@@ -1,0 +1,56 @@
+{% extends 'master.tmpl' %}
+{% block content %}
+
+{% if not editable %}
+<blockquote>
+  提示：如果你看到此提示，说明有其他用户正在编辑该文件，或者
+  你没有权限编辑该文件
+</blockquote>
+<br />
+{% else %}
+<h1>{% ifequal editmode 'edit' %}编辑{% else %}添加{% endifequal %}模板</h1>
+<hr />
+<form id="ksform" method="post" action="/quick/ksfile/save">
+  {% csrf_token %}
+  <ol>
+    <li>
+      <label for="ksdata">{% if ksfile_name %}编辑: {{ ksfile_name }}{% else %}文件名称:{% endif %}</label>
+  {% ifnotequal editmode 'edit' %}
+      <input type="text" name="ksfile_name" id="ksfile_name" />
+      <span class="context-tip">Example:  foo.ks (to be saved in /var/lib/cobbler/kickstarts/)</span>
+  {% else %}
+      <input type="hidden" name="ksfile_name" value="{{ ksfile_name }}" />
+  {% endifnotequal %}
+    </li>
+    <li>
+      <pre><textarea name="ksdata" id="ksdata">{{ ksdata }}</textarea></pre>
+    </li>
+  {% if deleteable %}
+    <li>
+      <input type="checkbox" name="delete1" value="delete1" />
+      <label class="delete" for="delete1">删除</label>
+      <br>
+      <input type="checkbox" name="delete2" value="delete2" />
+      <label class="delete" for="delete2">确认?</label>
+      <span class="context-tip">只有两个选项同时选中才可以删除!</span>
+    </li>
+  {% else %}
+    {% ifequal editmode "edit" %}
+    <li>
+      <span class="warn">提示：该模板正在使用中...</span>
+    </li>
+    {% endifequal %}
+  {% endif %}
+  {% if editable %}
+    <li>
+      <input type="hidden" name="editmode" value="{{ editmode }}" />
+      <input class="button" type="submit" name="submit" value="保存" />
+      <input class="button" type="reset" name="reset" value="重置" />
+    </li>
+  {% endif %}
+  </ol>
+</form>
+{% endif %}
+{% endblock content %}
+
+

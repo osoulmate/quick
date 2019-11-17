@@ -1,0 +1,14 @@
+{% extends "master.tmpl" %}
+
+{% block content %}
+
+<h1 class="error">错误</h1>
+
+发生错误
+
+<p class="errormsg">{{ message }}</p>
+<br/>
+<a href="javascript: history.go(-1)">返回</a>
+
+{% endblock content %}
+

@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xml:lang="en" lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>{% block title %}迅捷管理平台{% endblock %}</title>
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+  <link rel="stylesheet" href="/quick_content/jquery-ui.css" type="text/css" />
+  <link rel="stylesheet" type="text/css" media="all" href="/quick_content/style.css" />
+  <link rel="stylesheet" type="text/css" media="all" href="/quick_content/jsGrowl.css" />
+  <script src="/quick_content/jquery.min.js"></script>
+  <script src="/quick_content/jquery-ui.min.js"></script>
+  <script src="/quick_content/jsGrowl.js" type="text/javascript"></script> 
+  <script src="/quick_content/jsGrowl_jquery.js" type="text/javascript"></script> 
+  <script src="/quick_content/cobbler.js" type="text/javascript"></script> 
+  <link rel="icon" type="image/png" href="/quick_content/favicon.png" />
+</head>
+<body onload="go_go_gadget()">
+<div id="container">
+  <div id="header">
+    <div id="logo"><a href="/quick/"><img src="/quick_content/logo.png" /></a></div>
+    <div id="user">
+      <input type="hidden" name="username" id="username" value="{{ username }}" />
+      <span>Hi,<b>{{ username }}</b> <a class="action" href="javascript:menuaction('/quick/logout');">退出登录</a></span>
+    </div>
+  </div>
+  <div id="body">
+    <div id="menubar">
+      <form id="menuaction" method="POST" action="">{% csrf_token %}</form>
+      <script type="text/javascript">
+      function menuaction(action) {
+         document.forms["menuaction"].action = action
+         document.forms["menuaction"].submit();
+      }
+      </script>
+       {% for url in menu %}
+       <h1>{{url.menutitle}}</h1>
+       <ul>
+       {% for sub in url.children %}
+       <li><a href="{{sub.url}}" class="menu">{{sub.title}}</a></li>
+       {% endfor %}
+       </ul>
+       {% endfor %}
+    </div>
+    <div id="content">
+  {% block content %}
+      <h1 class="error">模板生成失败</h1>
+  {% endblock %}
+    </div> <!-- content -->
+    <div id="spacer">&nbsp</div>
+  </div> <!-- body -->
+  <div id="footer">
+    <a href="#">底部版权</a>
+  </div>
+  <div id="jsGrowl"></div>
+</div> <!-- container -->
+</body>
+</html>

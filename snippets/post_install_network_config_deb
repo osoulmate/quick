@@ -1,0 +1,54 @@
+#if $getVar("system_name","") != ""
+#raw
+#end raw
+    #set ikeys = $interfaces.keys()
+    #for $iname in $ikeys
+        #set $idata         = $interfaces[$iname]
+        #set $mac           = $idata["mac_address"]
+        #set $ip            = $idata["ip_address"]
+        #set $netmask       = $idata["netmask"]
+
+        #if $iname == 'bond0'
+cat >/etc/network/interfaces <<EOF
+auto lo
+iface lo inet loopback
+# The primary network interface
+auto bond0
+iface bond0 inet static
+    address $ip
+    netmask $netmask
+    gateway $gateway
+    bond-mode 1
+    bond-miimon 100
+    bond-slaves none
+EOF
+        #elif $iname != 'bond0' and $ip !=''
+            #if $mac !=""
+IFNAME=\$(ip -o link | grep -i '$mac' | sed -e 's/^[0-9]*: //' -e 's/:.*//')
+if [ \$IFNAME ]; then
+cat >/etc/network/interfaces <<EOF
+auto lo
+iface lo inet loopback
+auto \$IFNAME
+iface \$IFNAME inet static
+    hwaddress $mac
+    address $ip
+    netmask $netmask
+    gateway $gateway
+EOF
+fi
+            #end if
+        #else
+            #if $mac !=""
+IFNAME=\$(ip -o link | grep -i '$mac' | sed -e 's/^[0-9]*: //' -e 's/:.*//')
+if [ \$IFNAME ]; then
+    cat >>/etc/network/interfaces <<EOF
+auto \$IFNAME
+iface \$IFNAME inet manual
+    bond-master bond0
+EOF
+fi
+            #end if
+        #end if
+    #end for
+#end if

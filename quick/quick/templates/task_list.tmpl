@@ -1,0 +1,82 @@
+{% extends "master.tmpl" %}
+{% block content %}
+
+<form id="action" method="POST" action="">{% csrf_token %}</form>
+<script src="/quick_content/quick.js" type="text/javascript"></script>
+<h1>任务列表</h1>
+<hr />
+<ul id="submenubar">
+  <li>
+    <a class="action" href="/quick/task/edit">创建任务</a>
+  </li>
+  <li>
+    <select id="batchactions">
+      <option value="" selected="selected">批量操作</option>
+      {% for title,action,value in batchactions %}<option value="{{ action }}|{{ value }}">{{ title }}</option>{% endfor %}
+    </select>
+    <input class="button" type="button" value="执行" onclick="javascript:action_multi('{{ what }}')" />
+  </li>
+  {% include "paginate.tmpl" %}
+</ul>
+
+<form name="myform" method="post" action="/quick/task/action">
+  {% csrf_token %}
+  <table id="listitems" cellspacing="0">
+    <thead>
+      <tr>
+        <th>
+          <input type="checkbox" id="itemsall" onclick="javascript:items_check_all();" />
+        </th>
+        {% for value in columns %}
+        <th>
+          <a href="javascript:action_sort('{{ what }}','{{ value.0 }}');">{{ value.2 }}</a>
+          {% ifequal value.1 "asc" %}&darr;{% endifequal %}
+          {% ifequal value.1 "desc" %}&uarr;{% endifequal %}
+        </th>
+        {% endfor %}
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for item in items %}
+    <tr class="{% cycle 'rowodd' 'roweven' %}">
+        <td><input type="checkbox" name="items" value="{{ item.0.1 }}" onclick="javascript:items_check(this);" /></td>
+    {% for value in item %}
+        {% ifequal value.0 "name" %}
+        <td><a href="/quick/task/edit/{{ value.1 }}">{{ value.1 }}</a></td>
+        {% endifequal %}
+
+        {% ifequal value.2 "editlink" %}
+        {% ifnotequal value.1 "~" %}
+        <td><a href="/quick/{{ value.0 }}/edit/{{ value.1 }}">{{ value.1 }}</a></td>
+        {% endifnotequal %}
+        {% endifequal %}
+
+        {% if value.2 == "text" and value.0 == "usetime" %}
+        <td id="{{ item.0.1 }}|usetime" class="usetime">{{ value.1 }}</td>
+        {% endif %}
+
+        {% if value.2 == "text" and value.0 == "status" %}
+        <td id="{{ item.0.1 }}|progress" class="progress">{{ value.1 }}</td>
+        {% endif %}
+
+        {% if value.2 == "text" and value.0 != "status" and value.0 != "usetime"%}
+        <td title="{{ value.1 }}">{{ value.1 }}</td>
+        {% endif %}
+    {% endfor %}
+        <td>
+          <a class="action" href="/quick/task/edit/{{ item.0.1 }}">编辑</a>
+          <span class="action" onClick="javascript:obj_execute('{{ item.0.1 }}')">执行</span>
+          <span class="action" onClick="javascript:obj_delete('{{ item.0.1 }}')">删除</span>
+          <a class="action" href="/quick/task/detail/?name={{ item.0.1 }}">详情</a> 
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <input type="hidden" name="names" id="names" value=""/>
+</form>
+{% include "filter.tmpl" %}
+
+{% endblock content %}
+

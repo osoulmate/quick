@@ -1,0 +1,42 @@
+#!/bin/bash
+if [ "$1" != '' ];then
+    server=$1
+    echo $server
+else
+    exit 0
+fi
+while :
+do
+    if [ -e /var/log/YaST2/y2log ];then
+            #install_progress_log=$(tail -n 15 /var/log/YaST2/y2log|grep "Total package installation progress"|tail -1)
+            install_progress_log=""
+            downloaded_log=$(tail -n 15 /var/log/YaST2/y2log|egrep -e "PackageSlideShow.ycp(.*)Downloaded"|tail -1)
+            log=''
+            if [ -n "$install_progress_log" ];then
+                log=$(echo "$install_progress_log"|cut -d" " -f7-)
+                log=$(echo $log|sed -e "s/ /~/g")
+                log=$(echo $log|sed -e"s/\%/\%25/g")
+            elif [[ -n "$downloaded_log" ]]; then
+                log=$(echo "$downloaded_log"|cut -d" " -f7-)
+                log=$(echo $log|sed -e "s/ /~/g")
+                log=$(echo $log|sed -e"s/\%/\%25/g")
+            else
+                log=$(tail -n 1 /var/log/YaST2/y2log|grep "[YCP]")
+                log=$(echo "$log"|cut -d" " -f7-)
+                log=$(echo $log|sed -e "s/ /~/g")
+                log=$(echo $log|sed -e"s/\%/\%25/g")
+            fi
+            pid=$(ps -elf |grep "pre-scripts"|grep "sh -c"|awk -F ' ' '{print $4}')
+            if [ -n "$pid" ];then
+                    kill -9 $pid
+            fi
+            if [ "$log" != '' ];then
+                cmd="$server/quick/task/notice/install_"$log
+                echo $cmd >> /tmp/anamon.log
+                curl -s $cmd
+            fi
+    else
+        sleep 1
+    fi
+done
+

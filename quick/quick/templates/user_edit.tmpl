@@ -1,0 +1,254 @@
+{% extends "master.tmpl" %}
+{% block content %}
+<script>
+  $(function() {
+    $("#tabs").tabs();
+  });
+</script>
+<script type="text/javascript">
+function on_form_submit()
+{
+    var cur_multi = document.getElementById("to_group");
+    if (cur_multi) {
+        for (i=0; i <= cur_multi.options.length - 1; i++) {
+            cur_multi.options[i].selected = true;
+            console.log('group:',cur_multi.options[i].value)
+        }
+    }
+    var cur_multi = document.getElementById("to_right");
+    if (cur_multi) {
+        for (i=0; i <= cur_multi.options.length - 1; i++) {
+            cur_multi.options[i].selected = true;
+            console.log('right',cur_multi.options[i].value)
+        }
+    }
+    document.editform.submit()
+}
+function page_onload() {
+}
+</script>
+<h1>{% ifequal editmode 'edit'  %}编辑{% else %}添加用户{% endifequal %}{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}</h1>
+<hr />
+<form name="editform" method="post" action="/quick/user/save">
+  {% csrf_token %}
+  <div id="tabs">
+    <ul>
+      <li><a href="#tabs-1">基本信息</a></li>
+      <li><a href="#tabs-2">组管理</a></li>
+      <li><a href="#tabs-3">权限管理</a></li>
+    </ul>
+    {% ifequal editmode 'edit' %}
+    <div id="tabs-1">
+        <ol>
+            <li class="editrow">
+                <label for="username">用户名</label>
+                {{ name }}
+                <input type="hidden" id="username" name="username" value="{{ name }}"/>
+            </li>
+            <li class="editrow">
+                <label for="first_name">姓</label>
+                <input id="first_name" name="first_name" type="text" value="{{ user_result.first_name }}"/>
+            </li>
+            <li class="editrow">
+                <label for="last_name">名</label>
+                <input id="last_name" name="last_name" type="text" value="{{ user_result.last_name }}"/>
+            </li>
+            <li class="editrow">
+                <label for="pwd">密码</label>
+                <input id="pwd" name="pwd" type="password" value="{{ user_result.password }}"/>
+            </li>
+            <li class="editrow">
+                <label for="osarch">邮箱</label>
+                <input id="email" name="email" type="email" value="{{ user_result.email }}"/>
+            </li>
+            <li>
+            <label for="is_active">启用账户</label>
+            {% ifequal user_result.is_active "enable" %}
+            <input type="checkbox" name="is_active" id="is_active" checked>&nbsp;
+            {% else %}
+            <input type="checkbox" name="is_active" id="is_active" >&nbsp;
+            {% endifequal %}
+            </li>
+            <li>
+            <label for="is_superuser">管理员</label>
+            {% ifequal user_result.is_superuser "yes" %}
+            <input type="checkbox" name="is_superuser" id="is_superuser" checked>&nbsp;
+            {% else %}
+            <input type="checkbox" name="is_superuser" id="is_superuser" >&nbsp;
+            {% endifequal %}
+            </li>
+        </ol>
+    </div>
+    <div id="tabs-2">
+        <ol>
+            <li id="groups_row" class="editrow">
+              <label for="to_group" id="groups_caption">用户组</label>
+              <div class="multiselect">
+                <div class="multileft">
+                  <label for="from_group">可用:</label>
+                  <br />
+                  <select multiple id="from_group" name="from_group" class="edit">
+                        {% for group in groups %}
+                        {% if group.name not in have_groups %}
+                        <option value="{{ group.name }}">{{ group.name }}</option>
+                        {% endif %}
+                        {% endfor %}
+                  </select>
+                </div>
+                <div class="multibuttons">
+                  <input class="button" type="button" value="&gt;&gt;" id="add_group" onclick="$('#from_group option:selected').remove().appendTo('#to_group');" />
+                  <input class="button" type="button" value="&lt;&lt;" id="remove_group" onclick="$('#to_group option:selected').remove().appendTo('#from_group');" />
+                </div>
+                <div class="multiright">
+                  <label for="to_group">已选:</label>
+                  <br />
+                  <select multiple id="to_group" name="to_group" class="edit">
+                        {% for have_group in have_groups %}
+                            <option value="{{ have_group }}">{{ have_group }}</a>
+                        {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <span class="context-tip"></span>
+            </li>
+        </ol>
+    </div>
+    <div id="tabs-3">
+        <ol>
+            <li id="rights_row" class="editrow">
+              <label for="to_right" id="rights_caption">权限</label>
+              <div class="multiselect">
+                <div class="multileft">
+                  <label for="from_right">可用:</label>
+                  <br />
+                  <select multiple id="from_right" name="from_right" class="edit">
+                        {% for right in rights %}
+                        {% if right.codename not in have_rights %}
+                        <option value="{{ right.codename }}">{{ right.codename }}</option>
+                        {% endif %}
+                        {% endfor %}
+                  </select>
+                </div>
+                <div class="multibuttons">
+                  <input class="button" type="button" value="&gt;&gt;" id="add_right" onclick="$('#from_right option:selected').remove().appendTo('#to_right');" />
+                  <input class="button" type="button" value="&lt;&lt;" id="remove_right" onclick="$('#to_right option:selected').remove().appendTo('#from_right');" />
+                </div>
+                <div class="multiright">
+                  <label for="to_right">已选:</label>
+                  <br />
+                  <select multiple id="to_right" name="to_right" class="edit">
+                        {% for have_right in have_rights %}
+                            <option value="{{ have_right }}">{{ have_right }}</a>
+                        {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <span class="context-tip"></span>
+            </li>
+        </ol>
+    </div>
+    {% else %}
+    <div id="tabs-1">
+        <ol>
+            <li class="editrow">
+                <label for="username">用户名</label>
+                <input id="username" name="username" type="text"/>
+            </li>
+            <li class="editrow">
+                <label for="first_name">姓</label>
+                <input id="first_name" name="first_name" type="text"/>
+            </li>
+            <li class="editrow">
+                <label for="last_name">名</label>
+                <input id="last_name" name="last_name" type="text"/>
+            </li>
+            <li class="editrow">
+                <label for="pwd">密码</label>
+                <input id="pwd" name="pwd" type="password"/>
+            </li>
+            <li class="editrow">
+                <label for="osarch">邮箱</label>
+                <input id="email" name="email" type="email"/>
+            </li>
+            <li>
+            <label for="is_active">启用账户</label>
+            <input type="checkbox" name="is_active" id="is_active" >&nbsp;
+            </li>
+            <li>
+            <label for="is_superuser">管理员</label>
+            <input type="checkbox" name="is_superuser" id="is_superuser">&nbsp;
+            </li>
+        </ol>
+    </div>
+    <div id="tabs-2">
+        <ol>
+            <li id="groups_row" class="editrow">
+              <label for="to_group" id="groups_caption">用户组</label>
+              <div class="multiselect">
+                <div class="multileft">
+                  <label for="from_group">可用:</label>
+                  <br />
+                  <select multiple id="from_group" name="from_group" class="edit">
+                        {% for group in groups %}
+                            <option value="{{ group.name }}">{{ group.name }}</a>
+                        {% endfor %}
+                  </select>
+                </div>
+                <div class="multibuttons">
+                  <input class="button" type="button" value="&gt;&gt;" id="add_group" onclick="$('#from_group option:selected').remove().appendTo('#to_group');" />
+                  <input class="button" type="button" value="&lt;&lt;" id="remove_group" onclick="$('#to_group option:selected').remove().appendTo('#from_group');" />
+                </div>
+                <div class="multiright">
+                  <label for="to_group">已选:</label>
+                  <br />
+                  <select multiple id="to_group" name="to_group" class="edit">
+                  </select>
+                </div>
+              </div>
+              <span class="context-tip"></span>
+            </li>
+        </ol>
+    </div>
+    <div id="tabs-3">
+        <ol>
+            <li id="rights_row" class="editrow">
+              <label for="to_right" id="rights_caption">权限</label>
+              <div class="multiselect">
+                <div class="multileft">
+                  <label for="from_right">可用:</label>
+                  <br />
+                  <select multiple id="from_right" name="from_right" class="edit">
+                        {% for right in rights %}
+                            <option value="{{ right.codename }}">{{ right.codename }}</a>
+                        {% endfor %}
+                  </select>
+                </div>
+                <div class="multibuttons">
+                  <input class="button" type="button" value="&gt;&gt;" id="add_right" onclick="$('#from_right option:selected').remove().appendTo('#to_right');" />
+                  <input class="button" type="button" value="&lt;&lt;" id="remove_right" onclick="$('#to_right option:selected').remove().appendTo('#from_right');" />
+                </div>
+                <div class="multiright">
+                  <label for="to_right">已选:</label>
+                  <br />
+                  <select multiple id="to_right" name="to_right" class="edit">
+                  </select>
+                </div>
+              </div>
+              <span class="context-tip"></span>
+            </li>
+        </ol>
+    </div>
+    {% endifequal %}
+    <input type="hidden" name="editmode" value="{{ editmode }}" />
+    {% if editmode == 'edit' %}
+    <input class="button" type="submit" name="submit" onClick="on_form_submit();" value="更新" />
+    {% else %}
+    <input class="button" type="submit" name="submit" onClick="on_form_submit();" value="添加" />
+    {% endif %}
+    <input class="button" type="button" onClick="window.location='/quick/user/list';" value="取消" />
+  </div>
+</form>
+{% endblock content %}
+
+
+

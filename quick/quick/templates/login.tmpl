@@ -1,0 +1,32 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+    <title>{% block title %}迅捷管理平台{% endblock %}</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+    <link rel="stylesheet" type="text/css" media="all" href="/quick_content/style.css" />
+    <link rel="icon" type="image/png" href="/quick_content/favicon.png" />
+</head>
+<body class="loginscreen">
+  <div id="login">
+    <img src="/quick_content/logo.png" width="185" />
+    <form action="/quick/do_login" method="post">
+      {% csrf_token %}
+      {% if next %}<input type="hidden" name="next" value="{{ next|escape }}" />{% endif %}
+      <div id="username">
+        <label for="username">用户名: </label>
+        <input type="text" name="username" value="" id="username" autofocus>
+      </div>
+      <div id="password">
+        <label for="password">密码: </label>
+        <input type="password" name="password" value="" id="password">
+      </div>
+      <input class="button" type="submit" value="登录" />
+    </form>
+{% if message %}
+    <p class="error">{{ message }}</p>
+{% endif %}
+  </div>
+</body>
+</html>
+
+

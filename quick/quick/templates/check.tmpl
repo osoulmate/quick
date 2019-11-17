@@ -1,0 +1,14 @@
+{% extends "master.tmpl" %}
+
+{% block content %}
+<h1>按需更改项:</h1>
+<hr />
+<ol>
+  {% for entry in results %}
+  <li>{{ entry }}</li>
+  {% endfor %}
+</ol>
+<br/>
+更新配置后, 执行 "cobbler sync" 命令并重启cobblerd服务.
+{% endblock %}
+

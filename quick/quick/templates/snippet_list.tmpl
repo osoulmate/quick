@@ -1,0 +1,35 @@
+{% extends 'master.tmpl' %}
+{% block content %}
+<h1>代码片管理</h1>
+<hr />
+<!-- This is kind weird, but force the name "snippet"
+because we know this is the ksfile page. If this gets moved
+to generic_list, then it can be hacked around -->
+<ul id="submenubar">
+  <li><a class="action" href="/quick/{{ what }}/edit">创建代码片</a><li>
+</ul>
+<table id="listitems" cellspacing="0">
+  <thead>
+    <tr>
+      <th></th>
+      <th>文件</th>
+      <th>操作</th>
+    </tr>
+  </thead>
+  <tbody>
+{% for snippet,shortname,option in snippets %}
+    <tr class="{% cycle 'rowodd' 'roweven' %}">
+      <td></td>
+      <td>{{ shortname }}</td>
+  {% if option %}
+      <td>
+    {% ifequal option "editable" %}<span class="action" onClick="window.location='/quick/snippet/edit/file:{{ snippet }}'">编辑</a> {% endifequal %}
+      </td>
+  {% endif %}
+    </tr>
+{% endfor %}
+  </tbody>
+</table>
+{% endblock content %}
+
+

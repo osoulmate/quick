@@ -1,0 +1,7 @@
+<script>
+     <interpreter>shell</interpreter>
+     <source><![CDATA[
+curl -o /tmp/suse_anamon.sh "http://$server:$http_port/cobbler/misc/suse_anamon"
+sh /tmp/suse_anamon.sh "$server"
+]]></source>
+</script>

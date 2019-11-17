@@ -1,0 +1,150 @@
+{% extends "master.tmpl" %}
+{% block content %}
+<script>
+  $(function() {
+    $("#tabs").tabs();
+  });
+</script>
+<h1>{% ifequal editmode 'edit'  %}编辑{% else %}创建{% endifequal %}任务{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}</h1>
+<hr />
+<form name="editform" method="post" action="/quick/task/save">
+  {% csrf_token %}
+  <div id="tabs">
+    <ul>
+      <li><a href="#tabs-1">基本</a></li>
+      <li><a href="#tabs-2">高级设置</a></li>
+    </ul>
+    <div id="tabs-1">
+        <ol>
+           <input type="hidden" name="name" id="name" value="{{ name }}" />
+            <li class="editrow">
+                <label for="osenv">场景</label>
+                <select id="osenv" name="osenv">
+                {% for osenv in osenvs %}
+                    {% ifequal osenv.0  tasks.osenv %}
+                    <option value="{{ osenv.0 }}" selected>{{ osenv.1 }}</option>
+                    {% else %}
+                    <option value="{{ osenv.0 }}">{{ osenv.1 }}</option>
+                    {% endifequal %}
+                {% endfor %} 
+                </select>
+                <span class="context-tip">默认为无DHCP系统重装</span>
+            </li>
+            <li class="editrow">
+                <label for="osip">IP/地址池</label>
+                <textarea id="osip" name="osip">{{ tasks.ips }}</textarea>
+                <span class="context-tip">
+                <pre><code>
+重装场景格式: 支持单个地址、多个非连续地址以及与
+连续地址的组合输入，连续地址分隔符为英文"-",非
+连续地址为英文","
+示例一: 192.168.1.10
+示例二: 192.168.1.10,192.168.1.13
+示例三: 192.168.1.10-192.168.1.15,192.168.1.17
+新装场景格式：[IP NETMASK GATEWAY MAC1 MAC2...] 空格分隔，支持多行记录
+示例一：192.168.1.10 255.255.255.0 192.168.1.1 00:0C:29:DD:5D:84
+                </pre></code>
+                </span>
+            </li>
+            <li class="editrow">
+                <label for="osuser">用户名</label>
+                <input id="osuser" name="osuser" type="text" value="{{ tasks.osuser }}"/>
+                <span class="context-tip">主机操作系统用户名</span>
+            </li>
+            <li class="editrow">
+                <label for="ospass">密码</label>
+                <input id="ospass" name="ospass" type="password" value="{{ tasks.ospwd }}"/>
+                <span class="context-tip">主机操作系统密码</span>
+            </li>
+            <li class="editrow">
+                <label for="osarch">系统平台</label>
+                <select id="osarch" name="osarch">
+                    {% for arch in osarch %}
+                    {% ifequal arch  tasks.osarch %}
+                    <option value="{{ arch }}" selected>{{ arch }}</option>
+                    {% else %}
+                    <option value="{{ arch }}">{{ arch }}</option>
+                    {% endifequal %}
+                  {% endfor %}
+                </select>
+            </li>
+            <li class="editrow">
+                <label for="osbreed">Breed</label>
+                <select id="osbreed" name="osbreed">
+                {% for breed,releases in breeds.items %}
+                    {% ifequal breed  tasks.osbreed %}
+                    <option value="{{ breed }}" selected>{{ breed }}</option>
+                    {% else %}
+                    <option value="{{ breed }}">{{ breed }}</option>
+                    {% endifequal %}
+                {% endfor %}
+                </select>
+            </li>
+            <li class="editrow">
+                <label for="osrelease">发行版本</label>
+                <select id="osrelease" name="osrelease">
+                {% for breed,releases in breeds.items %}
+                {% for release in releases %}
+                    {% ifequal release  tasks.osrelease %}
+                    <option value="{{ release }}" selected>{{ release }}</option>
+                    {% else %}
+                    <option value="{{ release }}">{{ release }}</option>
+                    {% endifequal %}
+                {% endfor %}
+                {% endfor %}
+                </select>
+                <span class="context-tip">目标系统版本</span>
+            </li>
+        </ol>
+    </div>
+    <div id="tabs-2">
+        <ol>
+            <li class="editrow">
+                <label for="ospart">分区设置</label>
+                <textarea id="ospart" name="ospart">{{ tasks.ospart }}</textarea>
+                <span class="context-tip">
+                <pre><code>
+说明: 默认分区方式"auto"，已定义分区类别有: "auto","common"
+"auto"方式根据系统类别自动进行分区，"common"方式分区为:
+物理机: /boot 500M  swap 64G  / 剩余容量
+虚拟机: /boot 500M swap 16G / 剩余容量
+自定义分区格式: 分区名:容量,分区名:容量
+示例一: /boot:500M,swap:32G,/var:10G,/:all
+示例二: /boot/efi:100M,/boot:500M,swap:64G,/tmp:30G,/:all
+                </pre></code>
+                </span>
+            </li>
+            <li class="editrow">
+                <label for='ospackages'>安装包选择</label>
+                <textarea id="ospackages" name="ospackages">{{ tasks.ospackages }}</textarea>
+                <span class="context-tip">
+                <pre><code>
+默认最小化安装，如需安装额外安装包，请在此定义
+                </pre></code>
+</span>
+            </li>
+            <li class="editrow">
+                <label for='raid'>raid配置</label>
+                <textarea id="raid" name="raid">{{ tasks.raid }}</textarea>
+                <span class="context-tip">raid配置</span>
+            </li>
+            <li class="editrow">
+                <label for="drive_path">驱动路径</label>
+                <input id="drive_path" name="drive_path" type="text" value="{{ tasks.drive_path }}"/>
+                <span class="context-tip">支持http,ftp网络路径</span>
+            </li>
+            <li class="editrow">
+                <label for="notice_mail">通知邮箱</label>
+                <input id="notice_mail" name="notice_mail" type="email" value="{{ tasks.notice_mail }}"/>
+                <span class="context-tip">通知邮箱</span>
+            </li>
+        </ol>
+    </div>
+  <div>
+    <input type="hidden" name="editmode" value="{{ editmode }}" />
+    <input class="button" type="submit" name="submit" value="创建" />
+    <input class="button" type="button" onClick="window.location='/quick/task/list';" value="撤销" />
+  </div>
+</form>
+{% endblock content %}
+

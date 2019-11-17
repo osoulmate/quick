@@ -1,0 +1,53 @@
+#if $getVar("system_name","") != ""
+#raw
+#end raw
+    #set ikeys = $interfaces.keys()
+    #for $iname in $ikeys
+        #set $idata         = $interfaces[$iname]
+        #set $mac           = $idata["mac_address"]
+        #set $ip            = $idata["ip_address"]
+        #set $netmask       = $idata["netmask"]
+        #if $iname == 'bond0'
+cat >/etc/sysconfig/network-scripts/ifcfg-bond0 <<EOF
+DEVICE=bond0
+ONBOOT=yes
+BOOTPROTO=static
+IPADDR=$ip
+NETMASK=$netmask
+GATEWAY=$gateway
+TYPE=Ethernet
+BONDING_OPTS="mode=1 miimon=100"
+EOF
+        #elif $iname != 'bond0' and $ip !=''
+            #if $mac !=""
+IFNAME=\$(ip -o link | grep -i '$mac' | sed -e 's/^[0-9]*: //' -e 's/:.*//')
+if [ \$IFNAME ]; then
+cat >/etc/sysconfig/network-scripts/ifcfg-\$IFNAME <<EOF
+DEVICE=\$IFNAME
+ONBOOT=yes
+BOOTPROTO=static
+IPADDR=$ip
+NETMASK=$netmask
+GATEWAY=$gateway
+TYPE=Ethernet
+EOF
+fi
+            #end if
+        #else
+            #if $mac !=""
+IFNAME=\$(ip -o link | grep -i '$mac' | sed -e 's/^[0-9]*: //' -e 's/:.*//')
+if [ \$IFNAME ]; then
+    cat >/etc/sysconfig/network-scripts/ifcfg-\$IFNAME <<EOF
+DEVICE=\$IFNAME
+ONBOOT=yes
+BOOTPROTO=none
+MASTER=bond0
+SLAVE=yes
+EOF
+fi
+            #end if
+        #end if
+    #end for
+chkconfig NetworkManager off
+service NetworkManager stop
+#end if

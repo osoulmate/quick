@@ -1,0 +1,33 @@
+{% extends "master.tmpl" %}
+
+{% block content %}
+<h1>参数配置</h1>
+<hr />
+<p>
+  配置文件路径/etc/cobbler/settings，修改键值请<a href="javascript:menuaction('/quick/sync');" style="color:#306cac;">更新配置</a>
+</p>
+{% if settings %}
+<table id="listitems" cellspacing="0">
+  <thead>
+    <tr>
+      <th></th>
+      <th>键</th>
+      <th>值</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for setting,value in settings %}
+    <tr class="{% cycle 'rowodd' 'roweven' %}">
+      <td></td>
+      <td><a href="/quick/setting/edit/{{ setting }}">{{ setting }}</a></td>
+      <td>{% if value %}{{ value }}{% else %}None{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<h2 class="error">未找到settings文件</h2>
+{% endif %}
+{% endblock content %}
+
+

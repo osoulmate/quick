@@ -1,0 +1,6 @@
+<script>
+     <interpreter>shell</interpreter>
+     <source><![CDATA[
+curl $server/quick/task/notice/install_finish -o /dev/null
+]]></source>
+</script>

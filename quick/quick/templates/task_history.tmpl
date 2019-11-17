@@ -1,0 +1,67 @@
+{% extends "master.tmpl" %}
+{% block content %}
+
+<form id="action" method="POST" action="">{% csrf_token %}</form>
+<script src="/quick_content/quick.js" type="text/javascript"></script>
+<h1>任务历史</h1>
+<hr />
+<ul id="submenubar">
+  <li>
+    <a class="action" href="/quick/task/edit">创建任务</a>
+  </li>
+  <li>
+    <select id="batchactions">
+      <option value="" selected="selected">批量操作</option>
+      {% for title,action,value in batchactions %}<option value="{{ action }}|{{ value }}">{{ title }}</option>{% endfor %}
+    </select>
+    <input class="button" type="button" value="执行" onclick="javascript:action_multi('{{ what }}')" />
+  </li>
+  {% include "paginate.tmpl" %}
+</ul>
+
+<form name="myform" method="post" action="/quick/task/action">
+  {% csrf_token %}
+  <table id="listitems" cellspacing="0">
+    <thead>
+      <tr>
+        <th>
+          <input type="checkbox" id="itemsall" onclick="javascript:items_check_all();" />
+        </th>
+        {% for value in columns %}
+        <th>
+          <a href="javascript:action_sort('{{ what }}','{{ value.0 }}');">{{ value.2 }}</a>
+          {% ifequal value.1 "asc" %}&darr;{% endifequal %}
+          {% ifequal value.1 "desc" %}&uarr;{% endifequal %}
+        </th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+    {% for item in items %}
+    <tr class="{% cycle 'rowodd' 'roweven' %}">
+        <td><input type="checkbox" name="items" value="{{ item.0.1 }}" onclick="javascript:items_check(this);" /></td>
+    {% for value in item %}
+        {% ifequal value.0 "name" %}
+        <td><a href="/quick/task/edit/{{ value.1 }}">{{ value.1 }}</a></td>
+        {% endifequal %}
+
+        {% ifequal value.2 "editlink" %}
+          {% ifnotequal value.1 "~" %}
+          <td><a target="_blank" href="http://192.168.31.102:8022/ssh/host/{{ value.1 }}">{{ value.1 }}</a></td>
+          {% endifnotequal %}
+        {% endifequal %}
+        
+        {% if value.2 == "text" %}
+        <td>{{ value.1 }}</td>
+        {% endif %}
+    {% endfor %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <input type="hidden" name="names" id="names" value=""/>
+</form>
+{% include "filter.tmpl" %}
+
+{% endblock content %}
+

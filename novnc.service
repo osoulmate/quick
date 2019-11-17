@@ -1,0 +1,11 @@
+[Unit]
+Description=noVNC Server daemon
+[Service]
+ExecStart=/usr/bin/novnc --web=/usr/share/quick/extend/novnc --target-config=/usr/share/quick/extend/novnc/vnc_tokens 6080
+Type=simple
+KillMode=process
+Restart=on-failure
+RestartSec=42s
+
+[Install]
+WantedBy=multi-user.target
