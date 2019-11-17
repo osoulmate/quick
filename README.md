@@ -5,7 +5,7 @@ a platform of os management base Cobbler web
 
 **硬件要求**: x86，内存4G以上，硬盘容量不低于100G
 
-**软件环境**: Django 1.6.11.7  MySQL Ver 14.14 Distrib 5.6.46  Cobbler 2.8.4  node v10.16.0
+**软件环境**: Django 1.6.11.7  MySQL Ver 14.14  Cobbler 2.8.4  node 10.16.0 noVNC WebSSH2
 
              paramiko  gevent  pymysql  dhcp  tftp  rsync  apache
 
@@ -56,7 +56,7 @@ systemctl stop firewalld
 setenforce 0
 sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/sysconfig/selinux 
 sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux 
-read -p "please input your active IP ADDRESS: "  my_host                           #替换为cobbler服务器的IP地址
+read -p "please input your active IP ADDRESS: "  my_host                           #本机IP
 sed -i "s/server: 127.0.0.1/server: $my_host/g" /etc/cobbler/settings              #修改默认监听地址为本机IP
 sed -i "s/next_server: 127.0.0.1/next_server: $my_host/g" /etc/cobbler/settings    #修改next_server为本机IP
 sed -i "s/manage_rsync: 0/manage_rsync: 1/g" /etc/cobbler/settings                 #使能cobbler管理rsync
@@ -77,7 +77,7 @@ systemctl start cobblerd
 
 11. 启动并配置mysql
 ```
-    cat >> /etc/my.cnf <<EOF
+cat >> /etc/my.cnf <<EOF
 [client]
 default-character-set = utf8
 [mysqld]
@@ -85,11 +85,11 @@ default-storage-engine = INNODB
 character-set-server = utf8
 collation-server = utf8_general_ci
 EOF
-    service mysqld start
-    mysql -u root
-    mysql> set password for 'root'@'localhost' =password('password');       #配置数据库访问密码
-    mysql> grant all privileges on *.* to root@'%'identified by 'password'; #把所有数据库的所有表的所有权限赋值给位于所有IP地址的root用户
-    mysql> create database quick;
+service mysqld start
+mysql -u root
+mysql> set password for 'root'@'localhost' =password('root');       #配置数据库访问密码
+mysql> grant all privileges on *.* to root@'%'identified by 'root'; #把所有数据库的所有表的所有权限赋值给位于所有IP地址的root用户
+mysql> create database quick;
 ```
 12. 复制 quick 文件夹到/usr/share目录下
 ```
@@ -111,11 +111,10 @@ chown -R apache /var/log/quick                            #赋予apache用户读
 ```
 systemctl restart httpd
 ```
-20. 创建管理平台登陆账号
-   使用浏览器访问`http://localhost/quick/add_web_users`
+20. 创建管理平台登陆账号,使用浏览器访问`http://localhost/quick/add_web_users`
 21. 启动webssh服务
 ```
-    forever start /usr/share/quick/extend/webssh2/index.js
+forever start /usr/share/quick/extend/webssh2/index.js
 ```
 22. 启动novnc服务
 ```
