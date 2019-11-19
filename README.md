@@ -94,6 +94,7 @@ mysql> create database quick;
 12. 复制 quick 文件夹到/usr/share目录下
 ```
 cd /usr/share/quick
+mkdir sessions
 chown -R apache sessions/                                 #赋予apache用户读写sessions文件夹及其文件的权限
 chown apache extend/novnc/vnc_tokens                      #赋予apache用户读写vnc_tokens文件的权限
 python manage.py syncdb                                   #创建数据表
