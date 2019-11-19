@@ -21,7 +21,6 @@
 <body>
   
   <div class="layui-fluid">
-    <div class="layui-row layui-col-space15">
 {% load site %}
 <script type="text/javascript">
 {% ifequal what "system" %}
@@ -488,7 +487,7 @@ $(document).ready(function()
   });
 </script>
 
-<h1>{% ifequal editmode 'edit'  %}编辑{% else %}添加{% endifequal %}{{ what|capfirst }}{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}</h1>
+<h1><b>{% ifequal editmode 'edit'  %}编辑{% else %}添加{% endifequal %}{{ what|capfirst }}{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}</b></h1>
 <hr />
 <form name="editform" method="post" action="/quick/{{ what }}/save">
   {% csrf_token %}
@@ -618,9 +617,9 @@ $(document).ready(function()
 {% endifequal %}
 
 </form>
-    </div>
   </div>
 </body>
 </html>
+
 
 

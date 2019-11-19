@@ -21,12 +21,11 @@
 <body>
   
   <div class="layui-fluid">
-    <div class="layui-row layui-col-space15">
 
 <form id="action" method="POST" action="">{% csrf_token %}</form>
 <script src="/quick_content/quick.js" type="text/javascript"></script>
-<h1>任务详情</h1>
-<hr />
+<h1><b>任务详情<b/></h1>
+<hr/>
 <ul id="submenubar">
   <li>
     <a class="action" href="/quick/task/edit">创建任务</a>
@@ -99,7 +98,7 @@
 </form>
 {% include "filter.tmpl" %}
 
-    </div>
   </div>
 </body>
 </html>
+

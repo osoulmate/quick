@@ -21,11 +21,9 @@
 <body>
   
   <div class="layui-fluid">
-    <div class="layui-row layui-col-space15">
-
 <script type="text/javascript">
 function action_sort(value) {
-    document.forms["action"].action = '/cobbler_web/iplist/modifylist/sort/' + value;
+    document.forms["action"].action = '/quick/iplist/modifylist/sort/' + value;
     document.forms["action"].submit();
 }
 </script>
@@ -59,9 +57,8 @@ function action_sort(value) {
 {% else %}
 <h2>No IP addresses</h2>
 {% endif %}
-
-    </div>
   </div>
 </body>
 </html>
+
 

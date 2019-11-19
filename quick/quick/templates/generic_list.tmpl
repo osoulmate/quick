@@ -21,8 +21,6 @@
 <body>
   
   <div class="layui-fluid">
-    <div class="layui-row layui-col-space15">
-
 <form id="action" method="POST" action="">{% csrf_token %}</form>
 <script type="text/javascript">
 function items_check_all(){
@@ -139,6 +137,7 @@ function action_multi(otype) {
 }
 </script>
 <h1>
+<b>
 {% if what == "profile" or what == "system" or what == "image" %}{{ what|title }}管理
 {% elif what == "repo" %}软件库管理
 {% elif what == "package" %}安装包管理
@@ -146,6 +145,7 @@ function action_multi(otype) {
 {% elif what == "mgmtclass" %}管理组管理
 {% elif what == "distro" %}发行版管理
 {% else %}网络管理{% endif %}
+</b>
 </h1>
 <hr />
 <ul id="submenubar">
@@ -237,9 +237,9 @@ function action_multi(otype) {
 </form>
 {% include "filter.tmpl" %}
 
-    </div>
   </div>
 </body>
 </html>
+
 
 

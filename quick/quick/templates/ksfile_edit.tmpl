@@ -21,7 +21,6 @@
 <body>
   
   <div class="layui-fluid">
-    <div class="layui-row layui-col-space15">
 
 {% if not editable %}
 <blockquote>
@@ -30,7 +29,7 @@
 </blockquote>
 <br />
 {% else %}
-<h1>{% ifequal editmode 'edit' %}编辑{% else %}添加{% endifequal %}模板</h1>
+<h1><b>{% ifequal editmode 'edit' %}编辑{% else %}添加{% endifequal %}模板</b></h1>
 <hr />
 <form id="ksform" method="post" action="/quick/ksfile/save">
   {% csrf_token %}
@@ -73,10 +72,10 @@
   </ol>
 </form>
 {% endif %}
-    </div>
   </div>
 </body>
 </html>
+
 
 
 

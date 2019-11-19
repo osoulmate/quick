@@ -19,10 +19,15 @@
   <link rel="stylesheet" href="/quick_content/layuiadmin/style/admin.css" media="all">
 </head>
 <body>
-  
+  <form id="menuaction" method="POST" action="">{% csrf_token %}</form>
+  <script type="text/javascript">
+  function menuaction(action) {
+      document.forms["menuaction"].action = action
+      document.forms["menuaction"].submit();
+  }
+  </script>
   <div class="layui-fluid">
-    <div class="layui-row layui-col-space15">
-<h1>参数配置</h1>
+<h1><b>参数配置</b></h1>
 <hr />
 <p>
   配置文件路径/etc/cobbler/settings，修改键值请<a href="javascript:menuaction('/quick/sync');" style="color:#306cac;">更新配置</a>
@@ -49,10 +54,10 @@
 {% else %}
 <h2 class="error">未找到settings文件</h2>
 {% endif %}
-    </div>
   </div>
 </body>
 </html>
+
 
 
 

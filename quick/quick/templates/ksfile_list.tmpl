@@ -21,8 +21,7 @@
 <body>
   
   <div class="layui-fluid">
-    <div class="layui-row layui-col-space15">
-<h1>模板管理</h1>
+<h1><b>模板管理</b></h1>
 <hr />
 <!-- This is kind weird, but force the name "kickstart"
 because we know this is the ksfile page. If this gets moved
@@ -43,18 +42,19 @@ to generic_list, then it can be hacked around -->
     <tr class="{% cycle 'rowodd' 'roweven' %}">
       <td></td>
       <td>{{ shortname }}</td>
-  {% if option %}
-      <td>
-    {% ifequal option "editable" %}<span class="action" onClick="window.location='/quick/ksfile/edit/file:{{ ksfile }}'">编辑</a> {% endifequal %}
-    {% ifequal option "viewable" %}<span class="action" onClick="window.location='{{ ksfile }}'>View</a>{% endifequal %}
+      {% if option %}
+      <td>{% ifequal option "editable" %}
+      <a class="action" onClick="window.location='/quick/ksfile/edit/file:{{ ksfile }}'">编辑</a>
+      {% endifequal %}
+      {% ifequal option "viewable" %}
+      <a class="action" onClick="window.location='{{ ksfile }}'>View</a>
+      {% endifequal %}
       </td>
   {% endif %}
     </tr>
 {% endfor %}
   </tbody>
 </table>
-    </div>
   </div>
 </body>
 </html>
-

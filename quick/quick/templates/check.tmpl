@@ -21,9 +21,8 @@
 <body>
   
   <div class="layui-fluid">
-    <div class="layui-row layui-col-space15">
-<h1>按需更改项:</h1>
-<hr />
+<h1><b>按需更改项:</b></h1>
+<hr/>
 <ol>
   {% for entry in results %}
   <li>{{ entry }}</li>
@@ -31,9 +30,9 @@
 </ol>
 <br/>
 更新配置后, 执行 "cobbler sync" 命令并重启cobblerd服务.
-    </div>
   </div>
 </body>
 </html>
+
 
 

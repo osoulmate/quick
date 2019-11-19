@@ -21,18 +21,13 @@
 <body>
   
   <div class="layui-fluid">
-    <div class="layui-row layui-col-space15">
 {% if not editable %}
 <blockquote>
-NOTE: You do not have permission to make changes to this
-snippet and can only read it.  
-
-Contact your Cobbler server administrator
-if you need to resolve this.
+NOTE: 抱歉，您当前没有修改该文件的权限!
 </blockquote>
 <br />
 {% endif %}
-<h1>{% ifequal editmode 'edit' %}编辑{% else %}添加{% endifequal %} 代码片</h1>
+<h1><b>{% ifequal editmode 'edit' %}编辑{% else %}添加{% endifequal %} 代码片</b></h1>
 <hr />
 <form id="snippetform" method="post" action="/quick/snippet/save">
   {% csrf_token %}
@@ -74,10 +69,10 @@ if you need to resolve this.
 {% endif %}
   </ol>
 </form>
-    </div>
   </div>
 </body>
 </html>
+
 
 
 

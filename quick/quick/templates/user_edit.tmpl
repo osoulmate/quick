@@ -21,7 +21,6 @@
 <body>
   
   <div class="layui-fluid">
-    <div class="layui-row layui-col-space15">
 <script>
   $(function() {
     $("#tabs").tabs();
@@ -49,8 +48,8 @@ function on_form_submit()
 function page_onload() {
 }
 </script>
-<h1>{% ifequal editmode 'edit'  %}编辑{% else %}添加用户{% endifequal %}{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}</h1>
-<hr />
+<h1><b>{% ifequal editmode 'edit'  %}编辑{% else %}添加用户{% endifequal %}{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}</b></h1>
+<hr/>
 <form name="editform" method="post" action="/quick/user/save">
   {% csrf_token %}
   <div id="tabs">
@@ -270,10 +269,10 @@ function page_onload() {
     <input class="button" type="button" onClick="window.location='/quick/user/list';" value="取消" />
   </div>
 </form>
-    </div>
   </div>
 </body>
 </html>
+
 
 
 
