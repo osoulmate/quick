@@ -368,9 +368,18 @@ def add_cobbler_system(remote,token,taskname,ospart,ospackages,raid):
         obj_name='sys-%s'%task_detail.ip
         profile=task_detail.apply_template
         gateway=task_detail.gateway
+        if 'suse' in profile:
+            kopts="vncpassword=hellovnc vnc=1 sshpassword=hellossh ssh=1"
+        elif 'centos7' in profile:
+            kopts='inst.vnc inst.vncpassword=hellovnc inst.sshd'
+        elif 'centos6' in profile:
+            kopts='vnc vncpassword=hellovnc sshd=1'
+        else:
+            kopts=''
         ks_meta='partition=%s package=%s raid=%s'%(ospart,ospackages,raid)
         fields=[{'name':'name','value':obj_name},
                 {'name':'profile','value':profile},
+                {'name':'kernel_options','value':kopts},
                 {'name':'ks_meta','value':ks_meta},
                 {'name':'gateway','value':gateway}]
         if not remote.has_item('system', obj_name):
