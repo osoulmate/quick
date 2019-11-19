@@ -145,13 +145,13 @@ def user_list(request,page=None):
     result = Users.objects.filter(**filters).order_by(sort_field)
     t = "user_list.tmpl"
 
-    pageinfo = tasks.__paginate(result,page=page,items_per_page=limit)
+    (items,pageinfo) = tasks.__paginate(result,page=page,items_per_page=limit)
 
     t = get_template(t)
     html = t.render(RequestContext(request,{
         'what'     : 'user',
         'columns'        : tasks.__format_columns(columns,sort_field1),
-        'items'          : tasks.__format_items(result,columns),
+        'items'          : tasks.__format_items(items,columns),
         'pageinfo'       : pageinfo,
         'filters'        : filters,
         'limit'          : limit,
