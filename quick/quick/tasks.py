@@ -221,6 +221,7 @@ def task_execute(request,task_name=None):
             else:
                 utils.add_cobbler_system(views.remote,request.session['token'],task_name,
                     task.ospart,task.ospackages,task.raid)
+                views.remote.background_sync({"verbose":"True"},request.session['token'])
             utils.add_vnc_token(ip_list=ip_list)
             if task.usetime =='0':
                 task.start_time = now
