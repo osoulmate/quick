@@ -1,4 +1,0 @@
-#!/bin/bash
-#Location /usr/bin/novnc
-cd /usr/share/quick/extend/novnc
-python -m  websockify $@
