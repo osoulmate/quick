@@ -1,32 +1,73 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html>
 <html>
 <head>
-    <title>{% block title %}迅捷管理平台{% endblock %}</title>
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
-    <link rel="stylesheet" type="text/css" media="all" href="/quick_content/style.css" />
-    <link rel="icon" type="image/png" href="/quick_content/favicon.png" />
+  <meta charset="utf-8">
+  <title>{% block title %}迅捷管理平台{% endblock %}</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <link rel="icon" type="image/png" href="/quick_content/favicon.png" />
+  <link rel="stylesheet" href="/quick_content/layuiadmin/layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="/quick_content/layuiadmin/style/admin.css" media="all">
+  <link rel="stylesheet" href="/quick_content/layuiadmin/style/login.css" media="all">
 </head>
-<body class="loginscreen">
-  <div id="login">
-    <img src="/quick_content/logo.png" width="185" />
-    <form action="/quick/do_login" method="post">
+<body>
+
+  <div class="layadmin-user-login layadmin-user-display-show" id="LAY-user-login" style="display: none;">
+
+    <div class="layadmin-user-login-main">
+      <div class="layadmin-user-login-box layadmin-user-login-header">
+        <img src="/quick_content/logo.png" width="185" />
+      </div>
+      <form action="/quick/do_login" method="post">
       {% csrf_token %}
       {% if next %}<input type="hidden" name="next" value="{{ next|escape }}" />{% endif %}
-      <div id="username">
-        <label for="username">用户名: </label>
-        <input type="text" name="username" value="" id="username" autofocus>
+      <div class="layadmin-user-login-box layadmin-user-login-body layui-form">
+        <div class="layui-form-item">
+          <label class="layadmin-user-login-icon layui-icon layui-icon-username" for="LAY-user-login-username"></label>
+          <input type="text" name="username" id="username" lay-verify="required" placeholder="用户名" class="layui-input">
+        </div>
+        <div class="layui-form-item">
+          <label class="layadmin-user-login-icon layui-icon layui-icon-password" for="LAY-user-login-password"></label>
+          <input type="password" name="password" id="password" lay-verify="required" placeholder="密码" class="layui-input">
+        </div>
+        <div class="layui-form-item">
+          <div class="layui-row">
+            <div class="layui-col-xs7">
+              <label class="layadmin-user-login-icon layui-icon layui-icon-vercode" for="LAY-user-login-vercode"></label>
+              <input type="text" name="vercode" id="LAY-user-login-vercode" lay-verify="required" placeholder="图形验证码" class="layui-input">
+            </div>
+            <div class="layui-col-xs5">
+              <div style="margin-left: 10px;">
+                <img src="https://www.oschina.net/action/user/captcha" class="layadmin-user-login-codeimg" id="LAY-user-get-vercode">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="layui-form-item" style="margin-bottom: 20px;">
+          {% if message %}
+          <span style="color:red;margin-top: 5px;">{{ message }}</span>
+          {% endif %}
+          <input type="checkbox" name="remember" lay-skin="primary" title="记住密码">
+          <a href="#" class="layadmin-user-jump-change layadmin-link" style="margin-top: 7px;">忘记密码？</a>
+        </div>
+        <div class="layui-form-item">
+          <button class="layui-btn layui-btn-fluid" lay-submit lay-filter="LAY-user-login-submit">登 入</button>
+        </div>
+        <div class="layui-trans layui-form-item layadmin-user-login-other">
+          <label>社交账号登入</label>
+          <a href="javascript:;"><i class="layui-icon layui-icon-login-qq"></i></a>
+          <a href="javascript:;"><i class="layui-icon layui-icon-login-wechat"></i></a>
+          <a href="javascript:;"><i class="layui-icon layui-icon-login-weibo"></i></a>
+          
+          <a href="#" class="layadmin-user-jump-change layadmin-link">注册帐号</a>
+        </div>
       </div>
-      <div id="password">
-        <label for="password">密码: </label>
-        <input type="password" name="password" value="" id="password">
-      </div>
-      <input class="button" type="submit" value="登录" />
-    </form>
-{% if message %}
-    <p class="error">{{ message }}</p>
-{% endif %}
+      </form>
+    </div>
+    <div class="layui-trans layadmin-user-login-footer">
+      <p>© 2019 <a href="https://github.com/osoulmate/quick" target="_blank">quick</a></p>
+    </div>
   </div>
 </body>
 </html>
-
-

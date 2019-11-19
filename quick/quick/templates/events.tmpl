@@ -1,6 +1,27 @@
-{% extends "master.tmpl" %}
-
-{% block content %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>任务列表</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <link rel="stylesheet" href="/quick_content/jquery-ui.css" type="text/css" />
+  <link rel="stylesheet" type="text/css" media="all" href="/quick_content/style.css" />
+  <link rel="stylesheet" type="text/css" media="all" href="/quick_content/jsGrowl.css" />
+  <script src="/quick_content/jquery.min.js"></script>
+  <script src="/quick_content/jquery-ui.min.js"></script>
+  <script src="/quick_content/jsGrowl.js" type="text/javascript"></script> 
+  <script src="/quick_content/jsGrowl_jquery.js" type="text/javascript"></script> 
+  <script src="/quick_content/cobbler.js" type="text/javascript"></script> 
+  <link rel="icon" type="image/png" href="/quick_content/favicon.png" />
+  <link rel="stylesheet" href="/quick_content/layuiadmin/layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="/quick_content/layuiadmin/style/admin.css" media="all">
+</head>
+<body>
+  
+  <div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
 
 <h1>Events</h1>
 <hr />
@@ -30,6 +51,9 @@
 {% else %}
 <h2>No events</h2>
 {% endif %}
+    </div>
+  </div>
+</body>
+</html>
 
-{% endblock %}
 
