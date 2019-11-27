@@ -76,7 +76,7 @@ def generate_ip_list(ip,**kw):
                 for ip_postfix in ip_range:
                     ip_list.append(ip_prefix+'.'+str(ip_postfix))
             else:
-                ip_list.append(ip)
+                ip_list.append(ip.strip())
     elif '-' in ip:
         start_ip = ip.split('-')[0]
         end_ip = ip.split('-')[1]
