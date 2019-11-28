@@ -68,10 +68,10 @@
         {% endifequal %}
 
         {% if value.2 == "editlink" and value.0 == "ip" %}
-        <td><a target="_blank" href="http://192.168.31.102:8022/ssh/host/{{ value.1 }}">{{ value.1 }}</a></td>
+        <td><a target="_blank" href="http:{{ location }}:8022/ssh/host/{{ value.1 }}">{{ value.1 }}</a></td>
         {% endif %}
         {% if value.2 == "editlink" and value.0 == "apply_template" %}
-        <td><a target="_blank" href="http://192.168.31.102/cblr/svc/op/ks/profile/{{ value.1 }}">{{ value.1 }}</a></td>
+        <td><a target="_blank" href="http:{{ location }}/cblr/svc/op/ks/profile/{{ value.1 }}">{{ value.1 }}</a></td>
         {% endif %}
         {% if value.2 == "text" and value.0 == "usetime" %}
         <td id="{{ item.0.1 }}-{{ item.1.1 }}|usetime" class="usetime">{{ value.1 }}</td>
