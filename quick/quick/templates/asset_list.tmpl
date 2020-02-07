@@ -78,7 +78,7 @@
                                                 </th>
                                               {% for value in columns %}
                                                 {% if value.4 == 'on' %}
-                                                <th>
+                                                <th >
                                                   <a href="javascript:action_sort('{{ what }}','{{ value.0 }}');">{{ value.2 }}</a>
                                                   {% ifequal value.1 "asc" %}&darr;{% endifequal %}
                                                   {% ifequal value.1 "desc" %}&uarr;{% endifequal %}
@@ -107,7 +107,7 @@
                                                 <td><a href="/quick/{{ what }}/edit/{{ value.1 }}">{{ value.1 }}</a></td>
                                                 {% endifequal %}
                                                 {% ifequal value.0 "sn" %}
-                                                <td><a href="/quick/{{ what }}/edit/{{ value.1 }}">{{ value.1 }}</a></td>
+                                                <td style="white-space:wrap;"><a href="/quick/{{ what }}/edit/{{ value.1 }}">{{ value.1 }}</a></td>
                                                 {% endifequal %}
                                                 {% if value.2 == "text" %}
                                                 <td title="{{ value.1 }}">{{ value.1 }}</td>
