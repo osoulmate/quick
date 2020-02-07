@@ -1,0 +1,65 @@
+{% extends "master.tmpl" %}
+{% block content %}
+<script>
+  $(function() {
+    $("#tabs").tabs();
+  });
+</script>
+<script type="text/javascript">
+</script>
+<h1>
+{% ifequal editmode 'edit'  %}编辑{% else %}添加{% endifequal %}{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}
+</h1>
+<hr />
+<form name="editform" method="post" action="/quick/{{ what }}/save">
+  {% csrf_token %}
+  <div id="tabs">
+    <ul>
+      <li><a href="#tabs-1">常规</a></li>
+    </ul>
+    <div id="tabs-1">
+        <ol>
+            {% for item in items %}
+            {% if item.0 == 'ip' or item.0 == 'sn'  %}
+            <li class="editrow">
+                {% if editable or what == 'asset/ipsn' %}
+                {% ifequal action "batch" %}
+                <label for="{{ item.0 }}pool">{{ item.3 }}池</label>
+                <textarea id="{{ item.0 }}pool" name="{{ item.0 }}pool"></textarea>
+                {% else %}
+                <label for="{{ item.0 }}">{{ item.3 }}</label>
+                <input id="{{ item.0 }}" name="{{ item.0 }}" type="text"  value="{{ item.1 }}"/>
+                {% endifequal %}
+                {% else %}
+                <label for="{{ item.0 }}">{{ item.3 }}</label>
+                {{ item.1 }}
+                <input id="{{ item.0 }}" name="{{ item.0 }}" type="hidden" value="{{ item.1 }}"/>
+                {% endif %}
+            </li>
+            {% endif %}
+            {% if item.0 != 'id' and item.0 != 'ip' and item.0 != 'sn' %}
+            <li class="editrow">
+                <label for="{{ item.0 }}">{{ item.3 }}</label>
+                <input id="{{ item.0 }}" name="{{ item.0 }}" type="text" value="{{ item.1 }}"/>
+            </li>
+            {% endif %}
+            {% endfor %}
+        </ol>
+    </div>
+    <input type="hidden" name="editmode" value="{{ editmode }}" />
+    {% if editmode == 'edit' %}
+    <input class="button" type="submit" name="submit" onClick="on_form_submit();" value="更新" />
+    {% else %}
+    {% ifequal action "batch" %}
+    <input class="button" type="submit" name="submit" onClick="on_form_submit();" value="更新" />
+    {% else %}
+    <input class="button" type="submit" name="submit" onClick="on_form_submit();" value="添加" />
+    {% endifequal %}
+    {% endif %}
+    <input class="button" type="button" onClick="window.location='/quick/{{ what }}/list';" value="取消" />
+  </div>
+</form>
+{% endblock content %}
+
+
+

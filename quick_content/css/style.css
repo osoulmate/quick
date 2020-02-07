@@ -1,0 +1,119 @@
+/* 
+ rewrite checkbox style
+*/
+input[type="checkbox"] {
+    display: none;
+}
+input[type="checkbox"]+label>i {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border: 1px solid #bbb;
+    background: #fff;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+input[type="checkbox"]+label>i:hover{
+    cursor:pointer;
+    border-color:#5fb878;
+}
+input[type="checkbox"]:checked+label>i {
+    position: relative;
+    background: #5fb878;
+}
+input[type="checkbox"]:checked+label>i::before {
+    content: '';
+    position: absolute;
+    width: 5px;
+    height: 10px;
+    border-bottom: 1px solid #fff;
+    border-right: 1px solid #fff;
+    left: 50%;
+    top: 20%;
+    transform-origin: center;
+    transform: translate(-50%, -30%) rotate(40deg);
+    -webkit-transform: translate(-50%, -30%) rotate(40deg);
+}
+
+/* 
+  jQuery UI formatting for tabs, some styling based on examples here:
+  http://keith-wood.name/uiTabs.html 
+*/
+.ui-tabs .ui-tabs-nav li a {
+  padding: 0.5em 0.5em;
+  font-size: 0.95em;
+  font-weight: bold;
+}
+.ui-widget {
+  font-family: "URW Gothic", "Liberation Sans", "Helvetica", "Luxi Sans", "Bitstream Vera Sans", arial,helvetica,clean,sans-serif;
+  font-size: 0.85em;
+  font-weight: normal;
+}
+#tabs {
+  width:100%;
+  padding: 0px;
+  background: none;
+  border-width: 0px;
+}
+#tabs .ui-tabs-nav {
+  padding-left: 0px;
+  background: transparent;
+  border-width: 0px 0px 1px 0px;
+  -moz-border-radius: 0px;
+  -webkit-border-radius: 0px;
+  border-radius: 0px;
+}
+#tabs .ui-tabs-panel {
+  border-width: 0px 1px 1px 1px;
+  background-color: white;
+}
+
+/*ÃÃÃÅconfirmÃÃÃ*/
+.ack-btn{
+    text-decoration: none;
+    color:white;
+    border: 0px;
+    cursor: pointer;
+    margin: 5px 2px 2px 5px;
+    padding: 2px 4px;  
+    border-radius:4px; 
+    -moz-border-radius:4px; 
+    -webkit-border-radius:4px; 
+    width: auto; 
+}
+.cancel-btn{
+    text-decoration: none;
+    color:#306cac;
+    border:1px solid #dedede;
+    cursor: pointer;
+    margin: 5px 2px 2px 5px;
+    padding: 2px 4px;
+    border-radius:4px; 
+    -moz-border-radius:4px; 
+    -webkit-border-radius:4px; 
+    width: auto; 
+}
+.ack-btn:hover,.cancel-btn:hover{
+    opacity: 0.4;
+    filter:alpha(opacity=40);
+}
+/*-----------------------------------------------------------*/
+.card-header a{color:white}
+#submenubar {padding:0px;}
+#submenubar li{display:inline-block;margin-top:5px;}
+#listitems table{
+    table-layout:fixed;
+}
+#listitems table td{
+    width:100%;
+    word-break:keep-all;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+#listitems thead tr th:first-child {width:50px;}
+#listitems thead tr th {width:135px;}
+#quick-div thead tr th:first-child {width:50px;}
+
+
+

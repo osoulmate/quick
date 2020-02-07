@@ -85,7 +85,7 @@ class WatchedFile:
         p1=re.compile('(\d+:\d+:\d+,\d+) (.*) anaconda:')
         p2=re.compile('\s+')
         p3=re.compile('^\d+~blocks$')
-        cmd = "%s/quick/task/notice/install_"%server
+        cmd = "%s/quick/install/notice/install_"%server
         alogCmd="tail -n 1 %s" % self.fn
         log = os.popen(alogCmd).read().strip()
         log=re.sub(p1,'',log).strip()
@@ -223,7 +223,7 @@ def report(server=None):
         ipmiip = 'none'
     if not server:
         return False
-    cmd="%s/quick/task/notice/notice?vendor=%s&product=%s&sn=%s&ipmiip=%s"%(server,vendor,product,sn,ipmiip)
+    cmd="%s/quick/install/notice/notice?vendor=%s&product=%s&sn=%s&ipmiip=%s"%(server,vendor,product,sn,ipmiip)
     cmd = 'curl '+'"'+cmd+'"'
     os.system(cmd)
     debug("Adding %s to notice\n" % cmd)

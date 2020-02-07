@@ -1,0 +1,52 @@
+{% extends "master.tmpl" %}
+{% block content %}
+<script>
+  $(function() {
+    $("#tabs").tabs();
+  });
+</script>
+<script type="text/javascript">
+</script>
+<h1>
+{% ifequal editmode 'edit'  %}编辑{% else %}添加{% endifequal %}{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}
+</h1>
+<hr />
+<form name="editform" method="post" action="/quick/{{ what }}/save">
+  {% csrf_token %}
+  <div id="tabs">
+    <ul>
+      <li><a href="#tabs-1">常规</a></li>
+    </ul>
+    <div id="tabs-1">
+        <ol>
+            {% for item in items %}
+            {% if item.0 == 'id' %}
+            <li class="editrow">
+                <input id="host-{{ item.0 }}" name="host-{{ item.0 }}" type="hidden" value="{{ item.1 }}"/>
+            </li>
+            {% elif item.0 == 'content' or item.0 == 'desc' %}
+            <li class="editrow">
+                <label for="host-{{ item.0 }}">{{ item.3 }}</label>
+                <textarea id="host-{{ item.0 }}" name="host-{{ item.0 }}">{{ item.1 }}</textarea>
+            </li>
+            {% else %}
+            <li>
+                <label for="host-{{ item.0 }}">{{ item.3 }}</label>
+                <input id="host-{{ item.0 }}" name="host-{{ item.0 }}" type="text" value="{{ item.1 }}"/>
+            </li>
+            {% endif %}
+            {% endfor %}
+        </ol>
+    </div>
+    <input type="hidden" name="editmode" value="{{ editmode }}" />
+    {% if editmode == 'edit' %}
+    <input class="button" type="submit" name="submit" value="更新" />
+    {% else %}
+    <input class="button" type="submit" name="submit" value="添加" />
+    {% endif %}
+    <input class="button" type="button" onClick="window.location='/quick/{{ what }}/list';" value="取消" />
+  </div>
+</form>
+{% endblock content %}
+
+

@@ -1,33 +1,30 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>任务列表</title>
-  <meta name="renderer" content="webkit">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
-  <link rel="stylesheet" href="/quick_content/jquery-ui.css" type="text/css" />
-  <link rel="stylesheet" type="text/css" media="all" href="/quick_content/style.css" />
-  <link rel="stylesheet" type="text/css" media="all" href="/quick_content/jsGrowl.css" />
-  <script src="/quick_content/jquery.min.js"></script>
-  <script src="/quick_content/jquery-ui.min.js"></script>
-  <script src="/quick_content/jsGrowl.js" type="text/javascript"></script> 
-  <script src="/quick_content/jsGrowl_jquery.js" type="text/javascript"></script> 
-  <script src="/quick_content/cobbler.js" type="text/javascript"></script> 
-  <link rel="icon" type="image/png" href="/quick_content/favicon.png" />
-  <link rel="stylesheet" href="/quick_content/layuiadmin/layui/css/layui.css" media="all">
-  <link rel="stylesheet" href="/quick_content/layuiadmin/style/admin.css" media="all">
-</head>
-<body>
-  
-  <div class="layui-fluid">
+{% extends "master.tmpl" %}
+{% block content %}
 <form id="action" method="POST" action="">{% csrf_token %}</form>
-<script src="/quick_content/quick.js" type="text/javascript"></script>
-<h1><b>用户列表</b></h1>
-<hr/>
+{% ifequal what "user/user" %}
+<h1>用户列表</h1>
+{% endifequal %}
+{% ifequal what "user/role" %}
+<h1>角色列表</h1>
+{% endifequal %}
+{% ifequal what "user/right" %}
+<h1>权限列表</h1>
+{% endifequal %}
+<hr />
+<div id="view_col" style="top:150px;right:350px;position:absolute;display:none;background:#fff;color:#000;">
+  <ul>
+  {% for column in columns %}
+    <li style="margin:10px;">
+    <input type="checkbox" id="select_{{ column.0 }}" style="margin:0px 10px;padding:0px;" name="view_col" value="{{ column.3 }}" checked="checked" onclick="javascript:item_check_off(this,this.value);" />
+    <label for="select_{{ column.0 }}"><i></i></label> 
+    {{ column.2 }}
+    </li>
+  {% endfor %}
+  </ul>
+</div>
 <ul id="submenubar">
   <li>
-    <a class="action" href="/quick/user/edit">添加用户</a>
+    <a class="action" href="/quick/{{ what }}/edit">添加</a>
   </li>
   <li>
     <select id="batchactions">
@@ -39,13 +36,15 @@
   {% include "paginate.tmpl" %}
 </ul>
 
-<form name="myform" method="post" action="/quick/user/action">
+<form name="myform" method="post" action="/quick/{{ what }}/action">
   {% csrf_token %}
-  <table id="listitems" cellspacing="0">
+  <div style="width:100%;overflow:auto;">
+  <table id="listitems" cellspacing="0" onclick="javascript:hide();">
     <thead>
       <tr>
         <th>
           <input type="checkbox" id="itemsall" onclick="javascript:items_check_all();" />
+          <label for="itemsall"> <i></i></label> 
         </th>
         {% for value in columns %}
         <th>
@@ -60,7 +59,10 @@
     <tbody>
     {% for item in items %}
     <tr class="{% cycle 'rowodd' 'roweven' %}">
-        <td><input type="checkbox" name="items" value="{{ item.0.1 }}" onclick="javascript:items_check(this);" /></td>
+        <td>
+          <input type="checkbox" name="items" id="{{ item.0.1 }}" value="{{ item.0.1 }}" onclick="javascript:items_check(this);" />
+          <label for="{{ item.0.1 }}"> <i></i></label> 
+        </td>
     {% for value in item %}
         <td>
             {% if value.1 == 'yes' %}是
@@ -74,18 +76,22 @@
         </td>
     {% endfor %}
         <td>
-          <a class="action" href="/quick/user/edit/{{ item.0.1 }}">编辑</a>
-          <span class="action" onClick="javascript:user_offline('{{ item.0.1 }}')">强制下线</span>
-          <span class="action" onClick="javascript:user_delete('{{ item.0.1 }}')">删除</span>
+          <a class="action" href="/quick/{{ what }}/edit/{{ item.0.1 }}">编辑</a>
+          <span class="action" onClick="javascript:obj_execute('/quick/{{ what }}/delete/{{ item.0.1 }}','删除?','action')">删除</span>
+          {% ifequal what "user/user" %}
+          <span class="action" onClick="javascript:obj_execute('/quick/{{ what }}/offline/{{ item.0.1 }}','强制该用户下线?','action')">强制下线</span>
+          {% endifequal %}
         </td>
       </tr>
     {% endfor %}
     </tbody>
   </table>
+  </div>
   <input type="hidden" name="names" id="names" value=""/>
 </form>
 {% include "filter.tmpl" %}
-  </div>
-</body>
-</html>
+{% endblock content %}
+
+
+
 

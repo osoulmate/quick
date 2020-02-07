@@ -1,4 +1,4 @@
-# Django settings for qios(quilkly install os) project.
+# Django settings for QUICK project.
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -28,8 +28,8 @@ DEFAULT_CHARSET = 'utf-8'
 SITE_ID = 1
 
 # not used
-MEDIA_ROOT = ''
-MEDIA_URL = ''
+MEDIA_ROOT = '/var/www/quick_content/temp/'
+MEDIA_URL = '/media/'
 
 if django.VERSION[0] == 1 and django.VERSION[1] < 4:
     ADMIN_MEDIA_PREFIX = '/media/'

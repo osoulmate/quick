@@ -31,7 +31,7 @@ do
                     kill -9 $pid
             fi
             if [ "$log" != '' ];then
-                cmd="$server/quick/task/notice/install_"$log
+                cmd="$server/quick/install/notice/install_"$log
                 echo $cmd >> /tmp/anamon.log
                 curl -s $cmd
             fi

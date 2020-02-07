@@ -1,0 +1,50 @@
+{% extends "master.tmpl" %}
+{% block content %}
+<form id="action" method="POST" action="">{% csrf_token %}</form>
+{% ifequal what "changepwd" %}
+<h1>修改密码</h1>
+{% endifequal %}
+{% ifequal what "myinfo" %}
+<h1>个人信息</h1>
+{% endifequal %}
+<hr />
+<form name="editform" method="post" action="/quick/user/{{ what }}">
+  {% csrf_token %}
+    <div>
+        <ol>
+            {% ifequal what 'changepwd'  %}
+            <li class="editrow">
+                <label for="oldpwd">原密码</label>
+                <input id="oldpwd" name="oldpwd" type="password" />
+            </li>
+            <li class="editrow">
+                <label for="newpwd">新密码</label>
+                <input id="newpwd" name="newpwd" type="password" />
+            </li>
+            <li class="editrow">
+                <label for="newpwd2">二次确认</label>
+                <input id="newpwd2" name="newpwd2" type="password" />
+            </li>
+            {% endifequal %}
+            {% ifequal what 'myinfo'  %}
+            {% for item in items %}
+                {% if item.0 == 'username' or item.0 == 'employee_id' %}
+                <li class="editrow">
+                    <label for="{{ item.0 }}">{{ item.3 }}</label>
+                    <input id="{{ item.0 }}" name="{{ item.0 }}" type="text" style="background:#ccc;" readonly value="{{ item.1 }}"/>
+                </li>
+                {% else %}
+                <li class="editrow">
+                    <label for="{{ item.0 }}">{{ item.3 }}</label>
+                    <input id="{{ item.0 }}" name="{{ item.0 }}" type="text" value="{{ item.1 }}"/>
+                </li>
+                {% endif %}
+            {% endfor %}
+            {% endifequal %}
+        </ol>
+    <input class="button" type="submit" name="submit" onClick="on_form_submit();" value="更新" />
+    <input class="button" type="button" onClick="window.location='/quick/user/{{ what }}';" value="取消" />
+  </div>
+</form>
+{% endblock content %}
+

@@ -4,6 +4,6 @@
 #$SNIPPET('post_run_deb')
 #$SNIPPET('download_config_files')
 #$SNIPPET('kickstart_done')
-wget "$server/quick/task/notice/install_finish" -O /dev/null
+wget "$server/quick/install/notice/install_finish" -O /dev/null
 sed -i 's/PermitRootLogin(.*)$/PermitRootLogin yes/g' /etc/ssh/sshd_config
 #End preseed_late_default

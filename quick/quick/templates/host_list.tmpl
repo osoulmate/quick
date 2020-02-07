@@ -1,0 +1,171 @@
+{% extends "master.tmpl" %}
+{% block content %}
+<form id="action" method="POST" action="">{% csrf_token %}</form>
+            <div class="content">
+                <div class="page-inner">
+                    <div class="page-header">
+                        <h4 class="page-title">主机管理</h4>
+                        <ul class="breadcrumbs">
+                            <li class="nav-home">
+                                <a href="#">
+                                    <i class="flaticon-home"></i>
+                                </a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">主机管理</a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                            {% ifequal what "host/single" %}<a href="#">单机管理</a>{% endifequal %}
+                            {% ifequal what "host/group" %}<a href="#">主机组</a>{% endifequal %}
+                            {% ifequal what "host/batch" %}<a href="#">批处理</a>{% endifequal %}
+                            {% ifequal what "host/script" %}<a href="#">脚本</a>{% endifequal %}
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                {% if what == "host/single" %}
+                                <form name="editform" method="post" action="/quick/{{ what }}/list">{% csrf_token %}
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <ul id="submenubar">
+                                          <li>
+                                            <input id="osip" name="osip" class="form-control input-square" type="text" placeholder="请输入主机IP..."/>
+                                          </li>
+                                          <li>
+                                            <input class="btn btn-primary" type="submit" name="submit" value="查询" />
+                                          </li>
+                                            {% for item in items %}
+                                            {% for value in item %}
+                                                {% ifequal value.0 "ip" %}
+                                          <li><a class="btn btn-primary" target="_blank" href="http://{{ location }}:8022/ssh/host/{{ value.1 }}">SSH</a></li>
+                                          <li><a class="btn btn-primary" target="_blank" href="http://{{ location }}:6080/vnc.html?path=?token=sys-{{ value.1 }}">VNC</a></li>
+                                                {% endifequal %}
+                                                {% ifequal value.0 "ipmi_ip" %}
+                                                {% if value.1 != "None" or value.1 != ""%}
+                                          <li><a class="btn btn-primary" target="_blank" href="http://{{ location }}:8022/ssh/host/{{ location }}">SOL</a></li>
+                                          <li><a class="btn btn-primary" target="_blank" href="http://{{ value.1 }}">BMC</a></li>
+                                                {% endif %}
+                                                {% endifequal %}
+                                            {% endfor %}
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    </form>
+                                    <!--<div class="card-category"><a href="https://sweetalert.js.org/">SweetAlert</a> makes popup messages easy and pretty.</div>-->
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-bordered" id="listitems" >
+                                        <tbody>
+                                            {% for item in items %}
+                                            {% for value in item %}
+                                            <tr>
+                                                <td style="width: 40%; vertical-align: middle;">{{ value.3 }}</td>
+                                                <td>{{ value.1 }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div id="view_col" style="top:50px;right:200px;position:absolute;display:none;background:#fff;color:#000;z-index:999;">
+                                    <ul>
+                                    {% for column in columns %}
+                                     {% if column.0 != "id" %}
+                                      <li style="margin:10px;">
+                                      <input type="checkbox" id="{{ column.0 }}-host" style="margin:0px 10px;padding:0px;" name="view_col" value="{{ column.3 }}" checked="checked" onclick="javascript:item_check_off(this,this.value);" />
+                                      <label for="{{ column.0 }}-host"><i></i></label> 
+                                      {{ column.2 }}
+                                      </li>
+                                     {% endif %}
+                                    {% endfor %}
+                                    </ul>
+                                </div>
+                                <div class="card-header">
+                                    <div class="card-head-row">
+                                        <div class="card-title">
+                                        <a class="btn btn-primary" href="/quick/{{ what }}/edit">添加</a>
+                                        {% for title,action,value in batchactions %}
+                                        <a class="btn btn-primary" id="batchactions" href="javascript:;" value="{{ action }}|{{ value }}" onclick="javascript:action_multi_new('{{ what }}')">{{ title }}</a>
+                                        {% endfor %}
+                                        </div>
+                                        <div class="card-tools">
+                                          {% include "paginate.tmpl" %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p class="demo">
+                                        <form name="myform" method="post" action="/quick/{{ what }}/action">
+                                          {% csrf_token %}
+                                          <div class="table-responsive" id="listitems">
+                                          <table class="table table-bordered" onclick="javascript:hide();">
+                                            <thead>
+                                              <tr>
+                                                <th>
+                                                  <input type="checkbox" id="itemsall" onclick="javascript:items_check_all();" />
+                                                  <label for="itemsall"> <i></i></label> 
+                                                </th>
+                                                {% for value in columns %}
+                                                {% if value.0 != "id" %}
+                                                <th>
+                                                  <a href="javascript:action_sort('{{ what }}','{{ value.0 }}');">{{ value.2 }}</a>
+                                                  {% ifequal value.1 "asc" %}&darr;{% endifequal %}
+                                                  {% ifequal value.1 "desc" %}&uarr;{% endifequal %}
+                                                </th>
+                                                {% else %}
+                                                <th style="display:none"></th>
+                                                {% endif %}
+                                                {% endfor %}
+                                                <th><a href="javascript:;">操作</a></th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for item in items %}
+                                            <tr>
+                                                <td>
+                                                  <input type="checkbox" name="items" id="{{ item.1.1 }}" value="{{ item.1.1 }}" onclick="javascript:items_check(this);" />
+                                                  <label for="{{ item.1.1 }}"> <i></i></label> 
+                                                </td>
+                                            {% for value in item %}
+                                                {% if value.0 == "name" %}
+                                                <td><a href="/quick/{{ what }}/edit/{{ value.1 }}">{{ value.1 }}</a></td>
+                                                {% elif value.0 == "id" %}
+                                                <td style="display:none" title="host-{{ value.1 }}">{{ value.1 }}</td>
+                                                {% else %}
+                                                <td title="{{ value.1 }}">{{ value.1 }}</td>
+                                                {% endif %}
+                                            {% endfor %}
+                                                <td>
+                                                  <a class="btn btn-info btn-sm" href="/quick/{{ what }}/edit/{{ item.1.1 }}">编辑</a>
+                                                  <span class="btn btn-info btn-sm" onClick="javascript:obj_execute('/quick/{{ what }}/delete/{{ item.1.1 }}','确认删除{{ item.1.1 }}?','action')">删除</span>
+                                                </td>
+                                              </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                          </table>
+                                          </div>
+                                          <input type="hidden" name="names" id="names" value=""/>
+                                        </form>
+                                        {% include "filter.tmpl" %}
+                                    </p>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+{% endblock content %}
+
+
+

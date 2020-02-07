@@ -1,26 +1,5 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>任务列表</title>
-  <meta name="renderer" content="webkit">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
-  <link rel="stylesheet" href="/quick_content/jquery-ui.css" type="text/css" />
-  <link rel="stylesheet" type="text/css" media="all" href="/quick_content/style.css" />
-  <link rel="stylesheet" type="text/css" media="all" href="/quick_content/jsGrowl.css" />
-  <script src="/quick_content/jquery.min.js"></script>
-  <script src="/quick_content/jquery-ui.min.js"></script>
-  <script src="/quick_content/jsGrowl.js" type="text/javascript"></script> 
-  <script src="/quick_content/jsGrowl_jquery.js" type="text/javascript"></script> 
-  <script src="/quick_content/cobbler.js" type="text/javascript"></script> 
-  <link rel="icon" type="image/png" href="/quick_content/favicon.png" />
-  <link rel="stylesheet" href="/quick_content/layuiadmin/layui/css/layui.css" media="all">
-  <link rel="stylesheet" href="/quick_content/layuiadmin/style/admin.css" media="all">
-</head>
-<body>
-  
-  <div class="layui-fluid">
+{% extends "master.tmpl" %}
+{% block content %}
 <script>
   $(function() {
     $("#tabs").tabs();
@@ -48,58 +27,117 @@ function on_form_submit()
 function page_onload() {
 }
 </script>
-<h1><b>{% ifequal editmode 'edit'  %}编辑{% else %}添加用户{% endifequal %}{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}</b></h1>
-<hr/>
-<form name="editform" method="post" action="/quick/user/save">
+<h1>
+{% ifequal editmode 'edit'  %}编辑{% else %}添加{% endifequal %}{% ifequal what 'user/user'  %}用户{% endifequal %}{% ifequal what 'user/role'  %}角色{% endifequal %}{% ifequal what 'user/right'  %}权限{% endifequal %}
+{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}
+</h1>
+<hr />
+<form name="editform" method="post" action="/quick/{{ what }}/save">
   {% csrf_token %}
   <div id="tabs">
     <ul>
-      <li><a href="#tabs-1">基本信息</a></li>
+      <li><a href="#tabs-1">基本</a></li>
+      {% ifequal what 'user/user'  %}
       <li><a href="#tabs-2">组管理</a></li>
+      {% endifequal %}
+      {% if what == 'user/user' or what == 'user/role' %}
       <li><a href="#tabs-3">权限管理</a></li>
+      {% endif%}
     </ul>
-    {% ifequal editmode 'edit' %}
     <div id="tabs-1">
         <ol>
+            {% ifequal what 'user/user'  %}
             <li class="editrow">
                 <label for="username">用户名</label>
-                {{ name }}
-                <input type="hidden" id="username" name="username" value="{{ name }}"/>
+                {% if editable %}
+                <input id="username" name="username" type="text"  value="{{ item.username }}"/>
+                {% else %}
+                {{ item.username }}
+                <input id="username" name="username" type="hidden" value="{{ item.username }}"/>
+                {% endif %}
             </li>
             <li class="editrow">
-                <label for="first_name">姓</label>
-                <input id="first_name" name="first_name" type="text" value="{{ user_result.first_name }}"/>
+                <label for="name">姓名</label>
+                <input id="name" name="name" type="text" value="{{ item.name }}"/>
             </li>
             <li class="editrow">
-                <label for="last_name">名</label>
-                <input id="last_name" name="last_name" type="text" value="{{ user_result.last_name }}"/>
+                <label for="telephone">手机号</label>
+                <input id="telephone" name="telephone" type="text" value="{{ item.telephone }}"/>
             </li>
             <li class="editrow">
                 <label for="pwd">密码</label>
-                <input id="pwd" name="pwd" type="password" value="{{ user_result.password }}"/>
+                <input id="pwd" name="pwd" type="password" value="{{ item.password }}"/>
             </li>
             <li class="editrow">
                 <label for="osarch">邮箱</label>
-                <input id="email" name="email" type="email" value="{{ user_result.email }}"/>
+                <input id="email" name="email" type="email" value="{{ item.email }}"/>
             </li>
             <li>
-            <label for="is_active">启用账户</label>
-            {% ifequal user_result.is_active "enable" %}
+            {% ifequal item.is_active "enable" %}
             <input type="checkbox" name="is_active" id="is_active" checked>&nbsp;
             {% else %}
             <input type="checkbox" name="is_active" id="is_active" >&nbsp;
             {% endifequal %}
+            <label for="is_active">启用账户<i style="margin-left:5px;"></i></label>
             </li>
             <li>
-            <label for="is_superuser">管理员</label>
-            {% ifequal user_result.is_superuser "yes" %}
+            {% ifequal item.is_superuser "yes" %}
             <input type="checkbox" name="is_superuser" id="is_superuser" checked>&nbsp;
             {% else %}
             <input type="checkbox" name="is_superuser" id="is_superuser" >&nbsp;
             {% endifequal %}
+            <label for="is_superuser">管理员<i style="margin-left:5px;"></i></label>
             </li>
+            {% endifequal %}
+            {% ifequal what 'user/role'  %}
+                <li class="editrow">
+                    <label for="name">角色名称</label>
+                    {% if editable %}
+                    <input id="name" name="name" type="text"  value="{{ item.name }}"/>
+                    {% else %}
+                    {{ item.name }}
+                    <input id="name" name="name" type="hidden" value="{{ item.name }}"/>
+                    {% endif %}
+                </li>
+                <li class="editrow">
+                    <label for="desc">描述</label>
+                    <textarea id="desc" name="desc">{{ item.desc }}</textarea>
+                </li>
+            {% endifequal %}
+            {% ifequal what 'user/right'  %}
+                <li class="editrow">
+                    <label for="name">权限名称</label>
+                    {% if editable %}
+                    <input id="name" name="name" type="text"  value="{{ item.name }}"/>
+                    {% else %}
+                    {{ item.name }}
+                    <input id="name" name="name" type="hidden" value="{{ item.name }}"/>
+                    {% endif %}
+                </li>
+                <li class="editrow">
+                    <label for="menu1_title">一级菜单标题</label>
+                    <input id="menu1_title" name="menu1_title" type="text"  value="{{ item.menu1_title }}"/>
+                </li>
+                <li class="editrow">
+                    <label for="menu1_icon">一级菜单图标</label>
+                    <input id="menu1_icon" name="menu1_icon" type="text"  value="{{ item.menu1_icon }}"/>
+                </li>
+                <li class="editrow">
+                    <label for="menu2_title">二级菜单标题</label>
+                    <input id="menu2_title" name="menu2_title" type="text"  value="{{ item.menu2_title }}"/>
+                </li>
+                <li class="editrow">
+                    <label for="menu2_url">二级菜单URL</label>
+                    <input id="menu2_url" name="menu2_url" type="text"  value="{{ item.menu2_url }}"/>
+                </li>
+                <li class="editrow">
+                    <label for="desc">描述</label>
+                    <textarea id="desc" name="desc">{{ item.desc }}</textarea>
+                </li>
+            {% endifequal %}
         </ol>
     </div>
+    {% ifequal what 'user/user'  %}
     <div id="tabs-2">
         <ol>
             <li id="groups_row" class="editrow">
@@ -134,6 +172,8 @@ function page_onload() {
             </li>
         </ol>
     </div>
+    {% endifequal %}
+    {% if what == 'user/user' or what == 'user/role' %}
     <div id="tabs-3">
         <ol>
             <li id="rights_row" class="editrow">
@@ -144,8 +184,8 @@ function page_onload() {
                   <br />
                   <select multiple id="from_right" name="from_right" class="edit">
                         {% for right in rights %}
-                        {% if right.codename not in have_rights %}
-                        <option value="{{ right.codename }}">{{ right.codename }}</option>
+                        {% if right.name not in have_rights %}
+                        <option value="{{ right.name }}">{{ right.name }}</option>
                         {% endif %}
                         {% endfor %}
                   </select>
@@ -168,112 +208,16 @@ function page_onload() {
             </li>
         </ol>
     </div>
-    {% else %}
-    <div id="tabs-1">
-        <ol>
-            <li class="editrow">
-                <label for="username">用户名</label>
-                <input id="username" name="username" type="text"/>
-            </li>
-            <li class="editrow">
-                <label for="first_name">姓</label>
-                <input id="first_name" name="first_name" type="text"/>
-            </li>
-            <li class="editrow">
-                <label for="last_name">名</label>
-                <input id="last_name" name="last_name" type="text"/>
-            </li>
-            <li class="editrow">
-                <label for="pwd">密码</label>
-                <input id="pwd" name="pwd" type="password"/>
-            </li>
-            <li class="editrow">
-                <label for="osarch">邮箱</label>
-                <input id="email" name="email" type="email"/>
-            </li>
-            <li>
-            <label for="is_active">启用账户</label>
-            <input type="checkbox" name="is_active" id="is_active" >&nbsp;
-            </li>
-            <li>
-            <label for="is_superuser">管理员</label>
-            <input type="checkbox" name="is_superuser" id="is_superuser">&nbsp;
-            </li>
-        </ol>
-    </div>
-    <div id="tabs-2">
-        <ol>
-            <li id="groups_row" class="editrow">
-              <label for="to_group" id="groups_caption">用户组</label>
-              <div class="multiselect">
-                <div class="multileft">
-                  <label for="from_group">可用:</label>
-                  <br />
-                  <select multiple id="from_group" name="from_group" class="edit">
-                        {% for group in groups %}
-                            <option value="{{ group.name }}">{{ group.name }}</a>
-                        {% endfor %}
-                  </select>
-                </div>
-                <div class="multibuttons">
-                  <input class="button" type="button" value="&gt;&gt;" id="add_group" onclick="$('#from_group option:selected').remove().appendTo('#to_group');" />
-                  <input class="button" type="button" value="&lt;&lt;" id="remove_group" onclick="$('#to_group option:selected').remove().appendTo('#from_group');" />
-                </div>
-                <div class="multiright">
-                  <label for="to_group">已选:</label>
-                  <br />
-                  <select multiple id="to_group" name="to_group" class="edit">
-                  </select>
-                </div>
-              </div>
-              <span class="context-tip"></span>
-            </li>
-        </ol>
-    </div>
-    <div id="tabs-3">
-        <ol>
-            <li id="rights_row" class="editrow">
-              <label for="to_right" id="rights_caption">权限</label>
-              <div class="multiselect">
-                <div class="multileft">
-                  <label for="from_right">可用:</label>
-                  <br />
-                  <select multiple id="from_right" name="from_right" class="edit">
-                        {% for right in rights %}
-                            <option value="{{ right.codename }}">{{ right.codename }}</a>
-                        {% endfor %}
-                  </select>
-                </div>
-                <div class="multibuttons">
-                  <input class="button" type="button" value="&gt;&gt;" id="add_right" onclick="$('#from_right option:selected').remove().appendTo('#to_right');" />
-                  <input class="button" type="button" value="&lt;&lt;" id="remove_right" onclick="$('#to_right option:selected').remove().appendTo('#from_right');" />
-                </div>
-                <div class="multiright">
-                  <label for="to_right">已选:</label>
-                  <br />
-                  <select multiple id="to_right" name="to_right" class="edit">
-                  </select>
-                </div>
-              </div>
-              <span class="context-tip"></span>
-            </li>
-        </ol>
-    </div>
-    {% endifequal %}
+    {% endif %}
     <input type="hidden" name="editmode" value="{{ editmode }}" />
     {% if editmode == 'edit' %}
     <input class="button" type="submit" name="submit" onClick="on_form_submit();" value="更新" />
     {% else %}
     <input class="button" type="submit" name="submit" onClick="on_form_submit();" value="添加" />
     {% endif %}
-    <input class="button" type="button" onClick="window.location='/quick/user/list';" value="取消" />
+    <input class="button" type="button" onClick="window.location='/quick/{{ what }}/list';" value="取消" />
   </div>
 </form>
-  </div>
-</body>
-</html>
-
-
-
+{% endblock content %}
 
 

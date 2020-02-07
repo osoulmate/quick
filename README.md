@@ -1,7 +1,7 @@
 # quick
 a platform of os management base Cobbler web
 ---
-**系统要求**: centos7.3(1611)
+**系统要求**: centos7
 
 **硬件要求**: x86，内存4G以上，硬盘容量不低于100G
 
@@ -18,11 +18,14 @@ yum install -y epel-release
 ```
 2. 安装pip工具
 ```
-curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py                       #下载pip安装脚本
-python2 get-pip.py                                                            #执行脚本，执行无异常则成功安装pip
+yum install -y python-pip
 pip install --index http://pypi.douban.com/simple/ paramiko --trusted-host pypi.douban.com
 pip install --index http://pypi.douban.com/simple/ gevent --trusted-host pypi.douban.com
 pip install --index http://pypi.douban.com/simple/ pymysql --trusted-host pypi.douban.com
+pip install --index http://pypi.douban.com/simple/ pyexcel --trusted-host pypi.douban.com
+pip install --index http://pypi.douban.com/simple/ pyexcel-xls --trusted-host pypi.douban.com
+pip install --index http://pypi.douban.com/simple/ pyexcel-io --trusted-host pypi.douban.com
+pip install --index http://pypi.douban.com/simple/ pyexcel-xlsx --trusted-host pypi.douban.com
 ```
 3. 下载并安装mysql安装源
 ```
@@ -56,11 +59,11 @@ systemctl stop firewalld
 setenforce 0
 sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/sysconfig/selinux 
 sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux 
-read -p "please input your active IP ADDRESS: "  my_host                           #本机IP
-sed -i "s/server: 127.0.0.1/server: $my_host/g" /etc/cobbler/settings              #修改默认监听地址为本机IP
-sed -i "s/next_server: 127.0.0.1/next_server: $my_host/g" /etc/cobbler/settings    #修改next_server为本机IP
-sed -i "s/manage_rsync: 0/manage_rsync: 1/g" /etc/cobbler/settings                 #使能cobbler管理rsync
-sed -i "s/anamon_enabled: 0/anamon_enabled: 1/g" /etc/cobbler/settings             #启用安装通知
+read -p "please input your active IP ADDRESS: "  my_host                           
+sed -i "s/server: 127.0.0.1/server: $my_host/g" /etc/cobbler/settings              
+sed -i "s/next_server: 127.0.0.1/next_server: $my_host/g" /etc/cobbler/settings    
+sed -i "s/manage_rsync: 0/manage_rsync: 1/g" /etc/cobbler/settings                 
+sed -i "s/anamon_enabled: 0/anamon_enabled: 1/g" /etc/cobbler/settings 
 systemctl enable cobblerd
 systemctl enable httpd
 systemctl enable xinetd
@@ -126,3 +129,5 @@ service novnc start                                   #启动novnc服务
 ```
 23. 登陆平台
     使用浏览器访问http://localhost/quick
+
+

@@ -76,6 +76,6 @@ $SNIPPET('cobbler_register')
 $SNIPPET('post_anamon')
 # Start final steps
 $SNIPPET('kickstart_done')
-curl $server/quick/task/notice/install_finish -o /dev/null
+curl $server/quick/install/notice/install_finish -o /dev/null
 # End final steps
 %end
