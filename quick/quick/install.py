@@ -68,7 +68,7 @@ def task_edit(request,task_name=None, editmode='edit'):
     if redhat == [] and ubuntu == [] and suse == []:
         breeds = {}
     else:
-        breeds = {'redhat':redhat,'suse':suse,'ubuntu':ubuntu}
+        breeds = {"RedHat based(includes Fedora,CentOS,Scientific Linux)":redhat,"suse":suse,"ubuntu":ubuntu}
     t = get_template("task_edit.tmpl")
     html = t.render(RequestContext(request,{
         'breeds'            : breeds,
@@ -152,22 +152,24 @@ def task_save(request,editmode='edit'):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/install/save/%s" % task_name, expired=True)
     editmode = request.POST.get('editmode', 'edit')
-    osip = request.POST.get('osip', "").replace('\r\n','\n')
+    osip = request.POST.get('osip', "").replace('\n','').replace('\r','').replace(' ','')
     if osip == '':
         return error_page(request, "IP地址不能为空")
     else:
-        osuser = request.POST.get('osuser', "")
+        osuser = request.POST.get('osuser', "").replace('\n','').replace('\r','').replace(' ','')
         ospwd = request.POST.get('ospass', "")
-        osarch = request.POST.get('osarch', "")
-        osbreed = request.POST.get('osbreed', "")
-        osrelease = request.POST.get('osrelease', "")
-        ospart = request.POST.get('ospart', "")
-        ospackages = request.POST.get('ospackages', "")
-        osenv = request.POST.get('osenv', "")
-        raid = request.POST.get('raid', "")
-        mail = request.POST.get('notice_mail', "")
-        path = request.POST.get('drive_path', "")
+        osarch = request.POST.get('osarch', "").replace('\n','').replace('\r','').replace(' ','')
+        osbreed = request.POST.get('osbreed', "").replace('\n','').replace('\r','').replace(' ','')
+        osrelease = request.POST.get('osrelease', "").replace('\n','').replace('\r','').replace(' ','')
+        ospart = request.POST.get('ospart', "").replace('\n','').replace('\r','').replace(' ','')
+        ospackages = request.POST.get('ospackages', "").replace('\n','').replace('\r','').replace(' ','')
+        osenv = request.POST.get('osenv', "").replace('\n','').replace('\r','').replace(' ','')
+        raid = request.POST.get('raid', "").replace('\n','').replace('\r','').replace(' ','')
+        mail = request.POST.get('notice_mail', "").replace('\n','').replace('\r','').replace(' ','')
+        path = request.POST.get('drive_path', "").replace('\n','').replace('\r','').replace(' ','')
         profile = osrelease+'-'+osarch
+        if 'redhat' in osbreed.lower():
+            osbreed = 'redhat'
     if editmode != 'edit':
         now = int(time.time())
         task_name = 'task_'+ str(now)
@@ -607,6 +609,7 @@ def __mail(task_name,to):
     msg.attach_alternative(html_content, "text/html")
     msg.send()
     return 1
+
 
 
 
