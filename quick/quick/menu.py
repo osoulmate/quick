@@ -59,7 +59,7 @@ menu = [
                 "menustate":"inactive",
                 "children":[{'title':'参数配置','url':'/quick/setting/list','menustate':'inactive'},
                             {'title':'配置检查','url':'/quick/check'       ,'menustate':'inactive'},
-                            {'title':'更新配置','url':'javascript:menuaction("/quick/sync");','menustate':'inactive'}]
+                            {'title':'更新配置','url':"javascript:menuaction('/quick/sync');",'menustate':'inactive'}]
             },
             {
                 "menutitle":"用户管理",

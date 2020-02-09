@@ -6,7 +6,8 @@
 function intf_enable_field(field,enabled)
 {
     if (enabled) {
-        document.getElementById(field+"_row").style.display="table-row"
+        //document.getElementById(field+"_row").style.display="table-row"
+        document.getElementById(field+"_row").style.display="inherit"
     } else {
         document.getElementById(field+"_row").style.display="none"
     }
@@ -73,19 +74,19 @@ function on_interface_change()
 function populate_widgets() 
 {
     var buf = "";
-    buf = buf + "<input type='text' name='newinterfacename' id='newinterfacename' value=''>";
-    buf = buf + "<input class='button' type='button' name='addinterface' value='添加' onclick='javascript:on_interface_add()' />";
+    buf = buf + "<input class='form-control' type='text' name='newinterfacename' id='newinterfacename' value=''>";
+    buf = buf + "<input class='btn btn-primary btn-xs' type='button' name='addinterface' value='添加' onclick='javascript:on_interface_add()' />";
     document.getElementById("widget_network_widget_a").innerHTML = buf;
 
     buf = "";
-    buf = buf + "<select name='interfaces' id='interfaces' onchange='javascript:on_interface_change()'>";
+    buf = buf + "<select class='form-control' name='interfaces' id='interfaces' onchange='javascript:on_interface_change()'>";
     buf = buf + "</select>";
-    buf = buf + "<input class='button' type='button' name='deleteinterface' value='删除' onclick='javascript:on_interface_delete()' />";
-    buf = buf + "<input class='button' type='button' name='renameinterface' value='重命名' onclick='javascript:on_interface_rename()' />";
+    buf = buf + "<input class='btn btn-primary btn-xs' type='button' name='deleteinterface' value='删除' onclick='javascript:on_interface_delete()' />";
+    buf = buf + "<input class='btn btn-primary btn-xs' type='button' name='renameinterface' value='重命名' onclick='javascript:on_interface_rename()' />";
     document.getElementById("widget_network_widget_b").innerHTML = buf;
 
     buf = "";
-    buf = buf + "<input class='button' type='button' name='getrandommac' value='随机生成MAC' onclick='javascript:get_random_mac()' />";
+    buf = buf + "<input class='btn btn-primary btn-xs' type='button' name='getrandommac' value='随机生成MAC' onclick='javascript:get_random_mac()' />";
     document.getElementById("widget_network_widget_c").innerHTML = buf;
 }
 
@@ -316,8 +317,6 @@ function clear_intf()
     document.getElementById("ipv6_static_routes").value   = ""
     document.getElementById("ipv6_default_gateway").value = ""
     document.getElementById("cnames").value               = ""
-
-
 }
 
 function build_interface_table()
@@ -459,144 +458,201 @@ $(document).ready(function()
   //});
 });
 </script>
-
-<script>
-  $(function() {
-    $("#tabs").tabs();
-  });
-</script>
-
-<h1>{% ifequal editmode 'edit'  %}编辑{% else %}添加{% endifequal %}{{ what|capfirst }}{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}</h1>
-<hr />
-<form name="editform" method="post" action="/quick/{{ what }}/save">
-  {% csrf_token %}
-  <input type="hidden" name="editmode" value="{{ editmode }}" />
-  <input type="hidden" name="subobject" value="{{ subobject }}" />
-
-  <div>
-{% if editable %}
-    <input class="button" type="submit" name="submit" onClick="on_form_submit();" value="保存" />
-    <input class="button" type="button" onClick="window.location='/quick/{{ what }}/list';" value="取消" />
-{% else %}
-    抱歉!您没有权限编辑.
-{% endif %}
-  </div>
-
-  <div id="tabs">
-    <ul>
-{% for key,value in sections.items|sort %}
-      <li><a href="#tabs-{{ forloop.counter }}">
-      {% if value.name == 'General' %}基本
-      {% elif value.name == 'Management' %}管理
-      {% elif value.name == 'Advanced' %}高级
-      {% elif value.name == 'Networking (Global)' %}网络(全局)
-      {% elif value.name == 'Virtualization' %}虚拟化
-      {% elif value.name == 'Networking' %}网络
-      {% elif value.name == 'Power Management' %}电源管理
-      {% elif value.name == 'Resources' %}资源
-      {% else %}
-      {% endif %}
-      </a></li>
-{% endfor %}
-    </ul>
-{% for key,value in sections.items|sort %}
-    <div id="tabs-{{ forloop.counter }}">
-    <ol>
-  {% for item in value.fields %}
-    <li id="{{ item.dname }}_row" class="editrow">
-      <label for="{{ item.dname }}" id="{{ item.dname }}_caption">{{ item.caption }}</label>
-    {% ifequal item.html_element "widget" %}
-      <span id="widget_{{ item.dname }}"></span>
-    {% else %}
-      {% ifequal item.html_element "text" %}
-        {% smart_if editmode == "edit" and item.dname == "name" %}
-      {{ item.value }} (editing, value is read-only)
-      <input type="hidden" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ item.value }}" />
-        {% else %}
-      <input type="text" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ item.value }}" />
-        {% endsmart_if %}
-      {% endifequal %}
-      {% ifequal item.html_element "textarea" %}
-      <textarea name="{{ item.dname }}" id="{{ item.dname }}">{{ item.value }}</textarea>
-      {% endifequal %}
-      {% ifequal item.html_element "radio" %}
-        {% for choice in item.choices %}
-          {% ifequal item.value choice %}
-      <input type="radio" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ choice }}" checked="checked">{{ choice }}&nbsp;
-          {% else %}
-      <input type="radio" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ choice }}">{{ choice }}&nbsp;
-          {% endifequal %}
-        {% endfor %}
-      {% endifequal %}
-      {% ifequal item.html_element "checkbox" %}
-        {% ifequal item.value 1 %}
-      <input type="checkbox" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ item.dname }}" checked="checked" />
-        {% else %}
-      <input type="checkbox" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ item.dname }}" />
-        {% endifequal %}
-		<label for="{{ item.dname }}"><i style="margin-left:5px;"></i></label>
-      {% endifequal %}
-      {% ifequal item.html_element "select" %}
-      <select id="{{ item.dname }}" name="{{ item.dname }}">
-        {% for choice in item.choices %}
-          {% ifequal item.value choice %}
-        <option value="{{ choice }}" selected>{{ choice }}</A>
-          {% else %}
-        <option value="{{ choice }}">{{ choice }}</A>
-          {% endifequal %}
-        {% endfor %} 
-      </select>
-      {% endifequal %}
-      {% ifequal item.html_element "multiselect" %}
-      <div class="multiselect">
-        <div class="multileft">
-          <label for="from_{{ item.dname }}">可用:</label>
-          <br />
-          <select multiple id="from_{{ item.dname }}" name="from_{{ item.dname }}" class="edit">
-        {% for choice in item.choices %}
-          {% smart_if choice not in item.value_raw %}
-            <option value="{{ choice }}">{{ choice }}</a>
-          {% endsmart_if %}
-        {% endfor %} 
-          </select>
+<div class="content">
+    <div class="page-inner">
+        <div class="page-header">
+            <h4 class="page-title">配置管理</h4>
+            <ul class="breadcrumbs">
+                <li class="nav-home">
+                    <a href="/quick">
+                        <i class="flaticon-home"></i>
+                    </a>
+                </li>
+                <li class="separator">
+                    <i class="flaticon-right-arrow"></i>
+                </li>
+                <li class="nav-item">
+                    <a href="#">配置管理</a>
+                </li>
+                <li class="separator">
+                    <i class="flaticon-right-arrow"></i>
+                </li>
+                <li class="nav-item">
+                    <a href="/quick/{{what}}/list">{{ what|title }}</a>
+                </li>
+            </ul>
         </div>
-        <div class="multibuttons">
-          <input class="button" type="button" value="&gt;&gt;" id="add_{{ item.dname }}" onclick="$('#from_{{ item.dname }} option:selected').remove().appendTo('#{{ item.dname }}');" />
-          <input class="button" type="button" value="&lt;&lt;" id="remove_{{ item.dname }}" onclick="$('#{{ item.dname }} option:selected').remove().appendTo('#from_{{ item.dname }}');" />
+        <div class="row">
+            <div class="col-md-12">
+            <form name="editform" method="post" action="/quick/{{ what }}/save">{% csrf_token %}
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">{% ifequal editmode 'edit'  %}编辑{% else %}添加{% endifequal %}{{ what|capfirst }}{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}</div>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-pills nav-secondary" id="pills-tab" role="tablist">
+                        {% for key,value in sections.items|sort %}
+                            <li class="nav-item">
+                                {% if value.name == 'General' %}
+                                <a class="nav-link active" id="pills-{{ value.name }}-tab" data-toggle="pill" href="#pills-{{ value.name }}" role="tab" aria-controls="pills-{{ value.name }}" aria-selected="true">基本</a>
+                                {% elif value.name == 'Management' %}
+                                <a class="nav-link" id="pills-{{ value.name }}-tab" data-toggle="pill" href="#pills-{{ value.name }}" role="tab" aria-controls="pills-{{ value.name }}" aria-selected="false">管理</a>
+                                {% elif value.name == 'Advanced' %}
+                                <a class="nav-link" id="pills-{{ value.name }}-tab" data-toggle="pill" href="#pills-{{ value.name }}" role="tab" aria-controls="pills-{{ value.name }}" aria-selected="false">高级</a>
+                                {% elif value.name == 'Networking (Global)' %}
+                                <a class="nav-link" id="pills-{{ value.name }}-tab" data-toggle="pill" href="#pills-{{ value.name }}" role="tab" aria-controls="pills-{{ value.name }}" aria-selected="false">网络(全局)</a>
+                                {% elif value.name == 'Virtualization' %}
+                                <a class="nav-link" id="pills-{{ value.name }}-tab" data-toggle="pill" href="#pills-{{ value.name }}" role="tab" aria-controls="pills-{{ value.name }}" aria-selected="false">虚拟化</a>
+                                {% elif value.name == 'Networking' %}
+                                <a class="nav-link" id="pills-{{ value.name }}-tab" data-toggle="pill" href="#pills-{{ value.name }}" role="tab" aria-controls="pills-{{ value.name }}" aria-selected="false">网络</a>
+                                {% elif value.name == 'Power Management' %}
+                                <a class="nav-link" id="pills-{{ value.name }}-tab" data-toggle="pill" href="#pills-{{ value.name }}" role="tab" aria-controls="pills-{{ value.name }}" aria-selected="false">电源管理</a>
+                                {% elif value.name == 'Resources' %}
+                                <a class="nav-link" id="pills-{{ value.name }}-tab" data-toggle="pill" href="#pills-{{ value.name }}" role="tab" aria-controls="pills-{{ value.name }}" aria-selected="false">资源</a>
+                                {% else %}
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                        <div class="tab-content mt-2 mb-3" id="pills-tabContent">
+                        {% for key,value in sections.items|sort %}
+                            {% ifequal value.name "General" %}
+                            <div class="tab-pane fade show active" id="pills-{{ value.name }}" role="tabpanel">
+                            {% else %}
+                            <div class="tab-pane fade" id="pills-{{ value.name }}" role="tabpanel">
+                            {% endifequal %}
+                            {% for item in value.fields %}
+                                <div id="{{ item.dname }}_row" class="row">
+                                {% ifequal item.html_element "widget" %}
+                                    <div class="form-group col-md-8">
+                                        <label for="{{ item.dname }}" id="{{ item.dname }}_caption">{{ item.caption }}</label>
+                                        <span id="widget_{{ item.dname }}"></span>
+                                    </div>
+                                {% else %}
+                                    {% ifequal item.html_element "text" %}
+                                    <div class="form-group col-md-8">
+                                        <label for="{{ item.dname }}" id="{{ item.dname }}_caption">{{ item.caption }}</label>
+                                        {% smart_if editmode == "edit" and item.dname == "name" %}
+                                            {{ item.value }} (editing, value is read-only)
+                                            <input class="form-control" type="hidden" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ item.value }}" />
+                                            {% else %}
+                                            <input class="form-control" type="text" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ item.value }}" />
+                                        {% endsmart_if %}
+                                    </div>
+                                    {% endifequal %}
+                                    {% ifequal item.html_element "textarea" %}
+                                    <div class="form-group col-md-8">
+                                        <label for="{{ item.dname }}" id="{{ item.dname }}_caption">{{ item.caption }}</label>
+                                        <textarea class="form-control" rows="5" name="{{ item.dname }}" id="{{ item.dname }}">{{ item.value }}</textarea>
+                                    </div>
+                                    {% endifequal %}
+                                    {% ifequal item.html_element "radio" %}
+                                    <div class="form-group col-md-8">
+                                        <label for="{{ item.dname }}" id="{{ item.dname }}_caption">{{ item.caption }}</label>
+                                        {% for choice in item.choices %}
+                                            {% ifequal item.value choice %}
+                                            <input type="radio" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ choice }}" checked="checked">{{ choice }}&nbsp;
+                                            {% else %}
+                                            <input type="radio" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ choice }}">{{ choice }}&nbsp;
+                                            {% endifequal %}
+                                        {% endfor %}
+                                    </div>
+                                    {% endifequal %}
+                                    {% ifequal item.html_element "checkbox" %}
+                                    <div class="form-check col-md-8">
+										<label class="form-check-label">{{ item.caption }}
+                                    {% ifequal item.value 1 %}
+                                        <input type="checkbox" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ item.dname }}" checked="checked" />
+                                    {% else %}
+                                        <input type="checkbox" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ item.dname }}" />
+                                    {% endifequal %}
+                                        <label for="{{ item.dname }}" id="{{ item.dname }}_caption"><i></i></label>
+										</label>
+                                    </div>
+                                    {% endifequal %}
+                                    {% ifequal item.html_element "select" %}
+                                    <div class="form-group col-md-8">
+                                        <label for="{{ item.dname }}" id="{{ item.dname }}_caption">{{ item.caption }}</label>
+                                        <select class="form-control" id="{{ item.dname }}" name="{{ item.dname }}">
+                                        {% for choice in item.choices %}
+                                           {% ifequal item.value choice %}
+                                           <option value="{{ choice }}" selected>{{ choice }}</A>
+                                            {% else %}
+                                            <option value="{{ choice }}">{{ choice }}</A>
+                                            {% endifequal %}
+                                        {% endfor %} 
+                                        </select>
+                                    </div>
+                                    {% endifequal %}
+                                    {% ifequal item.html_element "multiselect" %}
+                                    <div class="form-group col-md-8">
+                                        <div class="multiselect">
+                                            <div class="multileft">
+                                                <label for="from_{{ item.dname }}">可用:</label>
+                                                <br />
+                                                <select class="form-control" multiple id="from_{{ item.dname }}" name="from_{{ item.dname }}" class="edit">
+                                            {% for choice in item.choices %}
+                                                {% smart_if choice not in item.value_raw %}
+                                                <option value="{{ choice }}">{{ choice }}</a>
+                                                {% endsmart_if %}
+                                            {% endfor %} 
+                                                </select>
+                                            </div>
+                                            <div class="multibuttons">
+                                                <input class="form-control button" type="button" value="&gt;&gt;" id="add_{{ item.dname }}" onclick="$('#from_{{ item.dname }} option:selected').remove().appendTo('#{{ item.dname }}');" />
+                                                <input class="form-control  button" type="button" value="&lt;&lt;" id="remove_{{ item.dname }}" onclick="$('#{{ item.dname }} option:selected').remove().appendTo('#from_{{ item.dname }}');" />
+                                            </div>
+                                            <div class="multiright">
+                                                <label for="{{ item.dname }}">已选:</label>
+                                                <br />
+                                                <select class="form-control" multiple id="{{ item.dname }}" name="{{ item.dname }}" class="edit">
+                                            {% for choice in item.choices %}
+                                                {% smart_if choice in item.value_raw %}
+                                                <option value="{{ choice }}">{{ choice }}</a>
+                                                {% endsmart_if %}
+                                            {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endifequal %}
+                                    <div class="form-group col-md-4">
+                                        <br/>
+                                        {% smart_if editmode == "edit" and item.dname != "name" %}
+                                        {% if item.tooltip %}
+                                        <p class="form-text text-muted">{{ item.tooltip }}</p>
+                                        {% endif %}
+                                        {% endsmart_if %}
+                                    </div>
+                                {% endifequal %}
+                                </div>
+                            {% endfor %}
+                            </div>
+                        {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            {% if editable %}
+                                <input class="btn btn-primary btn-xs" type="submit" name="submit" onClick="on_form_submit();" value="保存" />
+                                <input class="btn btn-primary btn-xs" type="button" onClick="window.location='/quick/{{ what }}/list';" value="取消" />
+                            {% else %}
+                                <input class="btn btn-primary btn-xs" type="submit" disabled="disabled" name="submit" onClick="on_form_submit();" value="保存" />
+                                <input class="btn btn-primary btn-xs" type="button" disabled="disabled" onClick="window.location='/quick/{{ what }}/list';" value="取消" />
+                            {% endif %}
+                                <input type="hidden" name="editmode" value="{{ editmode }}" />
+                                <input type="hidden" name="subobject" value="{{ subobject }}" />
+                            {% ifequal what "system" %}
+                                <input type="hidden" id="interface_list" name="interface_list" value="1" />
+                                <input type="hidden" id="present" name="present" value="1" />
+                                <input type="hidden" id="original" name="original" value="1" />
+                            {% endifequal %}
+                        </div>
+                    </div>
+                </div>
+            </form>
+            </div>
         </div>
-        <div class="multiright">
-          <label for="{{ item.dname }}">已选:</label>
-          <br />
-          <select multiple id="{{ item.dname }}" name="{{ item.dname }}" class="edit">
-        {% for choice in item.choices %}
-          {% smart_if choice in item.value_raw %}
-            <option value="{{ choice }}">{{ choice }}</a>
-          {% endsmart_if %}
-        {% endfor %}
-          </select>
-        </div>
-      </div>
-      {% endifequal %}
-      {% smart_if editmode == "edit" and item.dname != "name" %}
-        {% if item.tooltip %}
-      <span class="context-tip">{{ item.tooltip }}</span>
-        {% endif %}
-      {% endsmart_if %}
-    </li>
-    {% endifequal %}
-  {% endfor %}
-    </ol>
     </div>
-{% endfor %}
-  </div>
-
-{% ifequal what "system" %}
-  <input type="hidden" id="interface_list" name="interface_list" value="1" />
-  <input type="hidden" id="present" name="present" value="1" />
-  <input type="hidden" id="original" name="original" value="1" />
-{% endifequal %}
-
-</form>
+</div>
 {% endblock content %}
 
 

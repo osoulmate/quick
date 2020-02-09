@@ -50,7 +50,7 @@ function get_latest_task_info() {
                 align: placementAlign
             },
             time: 1000,
-            delay: 5,
+            delay: 5000,
         });
     });
   });
@@ -439,6 +439,7 @@ window.confirm = function(option)
     }
     alertFram.focus();
 }
+
 
 
 
