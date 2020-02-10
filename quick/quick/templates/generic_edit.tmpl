@@ -524,13 +524,13 @@ $(document).ready(function()
                             {% for item in value.fields %}
                                 <div id="{{ item.dname }}_row" class="row">
                                 {% ifequal item.html_element "widget" %}
-                                    <div class="form-group col-md-8">
+                                    <div class="form-group col-md-7">
                                         <label for="{{ item.dname }}" id="{{ item.dname }}_caption">{{ item.caption }}</label>
                                         <span id="widget_{{ item.dname }}"></span>
                                     </div>
                                 {% else %}
                                     {% ifequal item.html_element "text" %}
-                                    <div class="form-group col-md-8">
+                                    <div class="form-group col-md-7">
                                         <label for="{{ item.dname }}" id="{{ item.dname }}_caption">{{ item.caption }}</label>
                                         {% smart_if editmode == "edit" and item.dname == "name" %}
                                             {{ item.value }} (editing, value is read-only)
@@ -541,13 +541,13 @@ $(document).ready(function()
                                     </div>
                                     {% endifequal %}
                                     {% ifequal item.html_element "textarea" %}
-                                    <div class="form-group col-md-8">
+                                    <div class="form-group col-md-7">
                                         <label for="{{ item.dname }}" id="{{ item.dname }}_caption">{{ item.caption }}</label>
                                         <textarea class="form-control" rows="5" name="{{ item.dname }}" id="{{ item.dname }}">{{ item.value }}</textarea>
                                     </div>
                                     {% endifequal %}
                                     {% ifequal item.html_element "radio" %}
-                                    <div class="form-group col-md-8">
+                                    <div class="form-group col-md-7">
                                         <label for="{{ item.dname }}" id="{{ item.dname }}_caption">{{ item.caption }}</label>
                                         {% for choice in item.choices %}
                                             {% ifequal item.value choice %}
@@ -559,19 +559,19 @@ $(document).ready(function()
                                     </div>
                                     {% endifequal %}
                                     {% ifequal item.html_element "checkbox" %}
-                                    <div class="form-check col-md-8">
-										<label class="form-check-label">{{ item.caption }}
+                                    <div class="form-check col-md-3" style="margin-top:20px;">
+                                        <label class="form-check-label">{{ item.caption }}
                                     {% ifequal item.value 1 %}
                                         <input type="checkbox" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ item.dname }}" checked="checked" />
                                     {% else %}
                                         <input type="checkbox" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ item.dname }}" />
                                     {% endifequal %}
                                         <label for="{{ item.dname }}" id="{{ item.dname }}_caption"><i></i></label>
-										</label>
+                                        </label>
                                     </div>
                                     {% endifequal %}
                                     {% ifequal item.html_element "select" %}
-                                    <div class="form-group col-md-8">
+                                    <div class="form-group col-md-7">
                                         <label for="{{ item.dname }}" id="{{ item.dname }}_caption">{{ item.caption }}</label>
                                         <select class="form-control" id="{{ item.dname }}" name="{{ item.dname }}">
                                         {% for choice in item.choices %}
@@ -585,9 +585,10 @@ $(document).ready(function()
                                     </div>
                                     {% endifequal %}
                                     {% ifequal item.html_element "multiselect" %}
-                                    <div class="form-group col-md-8">
-                                        <div class="multiselect">
-                                            <div class="multileft">
+                                    <div class="form-group col-md-7">
+                                        <label for="{{ item.dname }}" id="{{ item.dname }}_caption">{{ item.caption }}</label>
+                                        <div class="row">
+                                            <div class="form-group col-md-5">
                                                 <label for="from_{{ item.dname }}">可用:</label>
                                                 <br />
                                                 <select class="form-control" multiple id="from_{{ item.dname }}" name="from_{{ item.dname }}" class="edit">
@@ -598,11 +599,12 @@ $(document).ready(function()
                                             {% endfor %} 
                                                 </select>
                                             </div>
-                                            <div class="multibuttons">
-                                                <input class="form-control button" type="button" value="&gt;&gt;" id="add_{{ item.dname }}" onclick="$('#from_{{ item.dname }} option:selected').remove().appendTo('#{{ item.dname }}');" />
-                                                <input class="form-control  button" type="button" value="&lt;&lt;" id="remove_{{ item.dname }}" onclick="$('#{{ item.dname }} option:selected').remove().appendTo('#from_{{ item.dname }}');" />
+                                            <div class="form-group col-md-2">
+                                                <br/><br/>
+                                                <input class="btn btn-primary btn-xs" style="display:block;margin-bottom:5px;margin-left:15px;" type="button" value="&gt;&gt;" id="add_{{ item.dname }}" onclick="$('#from_{{ item.dname }} option:selected').remove().appendTo('#{{ item.dname }}');" />
+                                                <input class="btn btn-primary btn-xs" style="display:block;margin-left:15px;" type="button" value="&lt;&lt;" id="remove_{{ item.dname }}" onclick="$('#{{ item.dname }} option:selected').remove().appendTo('#from_{{ item.dname }}');" />
                                             </div>
-                                            <div class="multiright">
+                                            <div class="form-group col-md-5">
                                                 <label for="{{ item.dname }}">已选:</label>
                                                 <br />
                                                 <select class="form-control" multiple id="{{ item.dname }}" name="{{ item.dname }}" class="edit">
@@ -616,7 +618,7 @@ $(document).ready(function()
                                         </div>
                                     </div>
                                     {% endifequal %}
-                                    <div class="form-group col-md-4">
+                                    <div class="form-group col-md-5">
                                         <br/>
                                         {% smart_if editmode == "edit" and item.dname != "name" %}
                                         {% if item.tooltip %}
@@ -632,11 +634,11 @@ $(document).ready(function()
                         </div>
                         <div class="form-group">
                             {% if editable %}
-                                <input class="btn btn-primary btn-xs" type="submit" name="submit" onClick="on_form_submit();" value="保存" />
-                                <input class="btn btn-primary btn-xs" type="button" onClick="window.location='/quick/{{ what }}/list';" value="取消" />
+                                <input class="btn btn-success" type="submit" name="submit" onClick="on_form_submit();" value="保存" />
+                                <input class="btn btn-danger" type="button" onClick="window.location='/quick/{{ what }}/list';" value="取消" />
                             {% else %}
-                                <input class="btn btn-primary btn-xs" type="submit" disabled="disabled" name="submit" onClick="on_form_submit();" value="保存" />
-                                <input class="btn btn-primary btn-xs" type="button" disabled="disabled" onClick="window.location='/quick/{{ what }}/list';" value="取消" />
+                                <input class="btn btn-success" type="submit" disabled="disabled" name="submit" onClick="on_form_submit();" value="保存" />
+                                <input class="btn btn-danger" type="button" disabled="disabled" onClick="window.location='/quick/{{ what }}/list';" value="取消" />
                             {% endif %}
                                 <input type="hidden" name="editmode" value="{{ editmode }}" />
                                 <input type="hidden" name="subobject" value="{{ subobject }}" />
@@ -654,6 +656,7 @@ $(document).ready(function()
     </div>
 </div>
 {% endblock content %}
+
 
 
 
