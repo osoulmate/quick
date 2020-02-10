@@ -41,7 +41,7 @@ function get_latest_task_info() {
         } else {
             content.icon = 'none';
         }
-        content.url = '/';
+        content.url = '/quick/eventlog/'+ id;
         content.target = '_blank';
         $.notify(content,{
             type: state,
@@ -418,7 +418,7 @@ window.confirm = function(option)
     alertFram.style.background = "white";
     alertFram.style.zIndex = "10001";
     strHtml = "<ul style=\"list-style:none;margin:0px;padding:0px;width:100%\">\n";
-    strHtml += " <li style=\"text-align:left;font-size:18px;height:25px;background-color:#f4f4f4;padding-top:10px;padding-left:8px;\">信息</li>\n";
+    strHtml += " <li style=\"text-align:left;font-size:18px;height:30px;background-color:#f4f4f4;padding-top:7px;padding-left:8px;\">提示!</li>\n";
     strHtml += " <li style=\"text-align:center;font:normal bold 18px/30px arial,sans-serif;height:40px;padding-top:20px;\">"+msg+"</li>\n";
     strHtml += " <li style=\"position:absolute;bottom:10px;right:20px;font-weight:bold;height:25px;\"><input type=\"button\" value=\"确 定\" class=\"ack-btn\" style=\"background-color:#1e9fff;\" onclick=\"ok('确认')\" /><input type=\"button\" value=\"取消\" class=\"cancel-btn\" onclick=\"cancel('取消')\" /></li>\n";
     strHtml += "</ul>\n";
@@ -428,9 +428,9 @@ window.confirm = function(option)
     this.ok = function(){
         alertFram.style.display = "none";
         shield.style.display = "none";
-        console.log("you click ok in this.ok")
+        //console.log("you click ok in this.ok")
         document.forms[para].action = target;
-        console.log(document.forms["action"].action )
+        //console.log(document.forms["action"].action )
         document.forms[para].submit();
     }
     this.cancel = function(){
@@ -439,6 +439,7 @@ window.confirm = function(option)
     }
     alertFram.focus();
 }
+
 
 
 

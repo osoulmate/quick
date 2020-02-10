@@ -1,59 +1,100 @@
-{% extends 'master.tmpl' %}
+{% extends "master.tmpl" %}
 {% block content %}
-
-{% if not editable %}
-<blockquote>
-NOTE: You do not have permission to make changes to this
-snippet and can only read it.  
-
-Contact your Cobbler server administrator
-if you need to resolve this.
-</blockquote>
-<br />
-{% endif %}
-<h1>{% ifequal editmode 'edit' %}编辑{% else %}添加{% endifequal %} 代码片</h1>
-<hr />
-<form id="snippetform" method="post" action="/quick/snippet/save">
-  {% csrf_token %}
-  
-  <ol>
-    <li>
-      <label for="snippetdata">{% if snippet_name %}Snippet: {{ snippet_name }}{% else %}文件名称:{% endif %}</label>
-{% ifnotequal editmode 'edit' %}
-      <input type="text" name="snippet_name" id="snippet_name" />
-      <span class="context-tip">Example:  foo.ks (to be saved in /var/lib/cobbler/snippets/)</span>
-{% else %}
-      <input type="hidden" name="snippet_name" value="{{ snippet_name }}" />
-{% endifnotequal %}
-    </li> 
-    <li>
-      <pre><textarea name="snippetdata" id="snippetdata">{{ snippetdata }}</textarea></pre>
-      </li>
-{% if deleteable %}
-    <li>
-      <input type="checkbox" name="delete1" id="delete1" value="delete1" />
-      <label for="delete1">删除<i style="margin-left:5px;"></i></label>
-      <br>
-      <input type="checkbox" name="delete2" id="delete2" value="delete2" />
-      <label for="delete2">确认<i style="margin-left:5px;"></i></label>
-      <span class="context-tip">只有两个选项同时选中才可以删除!</span>
-    </li>
-{% else %}
-  {% ifequal editmode "edit" %}
-    <li>
-      <span class="warn">NOTE: This kickstart template is currently in-use.</span>
-    </li>
-  {% endifequal %}
-{% endif %}
-{% if editable %}
-    <li>
-      <input type="hidden" name="editmode" value="{{ editmode }}" />
-      <input class="button" type="submit" name="submit" value="保存" />
-      <input class="button" type="reset" name="reset" value="重置" />
-    </li>
-{% endif %}
-  </ol>
-</form>
+            <div class="content">
+                <div class="page-inner">
+                    <div class="page-header">
+                        <h4 class="page-title">配置管理</h4>
+                        <ul class="breadcrumbs">
+                            <li class="nav-home">
+                                <a href="/quick">
+                                    <i class="flaticon-home"></i>
+                                </a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">配置管理</a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                            <a href="/quick/snippet/list">Snippets</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                        {% if not editable %}
+                            <blockquote>
+                            提示：如果您看到此提示，说明有其他用户正在编辑该文件，或者您没有权限编辑该文件
+                            </blockquote>
+                        {% else %}
+                        <form <form id="ksform" method="post" action="/quick/snippet/save">{% csrf_token %}
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">{% ifequal editmode 'edit'  %}编辑{% else %}添加{% endifequal %}Snippet: 
+                                    {% if snippet_name %} {{ snippet_name }} {% endif %} </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                            <label for="snippet_name">名称:</label>
+                                        {% ifnotequal editmode 'edit' %}
+                                            <input class="form-control" type="text" name="snippet_name" id="snippet_name" />
+                                        {% else %}
+                                            <input class="form-control" type="text" name="snippet_name" readonly="readonly" style="background-color:#eee" value="{{ snippet_name }}" id="snippet_name"  />
+                                        {% endifnotequal %}
+                                            </div>
+                                            <div class="col-md-4">
+                                                <br/>
+                                                <p>Example: kickstart_start (to be saved in /var/lib/cobbler/snippets/)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="snippetdata">内容</label>
+                                        <pre><textarea class="form-control" name="snippetdata" rows=10 id="snippetdata">{{ snippetdata }}</textarea></pre>
+                                    </div>
+                                    {% if deleteable %}
+                                    <div class="form-group">
+                                            <input type="checkbox" name="delete1" id="delete1" value="delete1" />
+                                            <label for="delete1">删除<i style="margin-left:5px;"></i></label>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                            <input type="checkbox" name="delete2" id="delete2" value="delete2" />
+                                            <label for="delete2">确认<i style="margin-left:5px;"></i></label>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <p>只有两个选项同时选中才可以删除!</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                        {% ifequal editmode "edit" %}
+                                    <div class="form-group">
+                                        <span class="warn">提示：该Snippet文件正在使用中...</span>
+                                    </div>
+                                        {% endifequal %}
+                                    {% endif %}
+                                    {% if editable %}
+                                    <div class="form-group">
+                                        <input class="btn btn-success" type="submit" name="submit" value="保存" />
+                                        <input class="btn btn-danger" type="reset" name="reset" value="重置"/>
+                                        <input type="hidden" name="editmode" value="{{ editmode }}" />
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </form>
+                        {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
 {% endblock content %}
-
 

@@ -1,10 +1,5 @@
 {% extends "master.tmpl" %}
 {% block content %}
-<script>
-  $(function() {
-    $("#tabs").tabs();
-  });
-</script>
 <script type="text/javascript">
 function on_form_submit()
 {
@@ -24,200 +19,325 @@ function on_form_submit()
     }
     document.editform.submit()
 }
-function page_onload() {
-}
 </script>
-<h1>
-{% ifequal editmode 'edit'  %}编辑{% else %}添加{% endifequal %}{% ifequal what 'user/user'  %}用户{% endifequal %}{% ifequal what 'user/role'  %}角色{% endifequal %}{% ifequal what 'user/right'  %}权限{% endifequal %}
-{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}
-</h1>
-<hr />
-<form name="editform" method="post" action="/quick/{{ what }}/save">
-  {% csrf_token %}
-  <div id="tabs">
-    <ul>
-      <li><a href="#tabs-1">基本</a></li>
-      {% ifequal what 'user/user'  %}
-      <li><a href="#tabs-2">组管理</a></li>
-      {% endifequal %}
-      {% if what == 'user/user' or what == 'user/role' %}
-      <li><a href="#tabs-3">权限管理</a></li>
-      {% endif%}
-    </ul>
-    <div id="tabs-1">
-        <ol>
-            {% ifequal what 'user/user'  %}
-            <li class="editrow">
-                <label for="username">用户名</label>
-                {% if editable %}
-                <input id="username" name="username" type="text"  value="{{ item.username }}"/>
-                {% else %}
-                {{ item.username }}
-                <input id="username" name="username" type="hidden" value="{{ item.username }}"/>
-                {% endif %}
-            </li>
-            <li class="editrow">
-                <label for="name">姓名</label>
-                <input id="name" name="name" type="text" value="{{ item.name }}"/>
-            </li>
-            <li class="editrow">
-                <label for="telephone">手机号</label>
-                <input id="telephone" name="telephone" type="text" value="{{ item.telephone }}"/>
-            </li>
-            <li class="editrow">
-                <label for="pwd">密码</label>
-                <input id="pwd" name="pwd" type="password" value="{{ item.password }}"/>
-            </li>
-            <li class="editrow">
-                <label for="osarch">邮箱</label>
-                <input id="email" name="email" type="email" value="{{ item.email }}"/>
-            </li>
-            <li>
-            {% ifequal item.is_active "enable" %}
-            <input type="checkbox" name="is_active" id="is_active" checked>&nbsp;
-            {% else %}
-            <input type="checkbox" name="is_active" id="is_active" >&nbsp;
-            {% endifequal %}
-            <label for="is_active">启用账户<i style="margin-left:5px;"></i></label>
-            </li>
-            <li>
-            {% ifequal item.is_superuser "yes" %}
-            <input type="checkbox" name="is_superuser" id="is_superuser" checked>&nbsp;
-            {% else %}
-            <input type="checkbox" name="is_superuser" id="is_superuser" >&nbsp;
-            {% endifequal %}
-            <label for="is_superuser">管理员<i style="margin-left:5px;"></i></label>
-            </li>
-            {% endifequal %}
-            {% ifequal what 'user/role'  %}
-                <li class="editrow">
-                    <label for="name">角色名称</label>
-                    {% if editable %}
-                    <input id="name" name="name" type="text"  value="{{ item.name }}"/>
-                    {% else %}
-                    {{ item.name }}
-                    <input id="name" name="name" type="hidden" value="{{ item.name }}"/>
-                    {% endif %}
-                </li>
-                <li class="editrow">
-                    <label for="desc">描述</label>
-                    <textarea id="desc" name="desc">{{ item.desc }}</textarea>
-                </li>
-            {% endifequal %}
-            {% ifequal what 'user/right'  %}
-                <li class="editrow">
-                    <label for="name">权限名称</label>
-                    {% if editable %}
-                    <input id="name" name="name" type="text"  value="{{ item.name }}"/>
-                    {% else %}
-                    {{ item.name }}
-                    <input id="name" name="name" type="hidden" value="{{ item.name }}"/>
-                    {% endif %}
-                </li>
-                <li class="editrow">
-                    <label for="menu1_title">一级菜单标题</label>
-                    <input id="menu1_title" name="menu1_title" type="text"  value="{{ item.menu1_title }}"/>
-                </li>
-                <li class="editrow">
-                    <label for="menu1_icon">一级菜单图标</label>
-                    <input id="menu1_icon" name="menu1_icon" type="text"  value="{{ item.menu1_icon }}"/>
-                </li>
-                <li class="editrow">
-                    <label for="menu2_title">二级菜单标题</label>
-                    <input id="menu2_title" name="menu2_title" type="text"  value="{{ item.menu2_title }}"/>
-                </li>
-                <li class="editrow">
-                    <label for="menu2_url">二级菜单URL</label>
-                    <input id="menu2_url" name="menu2_url" type="text"  value="{{ item.menu2_url }}"/>
-                </li>
-                <li class="editrow">
-                    <label for="desc">描述</label>
-                    <textarea id="desc" name="desc">{{ item.desc }}</textarea>
-                </li>
-            {% endifequal %}
-        </ol>
-    </div>
-    {% ifequal what 'user/user'  %}
-    <div id="tabs-2">
-        <ol>
-            <li id="groups_row" class="editrow">
-              <label for="to_group" id="groups_caption">用户组</label>
-              <div class="multiselect">
-                <div class="multileft">
-                  <label for="from_group">可用:</label>
-                  <br />
-                  <select multiple id="from_group" name="from_group" class="edit">
-                        {% for group in groups %}
-                        {% if group.name not in have_groups %}
-                        <option value="{{ group.name }}">{{ group.name }}</option>
-                        {% endif %}
-                        {% endfor %}
-                  </select>
+<form id="action" method="POST" action="">{% csrf_token %}</form>
+            <div class="content">
+                <div class="page-inner">
+                    <div class="page-header">
+                        <h4 class="page-title">用户管理</h4>
+                        <ul class="breadcrumbs">
+                            <li class="nav-home">
+                                <a href="/quick">
+                                    <i class="flaticon-home"></i>
+                                </a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">用户管理</a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                {% ifequal what 'user/user'  %}<a href="/quick/user/user/list/">用户管理</a>{% endifequal %}
+                                {% ifequal what 'user/role'  %}<a href="/quick/user/user/list/">角色管理</a>{% endifequal %}
+                                {% ifequal what 'user/right'  %}<a href="/quick/user/user/list/">权限管理</a>{% endifequal %}
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                        <form name="editform" method="post" action="/quick/{{ what }}/save">{% csrf_token %}
+                            <div class="card">
+                                <div class="card-body">
+                                    <ul class="nav nav-pills nav-secondary" id="pills-tab" role="tablist">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" id="pills-home-tab" data-toggle="pill" href="#pills-home" role="tab" aria-controls="pills-home" aria-selected="true">基本</a>
+                                        </li>
+                                        {% ifequal what 'user/user'  %}
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="pills-role-tab" data-toggle="pill" href="#pills-role" role="tab" aria-controls="pills-role" aria-selected="false">角色管理</a>
+                                        </li>
+                                        {% endifequal %}
+                                        {% if what == 'user/user' or what == 'user/role' %}
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="pills-right-tab" data-toggle="pill" href="#pills-right" role="tab" aria-controls="pills-right" aria-selected="false">权限管理</a>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                    <div class="tab-content mt-2 mb-3" id="pills-tabContent">
+                                        <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
+                                        {% ifequal what 'user/user'  %}
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="username">用户名</label>
+                                                    {% if editable %}
+                                                    <input class="form-control" id="username" name="username" type="text"  value="{{ item.username }}"/>
+                                                    {% else %}
+                                                    <input class="form-control" id="username" readonly="readonly" style="background-color:#eee" name="username" type="text"  value="{{ item.username }}"/>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <p class="form-text text-muted">由字母、数字、下划线组成</p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="name">姓名</label>
+                                                    <input type="text" class="form-control" id="name" name="name" value="{{ item.name }}"/>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <p class="form-text text-muted"></p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="telephone">手机号</label>
+                                                    <input type="text" class="form-control" id="telephone" name="telephone" value="{{ item.telephone }}"/>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <p class="form-text text-muted"></p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="pwd">密码</label>
+                                                    <input type="password" class="form-control" id="pwd" name="pwd" value="{{ item.password }}"/>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <p class="form-text text-muted"></p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="email">邮箱</label>
+                                                    <input type="email" class="form-control" id="email" name="email" value="{{ item.email }}"/>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <p class="form-text text-muted"></p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    {% ifequal item.is_active "enable" %}
+                                                    <input type="checkbox" name="is_active" id="is_active" checked>&nbsp;
+                                                    {% else %}
+                                                    <input type="checkbox" name="is_active" id="is_active" >&nbsp;
+                                                    {% endifequal %}
+                                                    <label for="is_active">启用账户<i style="margin-left:5px;"></i></label>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <p class="form-text text-muted"></p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    {% ifequal item.is_superuser "yes" %}
+                                                    <input type="checkbox" name="is_superuser" id="is_superuser" checked>&nbsp;
+                                                    {% else %}
+                                                    <input type="checkbox" name="is_superuser" id="is_superuser" >&nbsp;
+                                                    {% endifequal %}
+                                                    <label for="is_superuser">管理员<i style="margin-left:15px;"></i></label>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <p class="form-text text-muted"></p>
+                                                </div>
+                                            </div>
+                                        {% endifequal %}
+                                        {% ifequal what 'user/role'  %}
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="name">角色名称</label>
+                                                    {% if editable %}
+                                                    <input class="form-control" id="name" name="name" type="text"  value="{{ item.name }}"/>
+                                                    {% else %}
+                                                    <input class="form-control" id="name" readonly="readonly" style="background-color:#eee" name="name" type="text"  value="{{ item.name }}"/>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <p class="form-text text-muted"></p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="desc">描述</label>
+                                                    <textarea class="form-control" id="desc" name="desc" rows="5">{{ item.desc }}</textarea>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <div class="form-text text-muted">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endifequal %}
+                                        {% ifequal what 'user/right'  %}
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="name">权限名称</label>
+                                                    {% if editable %}
+                                                    <input class="form-control" id="name" name="name" type="text"  value="{{ item.name }}"/>
+                                                    {% else %}
+                                                    <input class="form-control" id="name" readonly="readonly" style="background-color:#eee" name="name" type="text"  value="{{ item.name }}"/>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <p class="form-text text-muted"></p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="menu1_title">一级菜单标题</label>
+                                                    <input type="text" class="form-control" id="menu1_title" name="menu1_title" value="{{ item.menu1_title }}"/>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <p class="form-text text-muted"></p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="menu1_icon">一级菜单图标</label>
+                                                    <input type="text" class="form-control" id="menu1_icon" name="menu1_icon" value="{{ item.menu1_icon }}"/>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <p class="form-text text-muted"></p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="menu2_title">二级菜单标题</label>
+                                                    <input type="text" class="form-control" id="menu2_title" name="menu2_title" value="{{ item.menu2_title }}"/>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <p class="form-text text-muted"></p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="menu2_url">二级菜单URL</label>
+                                                    <input type="text" class="form-control" id="menu2_url" name="menu2_url" value="{{ item.menu2_url }}"/>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <p class="form-text text-muted"></p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="desc">描述</label>
+                                                    <textarea class="form-control" id="desc" name="desc" rows="5">{{ item.desc }}</textarea>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <div class="form-text text-muted">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endifequal %}
+										</div>
+                                        {% ifequal what 'user/user'  %}
+                                        <div class="tab-pane fade" id="pills-role" role="tabpanel" aria-labelledby="pills-role-tab">
+                                        <div>
+                                        <div class="form-group">
+                                            <label for="groups_row" id="groups_caption">用户组</label>
+                                            <div class="row">
+                                                <div class="form-group col-md-5">
+                                                    <label for="from_group">可用:</label>
+                                                    <br />
+                                                    <select multiple id="from_group" name="from_group" class="form-control">
+                                                        {% for group in groups %}
+                                                        {% if group.name not in have_groups %}
+                                                        <option value="{{ group.name }}">{{ group.name }}</option>
+                                                        {% endif %}
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="form-group col-md-2">
+                                                    <br/><br/>
+                                                    <input class="btn btn-primary btn-xs" style="display:block;margin-bottom:5px;margin-left:15px;" type="button" value="&gt;&gt;" id="add_group" onclick="$('#from_group option:selected').remove().appendTo('#to_group');" />
+                                                    <input class="btn btn-primary btn-xs" style="display:block;margin-left:15px;" type="button" value="&lt;&lt;" id="remove_group" onclick="$('#to_group option:selected').remove().appendTo('#from_group');" />
+                                                </div>
+                                                <div class="form-group col-md-5">
+                                                    <label for="to_group">已选:</label>
+                                                    <br />
+                                                    <select multiple class="form-control" id="to_group" name="to_group" class="edit">
+                                                        {% for have_group in have_groups %}
+                                                        <option value="{{ have_group }}">{{ have_group }}</a>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                        </div>
+                                        {% endifequal %}
+                                        {% if what == 'user/user' or what == 'user/role' %}
+                                        <div class="tab-pane fade" id="pills-right" role="tabpanel" aria-labelledby="pills-right-tab">
+                                        <div>
+                                        <div class="form-group">
+                                            <label for="rights_row" id="rights_caption">权限组</label>
+                                            <div class="row">
+                                                <div class="form-group col-md-5">
+                                                    <label for="from_right">可用:</label>
+                                                    <br />
+                                                    <select multiple id="from_right" name="from_right" class="form-control">
+                                                        {% for right in rights %}
+                                                        {% if right.name not in have_rights %}
+                                                        <option value="{{ right.name }}">{{ right.name }}</option>
+                                                        {% endif %}
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="form-group col-md-2">
+                                                    <br/><br/>
+                                                    <input class="btn btn-primary btn-xs" style="display:block;margin-bottom:5px;margin-left:15px;" type="button" value="&gt;&gt;" id="add_right" onclick="$('#from_right option:selected').remove().appendTo('#to_right');" />
+                                                    <input class="btn btn-primary btn-xs" style="display:block;margin-left:15px;" type="button" value="&lt;&lt;" id="remove_right" onclick="$('#to_right option:selected').remove().appendTo('#from_right');" />
+                                                </div>
+                                                <div class="form-group col-md-5">
+                                                    <label for="to_right">已选:</label>
+                                                    <br />
+                                                    <select multiple class="form-control" id="to_right" name="to_right" class="edit">
+                                                        {% for have_right in have_rights %}
+                                                        <option value="{{ have_right }}">{{ have_right }}</a>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-action">
+                                        {% if editmode == 'edit' %}
+                                        <input class="btn btn-success" type="submit" name="submit" onClick="on_form_submit();" value="更新" />
+                                        {% else %}
+                                        <input class="btn btn-success" type="submit" name="submit" onClick="on_form_submit();" value="添加" />
+                                        {% endif %}
+                                        <input class="btn btn-danger" type="button" onClick="window.location='/quick/{{ what }}/list';" value="取销"/>
+                                        <input type="hidden" name="editmode" value="{{ editmode }}" />
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        </div>
+                    </div>
                 </div>
-                <div class="multibuttons">
-                  <input class="button" type="button" value="&gt;&gt;" id="add_group" onclick="$('#from_group option:selected').remove().appendTo('#to_group');" />
-                  <input class="button" type="button" value="&lt;&lt;" id="remove_group" onclick="$('#to_group option:selected').remove().appendTo('#from_group');" />
-                </div>
-                <div class="multiright">
-                  <label for="to_group">已选:</label>
-                  <br />
-                  <select multiple id="to_group" name="to_group" class="edit">
-                        {% for have_group in have_groups %}
-                            <option value="{{ have_group }}">{{ have_group }}</a>
-                        {% endfor %}
-                  </select>
-                </div>
-              </div>
-              <span class="context-tip"></span>
-            </li>
-        </ol>
-    </div>
-    {% endifequal %}
-    {% if what == 'user/user' or what == 'user/role' %}
-    <div id="tabs-3">
-        <ol>
-            <li id="rights_row" class="editrow">
-              <label for="to_right" id="rights_caption">权限</label>
-              <div class="multiselect">
-                <div class="multileft">
-                  <label for="from_right">可用:</label>
-                  <br />
-                  <select multiple id="from_right" name="from_right" class="edit">
-                        {% for right in rights %}
-                        {% if right.name not in have_rights %}
-                        <option value="{{ right.name }}">{{ right.name }}</option>
-                        {% endif %}
-                        {% endfor %}
-                  </select>
-                </div>
-                <div class="multibuttons">
-                  <input class="button" type="button" value="&gt;&gt;" id="add_right" onclick="$('#from_right option:selected').remove().appendTo('#to_right');" />
-                  <input class="button" type="button" value="&lt;&lt;" id="remove_right" onclick="$('#to_right option:selected').remove().appendTo('#from_right');" />
-                </div>
-                <div class="multiright">
-                  <label for="to_right">已选:</label>
-                  <br />
-                  <select multiple id="to_right" name="to_right" class="edit">
-                        {% for have_right in have_rights %}
-                            <option value="{{ have_right }}">{{ have_right }}</a>
-                        {% endfor %}
-                  </select>
-                </div>
-              </div>
-              <span class="context-tip"></span>
-            </li>
-        </ol>
-    </div>
-    {% endif %}
-    <input type="hidden" name="editmode" value="{{ editmode }}" />
-    {% if editmode == 'edit' %}
-    <input class="button" type="submit" name="submit" onClick="on_form_submit();" value="更新" />
-    {% else %}
-    <input class="button" type="submit" name="submit" onClick="on_form_submit();" value="添加" />
-    {% endif %}
-    <input class="button" type="button" onClick="window.location='/quick/{{ what }}/list';" value="取消" />
-  </div>
-</form>
+            </div>
 {% endblock content %}
+
 
 

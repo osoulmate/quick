@@ -6,8 +6,9 @@
 function intf_enable_field(field,enabled)
 {
     if (enabled) {
-        //document.getElementById(field+"_row").style.display="table-row"
-        document.getElementById(field+"_row").style.display="inherit"
+        //document.getElementById(field+"_row").style.display="block"
+        var current_ele = field+"_row"
+        $(current_ele).addClass("row");
     } else {
         document.getElementById(field+"_row").style.display="none"
     }
@@ -74,15 +75,15 @@ function on_interface_change()
 function populate_widgets() 
 {
     var buf = "";
-    buf = buf + "<input class='form-control' type='text' name='newinterfacename' id='newinterfacename' value=''>";
-    buf = buf + "<input class='btn btn-primary btn-xs' type='button' name='addinterface' value='添加' onclick='javascript:on_interface_add()' />";
+    buf = buf + "<div class='row'><div class='col-md-8'><input class='form-control' type='text' name='newinterfacename' id='newinterfacename' value=''></div>";
+    buf = buf + "<div class='col-md-4'><input class='btn btn-primary btn-xs' style='margin-top:5px' type='button' name='addinterface' value='添加' onclick='javascript:on_interface_add()'/></div></div>";
     document.getElementById("widget_network_widget_a").innerHTML = buf;
 
     buf = "";
-    buf = buf + "<select class='form-control' name='interfaces' id='interfaces' onchange='javascript:on_interface_change()'>";
-    buf = buf + "</select>";
-    buf = buf + "<input class='btn btn-primary btn-xs' type='button' name='deleteinterface' value='删除' onclick='javascript:on_interface_delete()' />";
-    buf = buf + "<input class='btn btn-primary btn-xs' type='button' name='renameinterface' value='重命名' onclick='javascript:on_interface_rename()' />";
+    buf = buf + "<div class='row'><div class='col-md-8'><select class='form-control' name='interfaces' id='interfaces' onchange='javascript:on_interface_change()'>";
+    buf = buf + "</select></div>";
+    buf = buf + "<div class='col-md-4'><input class='btn btn-primary btn-xs' style='margin-top:5px' type='button' name='deleteinterface' value='删除' onclick='javascript:on_interface_delete()' />";
+    buf = buf + "<input class='btn btn-primary btn-xs' style='margin-top:5px;margin-left:10px;' type='button' name='renameinterface' value='重命名' onclick='javascript:on_interface_rename()' /></div></div>";
     document.getElementById("widget_network_widget_b").innerHTML = buf;
 
     buf = "";
@@ -153,7 +154,7 @@ function on_interface_delete()
     interfaces = document.getElementById("interfaces")
 
     if (interfaces.length == 1) {
-        alert("systems 必须至少有一个接口存在")
+        alert("system类型至少需要要定义一个接口")
         return
     } 
    
@@ -171,7 +172,7 @@ function on_interface_delete()
 function on_interface_rename()
 {
     selected = get_selected_interface();
-    var newname = window.prompt("Rename Interface",selected);
+    var newname = window.prompt("重命名接口",selected);
     if (newname == null || newname == selected) {
         return;
     }
@@ -533,8 +534,7 @@ $(document).ready(function()
                                     <div class="form-group col-md-7">
                                         <label for="{{ item.dname }}" id="{{ item.dname }}_caption">{{ item.caption }}</label>
                                         {% smart_if editmode == "edit" and item.dname == "name" %}
-                                            {{ item.value }} (editing, value is read-only)
-                                            <input class="form-control" type="hidden" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ item.value }}" />
+                                            <input class="form-control" readonly="readonly" style="background-color:#eee" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ item.value }}" />
                                             {% else %}
                                             <input class="form-control" type="text" name="{{ item.dname }}" id="{{ item.dname }}" value="{{ item.value }}" />
                                         {% endsmart_if %}
@@ -656,7 +656,4 @@ $(document).ready(function()
     </div>
 </div>
 {% endblock content %}
-
-
-
 

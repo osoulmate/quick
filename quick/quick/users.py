@@ -163,8 +163,12 @@ def user_save(request,what):
             if role and right_name_list:
                 for right_name in right_name_list:
                     right = Rights.objects.get(name=right_name)
-                    group_right = Group_Right(group_id=role.id,right_id=right.id)
-                    group_right.save()
+                    is_exist = Group_Right.objects.filter(group_id=role.id,right_id=right.id)
+                    if is_exist:
+                        continue
+                    else:
+                        group_right = Group_Right(group_id=role.id,right_id=right.id)
+                        group_right.save()
     elif what == 'right':
         name = request.POST.get('name', "")
         if name == "":
@@ -176,7 +180,7 @@ def user_save(request,what):
         desc = request.POST.get('desc', "")
         if editmode != 'edit':
             right = Rights(name=name,menu1_title=menu1_title,menu1_icon=menu1_icon,
-                           menu2_title=menu1_title,menu2_url=menu2_url,desc=desc)
+                           menu2_title=menu2_title,menu2_url=menu2_url,desc=desc)
             right.save()
         else:
             right = Rights.objects.get(name=name)
@@ -441,6 +445,7 @@ def myinfo(request):
         'menu'           : request.session['%s_menu'%request.session['username']]
     }))
     return HttpResponse(html)
+
 
 
 
