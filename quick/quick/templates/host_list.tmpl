@@ -1,5 +1,72 @@
 {% extends "master.tmpl" %}
 {% block content %}
+<script>
+    $(document).ready(function() {
+        $('input[type=radio][name=hosttype]').change(function() {
+            if (this.value == '0') {
+                $("#hostgroup").hide();
+                $("#hostsingle").show();
+            }
+            else if (this.value == '1') {
+                $("#hostgroup").show();
+                $("#hostsingle").hide();
+            }
+        });
+    });
+    $(document).ready(function() {
+        $('input[type=radio][name=scripttype]').change(function() {
+            if (this.value == '0') {
+                $("#scriptgroup").hide();
+                $("#scriptsingle").show();
+            }
+            else if (this.value == '1') {
+                $("#scriptgroup").show();
+                $("#scriptsingle").hide();
+            }
+        });
+    });
+    $(document).ready(function() {
+        $('input[type=reset]').click(function() {
+            $("#hostgroup").hide();
+            $("#hostsingle").show();
+            $("#scriptgroup").hide();
+            $("#scriptsingle").show();
+        });
+    });
+function format(source, params) {
+    if (arguments.length === 1) {
+        return function () {
+            var args = $.makeArray(arguments);
+            args.unshift(source);
+            return $.validator.format.apply(this, args);
+        };
+    }
+    if (arguments.length > 2 && params.constructor !== Array) {
+        params = $.makeArray(arguments).slice(1);
+    }
+    if (params.constructor !== Array) {
+        params = [params];
+    }
+    $.each(params, function (i, n) {
+        source = source.replace(new RegExp("\\{" + i + "\\}", "g"), function () {
+            return n;
+        });
+    });
+    return source;
+};
+setInterval(update_data,2000)
+function update_data() {
+  $.get("/quick/host/batch/list?action='exec'",function(data,status){
+    if (data){
+    console.log(data)
+    var current_msg = $("#result").val();
+    var msg = format("{0}                  {1}                                     {2}", data.ip, data.status,data.result);
+    var append_msg = msg + "\n" + current_msg;
+    $("#result").val(append_msg);
+    }
+  });
+}
+</script>
 <form id="action" method="POST" action="">{% csrf_token %}</form>
             <div class="content">
                 <div class="page-inner">
@@ -7,7 +74,7 @@
                         <h4 class="page-title">主机管理</h4>
                         <ul class="breadcrumbs">
                             <li class="nav-home">
-                                <a href="#">
+                                <a href="/quick">
                                     <i class="flaticon-home"></i>
                                 </a>
                             </li>
@@ -21,10 +88,10 @@
                                 <i class="flaticon-right-arrow"></i>
                             </li>
                             <li class="nav-item">
-                            {% ifequal what "host/single" %}<a href="#">单机管理</a>{% endifequal %}
-                            {% ifequal what "host/group" %}<a href="#">主机组</a>{% endifequal %}
-                            {% ifequal what "host/batch" %}<a href="#">批处理</a>{% endifequal %}
-                            {% ifequal what "host/script" %}<a href="#">脚本</a>{% endifequal %}
+                            {% ifequal what "host/single" %}<a href="/quick/host/single/list">单机管理</a>{% endifequal %}
+                            {% ifequal what "host/group" %}<a href="/quick/host/group/list">主机组</a>{% endifequal %}
+                            {% ifequal what "host/batch" %}<a href="/quick/host/batch/list">批处理</a>{% endifequal %}
+                            {% ifequal what "host/script" %}<a href="/quick/host/script/list">脚本</a>{% endifequal %}
                             </li>
                         </ul>
                     </div>
@@ -58,9 +125,8 @@
                                             {% endfor %}
                                         </ul>
                                     </div>
-                                    </form>
-                                    <!--<div class="card-category"><a href="https://sweetalert.js.org/">SweetAlert</a> makes popup messages easy and pretty.</div>-->
                                 </div>
+                                </form>
                                 <div class="card-body">
                                     <table class="table table-bordered" id="listitems" >
                                         <tbody>
@@ -74,6 +140,88 @@
                                             {% endfor %}
                                         </tbody>
                                     </table>
+                                </div>
+                                {% elif what == "host/batch" %}
+                                <form name="editform" method="post" action="/quick/host/batch/list">{% csrf_token %}
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-check" style="margin-top:5px;">
+                                                    <label class="form-radio-label">
+                                                        <input class="form-radio-input" type="radio" name="hosttype" value="0"  checked="">
+                                                        <span class="form-radio-sign">单机</span>
+                                                    </label>
+                                                    <label class="form-radio-label">
+                                                        <input class="form-radio-input" type="radio" name="hosttype" value="1">
+                                                        <span class="form-radio-sign">主机组</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="form-group">
+                                                    <input type="text" class="form-control" id="hostsingle" name="groupname" placeholder="请输入主机IP..."/>
+                                                    <select class="form-control" id="hostgroup" name="groupname" style="display:none">
+                                                    {% for group in groups %}
+                                                        <option>{{ group }}</option>
+                                                    {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-check" style="margin-top:5px;">
+                                                    <label class="form-radio-label">
+                                                        <input class="form-radio-input" type="radio" name="scripttype" value="0"  checked="">
+                                                        <span class="form-radio-sign">命令</span>
+                                                    </label>
+                                                    <label class="form-radio-label">
+                                                        <input class="form-radio-input" type="radio" name="scripttype" value="1">
+                                                        <span class="form-radio-sign">脚本</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="form-group">
+                                                    <input type="text" class="form-control"  name="scriptname" id="scriptsingle" placeholder="Ex: ls -l;pwd"/>
+                                                    <select class="form-control" id="scriptgroup" name="scriptname" style="display:none">
+                                                    {% for script in scripts %}
+                                                        <option>{{ script }}</option>
+                                                    {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" id="username" name="username" placeholder="username">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <input type="password" class="form-control" id="password" name="password" placeholder="Password">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <input class="btn btn-success" type="submit" name="submit" value="执行"/>
+                                            <input class="btn btn-danger" type="reset" value="重置"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                </form>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <pre><textarea class="form-control" style="background-color:#000;color:#fff;" id="result" rows="15"></textarea></pre>
+                                        </div>
+                                    </div>
                                 </div>
                                 {% else %}
                                 <div id="view_col" style="top:50px;right:200px;position:absolute;display:none;background:#fff;color:#000;z-index:999;">
@@ -92,9 +240,9 @@
                                 <div class="card-header">
                                     <div class="card-head-row">
                                         <div class="card-title">
-                                        <a class="btn btn-primary" href="/quick/{{ what }}/edit">添加</a>
+                                            <a class="btn btn-primary" href="/quick/{{ what }}/edit">添加</a>
                                         {% for title,action,value in batchactions %}
-                                        <a class="btn btn-primary" id="batchactions" href="javascript:;" value="{{ action }}|{{ value }}" onclick="javascript:action_multi_new('{{ what }}')">{{ title }}</a>
+                                            <a class="btn btn-primary" id="batchactions" href="javascript:;" value="{{ action }}|{{ value }}" onclick="javascript:action_multi_new('{{ what }}')">{{ title }}</a>
                                         {% endfor %}
                                         </div>
                                         <div class="card-tools">
@@ -166,6 +314,7 @@
                 </div>
             </div>
 {% endblock content %}
+
 
 
 

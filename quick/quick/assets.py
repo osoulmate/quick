@@ -597,6 +597,9 @@ def host_list(request,what,page=None):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/host/%s/list"%what, expired=True)
     columns=[]
+    groups = []
+    scripts = []
+    items = {}
     num_items = 0
     if page == None:
         page = int(request.session.get("%s_page" % what, 1))
@@ -651,17 +654,44 @@ def host_list(request,what,page=None):
                 columns.append([field.name,field.verbose_name,'on'])
             items = __format_items(items,columns)
         elif what == 'batch':
-            items = Batch.objects.filter(**filters).order_by(sort_field)
-            num_items = len(items)
-            offset = (page -1 )*limit
-            end = page*limit
-            items = Batch.objects.filter(**filters).order_by(sort_field)[offset:end]
-            fields = [f for f in Batch._meta.fields]
-            for field in fields:
-                if field.name == 'flag':
-                    continue
-                columns.append([field.name,field.verbose_name,'on'])
-            items = __format_items(items,columns)
+            if request.GET.get("action", ""):
+                """
+                tasks = Batch_Temp.objects.all()
+                for task in tasks:
+                    if task.status !='' or task.result != '':
+                        ip = task.ip
+                        status = task.status
+                        result = task.result
+                        Batch_Temp.get(ip=ip).delete()
+                        return HttpResponse([ip,status,result])
+                """
+                datas = request.session['testdata']
+                if datas:
+                    data = datas[0]
+                    datas.pop(0)
+                    request.session['testdata'] = datas
+                    result = {"ip":data[0],"status":data[1],"result":data[2]}
+                    return HttpResponse(simplejson.dumps(result,ensure_ascii=False),content_type="application/json,charset=utf-8")
+                return HttpResponse([])
+            elif request.POST.get("hosttype", ""):
+                hosttype = request.POST.get("hosttype", "")
+                scripttype = request.POST.get("scripttype", "")
+                groupname = request.POST.get("groupname", "")
+                scriptname = request.POST.get("scriptname", "")
+                host_user = request.POST.get("username", "")
+                host_pass = request.POST.get("password", "")
+                #if groupname and scriptname and host_user and host_pass:
+                    #return HttpResponse([hosttype,scripttype,groupname,scriptname,host_user,host_pass])
+                    #something bachgroud_exec()
+            else:
+                testdata = [['192.168.1.5','success','haha'],['192.168.1.6','success','hahaha'],['192.168.1.7','failure','none']]
+                request.session['testdata'] = testdata
+                host_group = Host_Group.objects.all()
+                for group in host_group:
+                    groups.append(group.name)
+                script = Script.objects.all()
+                for s in script:
+                    scripts.append(s.name)
     t = get_template("host_list.tmpl")
     #如果是https则为True，反之为False
     #request.is_secure()
@@ -673,12 +703,13 @@ def host_list(request,what,page=None):
         'items'          : items,
         'location'       : request.META['HTTP_HOST'],
         'columns'        : __format_columns(columns,sort_field_old),
-        'items'          : items,
         'pageinfo'       : __paginate(num_items,page=page,items_per_page=limit),
         'filters'        : filters,
         'limit'          : limit,
         'username'       : request.session['username'],
         'batchactions'   : batchactions,
+        'scripts'        : scripts,
+        'groups'         : groups,
         'menu'           : request.session['%s_menu'%request.session['username']]
     }))
     return HttpResponse(html)
@@ -948,6 +979,7 @@ def __paginate(num_items=0,page=None,items_per_page=None,token=None):
             'items_per_page' : items_per_page,
             'items_per_page_list' : [10,20,50,100,200,500],
             })
+
 
 
 

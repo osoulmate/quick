@@ -191,12 +191,11 @@ class Host_Group(models.Model):
     create_time = models.CharField(max_length=100,verbose_name='创建时间')
     owner = models.CharField(max_length=100,verbose_name='创建者')
 class Batch(models.Model):
-    name = models.CharField(max_length=30,verbose_name='名称')
-    ip = models.GenericIPAddressField(verbose_name='IP')
-    status = models.CharField(max_length=100,verbose_name='状态',null=True)
-    result = models.TextField(verbose_name='返回结果',null=True)
-    owner = models.CharField(max_length=100,verbose_name='执行人')
-    flag = models.CharField(max_length=20,default="history")
+    name = models.CharField(max_length=30,verbose_name='名称',primary_key=True,)
+    ips = models.TextField(verbose_name='IPS')
+    command = models.TextField(verbose_name='命令')
+    osuser = models.CharField(max_length=20,verbose_name='系统账号')
+    ospwd = models.CharField(max_length=35,verbose_name='系统密码')
 class Virt_Host(models.Model):
     ip = models.GenericIPAddressField(verbose_name='IP')
     username = models.CharField(max_length=100,verbose_name='用户名')
@@ -219,6 +218,7 @@ class Manual_Log(models.Model):
     action = models.CharField(max_length=100,verbose_name='操作')
     user = models.CharField(max_length=100,verbose_name='用户')
     desc = models.TextField(verbose_name='描述',null=True)
+
 
 
 
