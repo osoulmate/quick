@@ -10,14 +10,11 @@ from quick.models import Users
 @require_POST
 @csrf_protect
 def do_logout(request):
-    user = Users.objects.get(username=request.session['username'])
-    user.is_online = 'offline'
-    user.last_login = datetime.now()
-    user.save()
-    request.session['username'] = ""
     request.session[request.session['token']] = ""
     request.session['token'] = ""
-    request.session['menu']= ""
+    request.session['%s_menu'%request.session['username']]= ""
+    request.session['username'] = ""
     request.session['cobbler_token'] = ""
     return HttpResponseRedirect("/quick")
 #========================================================================
+

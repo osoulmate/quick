@@ -39,7 +39,7 @@ else:
 SECRET_KEY = 'K/YO3Psl+ulFWz1A+nJdoTe8ihso0DaBIb59Uxn36RBpEtKSx8WVYg=='
 EMAIL_HOST = 'smtp.163.com'
 EMAIL_PORT = 25
-EMAIL_HOST_USER = 'yourname@163.com'
+EMAIL_HOST_USER = 'yourmail@163.com'
 EMAIL_HOST_PASSWORD = 'yourpassword'
 # code config
 
@@ -104,5 +104,7 @@ TEMPLATE_CONTEXT_PROCESSORS += (
      'django.core.context_processors.request',
 )
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.file'
-SESSION_FILE_PATH = '/usr/share/quick/sessions'
+#SESSION_ENGINE = 'django.contrib.sessions.backends.file'
+#SESSION_FILE_PATH = '/usr/share/quick/sessions'
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+

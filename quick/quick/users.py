@@ -16,6 +16,10 @@ from quick.models import Users,Groups,Rights,User_Group,Group_Right,User_Right
 from error_page import error_page
 import oauth
 from login import login
+'''
+import xmlrpclib
+import cobbler.utils as utils
+'''
 #========================================================================
 @csrf_protect
 def user_edit(request,what,obj_name=None, editmode='edit'):
@@ -210,6 +214,13 @@ def user_list(request,what,page=None):
 
     num_items  = request.session.get("%s_num_items"%what,None)
     if what == 'user':
+        """
+        测试用
+        url_cobbler_api = utils.local_get_cobbler_api_url()
+        remote = xmlrpclib.Server(url_cobbler_api, allow_none=True)
+        settings = remote.get_settings()
+        return HttpResponse(simplejson.dumps(settings,ensure_ascii=False),content_type="application/json,charset=utf-8")
+        """
         batchactions = [["删除","delete","delete"],
                         ["禁用","account","disable"],
                         ["启用","account","enable"]
@@ -445,6 +456,7 @@ def myinfo(request):
         'menu'           : request.session['%s_menu'%request.session['username']]
     }))
     return HttpResponse(html)
+
 
 
 

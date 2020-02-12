@@ -15,10 +15,6 @@ def test_user_authenticated(request):
     if url_cobbler_api is None:
         url_cobbler_api = utils.local_get_cobbler_api_url()
     remote = xmlrpclib.Server(url_cobbler_api, allow_none=True)
-    # if we have a cobbler_token, get the associated username from
-    # the remote server via XMLRPC. We then compare that to
-    # the value stored in the session.  If everything matches up,
-    # the user is considered successfully authenticated
     if request.session.has_key('cobbler_token') and request.session['cobbler_token'] != '':
         try:
             if remote.token_check(request.session['cobbler_token']):
@@ -71,6 +67,7 @@ def test_user_authenticated(request):
             # just let it fall through to the 'return False' below
             pass
     return False
+
 
 
 
