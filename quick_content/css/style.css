@@ -68,7 +68,7 @@ input[type="checkbox"]:checked+label>i::before {
   background-color: white;
 }
 
-/*ÃƒÃƒÃƒÃconfirmÃƒÃƒÃƒ*/
+
 .ack-btn{
     text-decoration: none;
     color:white;
@@ -119,12 +119,15 @@ input[type="checkbox"]:checked+label>i::before {
 .quick-dropbtn {
     border: none;
     cursor: pointer;
-    margin-right:10px;
 }
 
 .quick-dropdown {
     position: relative;
     display: inline-block;
+    margin-top:1px;
+    margin-right:10px;
+    margin-bottom:20px;
+    z-index:9999;
 }
 
 .quick-dropdown-content {
@@ -149,5 +152,4 @@ input[type="checkbox"]:checked+label>i::before {
 .quick-dropdown:hover .quick-dropdown-content {
     display: block;
 }
-
 

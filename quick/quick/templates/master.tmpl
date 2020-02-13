@@ -267,11 +267,105 @@
             {% endblock %}
         </div>
     </div>
+    <!-- Sweet Alert -->
+    <script src="/quick_content/assets/js/plugin/sweetalert/sweetalert.min.js"></script>
+    <script>
+        //== Class definition
+        var SweetAlertQuick = function() {
+            var initQuick = function() {
+                $('#import').click(function(e){
+                    swal({
+                        title: '导入数据',
+                        content: {
+                            element: "input",
+                            attributes: {
+                                type: "file",
+                                id: "myfile",
+                                name:"myfile"
+                            },
+                        },
+                        buttons: {
+                            cancel: {
+                                visible: true,
+                                className: 'btn btn-danger',
+                                text : '取消',
+                            },                  
+                            confirm: {
+                                className : 'btn btn-success',
+                                text : '上传',
+                            }
+                        },
+                    }).then((value) => {
+                        if (value) {
+                            console.log(value)
+                            var csrfToken = $("[name='csrfmiddlewaretoken']").val();
+                            var what = $('#import').data('import-type')
+                            console.log(what)
+                            var fd = new FormData();
+                            fd.append("xlsfile",$("#myfile")[0].files[0])
+                            fd.append("what",what)
+                            $.ajax({
+                              url: "/quick/"+what+"/import",
+                              type: "POST",
+                              headers: {"X-CSRFToken": csrfToken},
+                              contentType: false,
+                              processData: false,
+                              data: fd,
+                              success: function (data,status) {
+                                //console.log("数据: \n" + data + "\n状态: " + status);
+                                if (data != 'True'){
+                                    console.log(data)
+                                    $("#uploading").hide()
+                                    swal("导入失败!", data, {
+                                        icon : "error",
+                                        buttons: {                  
+                                            confirm: {
+                                                className : 'btn btn-danger'
+                                            }
+                                        },
+                                    });
+                                }else{
+                                    $("#uploading").hide()
+                                    swal("恭喜!", "数据已成功导入!", {
+                                        icon : "success",
+                                        buttons: {                  
+                                            confirm: {
+                                                className : 'btn btn-success'
+                                            }
+                                        },
+                                    }).then((ok) => {
+                                        if (ok) {
+                                            location.reload();
+                                        } else {
+                                            location.reload();
+                                        }
+                                    });
+                                    
+                                }
+                              }
+                            })
+                            $("#uploading").show()
+                        } else {
+                            swal.close();
+                        }
+                    });
+                });
+            };
+
+            return {
+                //== Init
+                init: function() {
+                    initQuick();
+                },
+            };
+        }();
+
+        //== Class Initialization
+        jQuery(document).ready(function() {
+            SweetAlertQuick.init();
+        });
+    </script>
 </body>
 </html>
-
-
-
-
 
 

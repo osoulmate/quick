@@ -313,7 +313,7 @@ function batch_query(what){
     shield.style.top = "0px";
     shield.style.width = "100%";
     shield.style.height = document.body.scrollHeight+"px";
-    shield.style.background = "#b3b3b3";
+    shield.style.background = "#eee";
     shield.style.textAlign = "center";
     shield.style.zIndex = "10000";
     shield.style.opacity = "0.1";
@@ -328,9 +328,9 @@ function batch_query(what){
     inputFram.style.background = "white";
     inputFram.style.zIndex = "10001";
     strHtml = "<ul style=\"list-style:none;margin:0px;padding:0px;width:100%;height:100%\">\n";
-    strHtml += " <li style=\"text-align:left;font-size:18px;height:10%;background-color:#f4f4f4;padding-top:10px;padding-left:8px;\">"+str+"</li>\n";
-    strHtml += " <li style=\"text-align:center;font:normal bold 18px/30px arial,sans-serif;height:65%;padding-top:5px;\"><textarea style=\"width:95%;height:100%;\" id=\"ippool\" name=\"ippool\"></textarea></li>\n";
-    strHtml += " <li style=\"position:absolute;bottom:5px;right:20px;font-weight:bold;height:10%;\"><input type=\"button\" value=\"确 定\" class=\"ack-btn\" style=\"background-color:#1e9fff;\" onclick=\"ok('确认')\" /><input type=\"button\" value=\"取消\" class=\"cancel-btn\" onclick=\"cancel('取消')\" /></li>\n";
+    strHtml += " <li style=\"text-align:left;font-size:18px;height:12%;background-color:#f4f4f4;padding-top:10px;padding-left:8px;\">"+str+"</li>\n";
+    strHtml += " <li style=\"text-align:center;font:normal bold 18px/30px arial,sans-serif;height:70%;padding-top:5px;\"><textarea class=\"form-control\" style=\"width:85%;height:100%;margin:15px;\" id=\"ippool\" name=\"ippool\"></textarea></li>\n";
+    strHtml += " <li style=\"position:absolute;bottom:5px;right:20px;font-weight:bold;height:10%;\"><input type=\"button\" value=\"确 定\" class=\"btn btn-success btn-sm\" onclick=\"ok('确认')\" /><input type=\"button\" value=\"取消\" style=\"margin-left:10px;\"class=\"btn btn-danger btn-sm\" onclick=\"cancel('取消')\" /></li>\n";
     strHtml += "</ul>\n";
     inputFram.innerHTML = strHtml;
     document.body.appendChild(inputFram);
@@ -352,8 +352,7 @@ function batch_query(what){
     inputFram.focus();
 }
 jQuery.expr[':'].contains = function (a, i, m) {
-    return jQuery(a).text().toUpperCase()
-        .indexOf(m[3].toUpperCase()) >= 0;
+    return jQuery(a).text().toUpperCase().indexOf(m[3].toUpperCase()) >= 0;
 };
 $(document).ready(function(){
     $("#filter_value").keyup(function () {
@@ -440,5 +439,6 @@ window.confirm = function(option)
     }
     alertFram.focus();
 }
+
 
 
