@@ -512,7 +512,7 @@ def __format_columns(column_names,sort_field):
         fieldorder = "none"
         if fieldname == sort_name:
             fieldorder = sort_order
-        dataset.append([fieldname,fieldorder,name_translate[fieldname],i])
+        dataset.append([fieldname,fieldorder,name_translate[fieldname],i,'on'])
     return dataset
 
 
@@ -609,6 +609,7 @@ def __mail(task_name,to):
     msg.attach_alternative(html_content, "text/html")
     msg.send()
     return 1
+
 
 
 

@@ -30,21 +30,6 @@
                     <div class="row">
                         <div class="col-md-12">
                             <div class="card">
-                                <div id="view_col" style="top:50px;right:180px;position:absolute;display:none;background:#fff;color:#000;z-index:999;max-height:300px;overflow-y:auto;">
-                                    <ul>
-                                    {% for column in columns %}
-                                      <li style="margin:10px;">
-                                      {% if column.4 == 'on' %}
-                                      <input type="checkbox" id="{{ column.0 }}" style="margin:0px 10px;padding:0px;" name="view_col" value="{{ column.3 }}" checked="checked" onclick="javascript:item_check_off(this,this.value,'{{what}}');" />
-                                      {% else %}
-                                      <input type="checkbox" id="{{ column.0 }}" style="margin:0px 10px;padding:0px;" name="view_col" value="{{ column.3 }}" onclick="javascript:item_check_off(this,this.value,'{{what}}');" />
-                                      {% endif %}
-                                      <label for="{{ column.0 }}"><i></i></label> 
-                                      {{ column.2 }}
-                                      </li>
-                                    {% endfor %}
-                                    </ul>
-                                </div>
                                 <div class="card-header">
                                     <div class="card-head-row">
                                         <div class="card-title">
@@ -332,5 +317,6 @@ function upload_xls(what){
 }
 </script>
 {% endblock content %}
+
 
 

@@ -11,8 +11,29 @@ function change_page(value) {
 }
 </script>
 <ul style="list-style:none" class="nav">
+{% if what == 'host/group' or what == 'host/script' or what == 'install/detail' or what == 'install/resume' or what == 'asset/app' or what == 'asset/hardware' or what == 'user/user' %}
 <li>
-  <span onclick="javascript:display()" style="margin-right:5px;">显示列</span>
+  <div class="quick-dropdown">
+    <span class="quick-dropbtn">显示列</span>
+    <div class="quick-dropdown-content">
+      {% for column in columns %}
+      {% if column.0 != "id" %}
+      <span>
+          {% if column.4 == 'on' %}
+          <input type="checkbox" id="{{ column.0 }}" style="margin:0px 10px;padding:0px;" name="view_col" value="{{ column.3 }}" checked="checked" onclick="javascript:item_check_off(this,this.value,'{{what}}');" />
+          {% else %}
+           <input type="checkbox" id="{{ column.0 }}" style="margin:0px 10px;padding:0px;" name="view_col" value="{{ column.3 }}" onclick="javascript:item_check_off(this,this.value,'{{what}}');" />
+          {% endif %}
+          <label for="{{ column.0 }}"><i></i></label> 
+          {{ column.2 }}
+      </span>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</li>
+{% endif %}
+<li>
   <span for="limit">条目/页:</span>
   <select name="limit" id="limit" onchange="javascript:change_limit(this.value)">
   {% for p in pageinfo.items_per_page_list %}
@@ -36,4 +57,5 @@ function change_page(value) {
 </li>
 </ul>
 {% endif %}
+
 

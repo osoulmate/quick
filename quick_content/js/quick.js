@@ -117,8 +117,8 @@ function items_check_all(){
     }
 }
 function item_check_off(obj,num,what){
-    console.log(num)
-    console.log(obj.id)
+    //console.log(num)
+    //console.log(obj.id)
     var num = Number(num)
     var view = ''
     if (obj.checked ? 'selected' : ''){
@@ -142,16 +142,17 @@ function item_check_off(obj,num,what){
         action: "update_view_col"
        },
       success: function (data,status) {
-        console.log("数据: \n" + data + "\n状态: " + status);
+        //console.log("数据: \n" + data + "\n状态: " + status);
       }
     })
 }
+/*
 function display(){
     $('#view_col').css('display',''); 
 }
 function hide(){
     $('#view_col').css('display','none'); 
-}
+}*/
 function items_check(obj) {
     obj.parentNode.parentNode.className=(obj.checked)? 'selected' : '';
 }
@@ -439,10 +440,5 @@ window.confirm = function(option)
     }
     alertFram.focus();
 }
-
-
-
-
-
 
 

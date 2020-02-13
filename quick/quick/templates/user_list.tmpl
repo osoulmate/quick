@@ -36,17 +36,6 @@
                     <div class="row">
                         <div class="col-md-12">
                             <div class="card">
-                                <div id="view_col" style="top:50px;right:200px;position:absolute;display:none;background:#fff;color:#000;z-index:999;">
-                                    <ul>
-                                    {% for column in columns %}
-                                      <li style="margin:10px;">
-                                      <input type="checkbox" id="{{ column.0 }}" style="margin:0px 10px;padding:0px;" name="view_col" value="{{ column.2 }}" checked="checked" onclick="javascript:item_check_off(this,this.value);" />
-                                      <label for="{{ column.0 }}"><i></i></label> 
-                                      {{ column.0 }}
-                                      </li>
-                                    {% endfor %}
-                                    </ul>
-                                </div>
                                 <div class="card-header">
                                     <div class="card-head-row">
                                         <div class="card-title">
@@ -129,5 +118,6 @@
                 </div>
             </div>
 {% endblock content %}
+
 
 
