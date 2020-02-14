@@ -124,9 +124,8 @@ input[type="checkbox"]:checked+label>i::before {
 .quick-dropdown {
     position: relative;
     display: inline-block;
-    margin-top:1px;
-    margin-right:10px;
-    margin-bottom:20px;
+    margin-top:7px;
+    margin-right:8px;
     z-index:9999;
 }
 
@@ -152,4 +151,5 @@ input[type="checkbox"]:checked+label>i::before {
 .quick-dropdown:hover .quick-dropdown-content {
     display: block;
 }
+
 

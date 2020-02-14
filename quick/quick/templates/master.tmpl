@@ -365,7 +365,42 @@
             SweetAlertQuick.init();
         });
     </script>
+    <script type="text/javascript">
+    window.confirm = function(option)
+    {
+        var msg = option.msg;
+        console.log('msg is '+msg)
+        var target = option.target;
+        console.log('target is '+target)
+        var para = option.para;
+        console.log('para is '+para)
+        swal({
+            title: '警告！不可逆操作',
+            text: msg,
+            type: 'warning',
+            buttons:{
+                confirm: {
+                    text : '确认',
+                    className : 'btn btn-success'
+                },
+                cancel: {
+                    visible: true,
+                    text : '取消',
+                    className: 'btn btn-danger'
+                }
+            }
+        }).then((Delete) => {
+            if (Delete) {
+                document.forms[para].action = target;
+                document.forms[para].submit();
+            } else {
+                swal.close();
+            }
+        });
+    }
+    </script>
 </body>
 </html>
+
 
 

@@ -12,8 +12,7 @@ function change_page(value) {
 </script>
 <ul style="list-style:none" class="nav">
 {% if what == 'host/group' or what == 'host/script' or what == 'install/detail' or what == 'install/resume' or what == 'asset/app' or what == 'asset/hardware' or what == 'user/user' %}
-<li>
-  <div class="quick-dropdown">
+<li class="quick-dropdown">
     <span class="quick-dropbtn">显示列</span>
     <div class="quick-dropdown-content">
       {% for column in columns %}
@@ -30,7 +29,6 @@ function change_page(value) {
       {% endif %}
       {% endfor %}
     </div>
-  </div>
 </li>
 {% endif %}
 <li>
@@ -42,20 +40,19 @@ function change_page(value) {
   </select>
   <span>共{{ pageinfo.num_items }}条</span>
   {% ifnotequal pageinfo.prev_page "~" %}
-  <a href="javascript:change_page('{{ pageinfo.prev_page }}')"><span class="lpointers" style="color:blue">&lArr;</span></a>
+  <a href="javascript:change_page('{{ pageinfo.prev_page }}')"><span class="lpointers" style="color:blue;font-size:150%;">&laquo;</span></a>
   {% else %}
-  <span class="lpointers">&lArr;</span>
+  <span class="lpointers" style="font-size:150%">&laquo;</span>
   {% endifnotequal %}
   <select name="page" id="page" onchange="javascript:change_page(this.value)">
     {% for p in pageinfo.pages %}<option value="{{ p }}"{% ifequal pageinfo.page p %} selected="selected"{% endifequal %}>Page {{ p }}</option>{% endfor %}
   </select>
   {% ifnotequal pageinfo.next_page "~" %}
-  <a href="javascript:change_page('{{ pageinfo.next_page }}')"><span class="rpointers" style="color:blue">&rArr;</span></a>
+  <a href="javascript:change_page('{{ pageinfo.next_page }}')"><span class="rpointers" style="color:blue;font-size:150%">&raquo;</span></a>
   {% else %}
-  <span class="rpointers">&rArr;</span>
+  <span class="rpointers" style="font-size:150%">&raquo;</span>
   {% endifnotequal %}
 </li>
 </ul>
 {% endif %}
-
 

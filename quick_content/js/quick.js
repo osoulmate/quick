@@ -313,25 +313,24 @@ function batch_query(what){
     shield.style.top = "0px";
     shield.style.width = "100%";
     shield.style.height = document.body.scrollHeight+"px";
-    shield.style.background = "#eee";
+    shield.style.background = "#999999";
     shield.style.textAlign = "center";
     shield.style.zIndex = "10000";
-    shield.style.opacity = "0.1";
-    shield.style.filter = "alpha(opacity=10)";
+    shield.style.opacity = "0.2";
+    shield.style.filter = "alpha(opacity=20)";
     var inputFram = document.createElement("DIV");
     inputFram.id="inputFram";
     inputFram.style.position = "absolute";
-    inputFram.style.top = "30%";
-    inputFram.style.left = "27%";
-    inputFram.style.width = "46%";
-    inputFram.style.height = "45%";
-    inputFram.style.background = "white";
+    inputFram.style.top = "20%";
+    inputFram.style.left = "35%";
+    inputFram.style.width = "30%";
+    inputFram.style.height = "20%";
     inputFram.style.zIndex = "10001";
-    strHtml = "<ul style=\"list-style:none;margin:0px;padding:0px;width:100%;height:100%\">\n";
-    strHtml += " <li style=\"text-align:left;font-size:18px;height:12%;background-color:#f4f4f4;padding-top:10px;padding-left:8px;\">"+str+"</li>\n";
-    strHtml += " <li style=\"text-align:center;font:normal bold 18px/30px arial,sans-serif;height:70%;padding-top:5px;\"><textarea class=\"form-control\" style=\"width:85%;height:100%;margin:15px;\" id=\"ippool\" name=\"ippool\"></textarea></li>\n";
-    strHtml += " <li style=\"position:absolute;bottom:5px;right:20px;font-weight:bold;height:10%;\"><input type=\"button\" value=\"确 定\" class=\"btn btn-success btn-sm\" onclick=\"ok('确认')\" /><input type=\"button\" value=\"取消\" style=\"margin-left:10px;\"class=\"btn btn-danger btn-sm\" onclick=\"cancel('取消')\" /></li>\n";
-    strHtml += "</ul>\n";
+    strHtml = "<div class='modal fade' id='myModal' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>";
+    strHtml = "<div class='modal-dialog'><div class='modal-content'><div class='modal-header'><h4 class='modal-title' id='myModalLabel'>"+str+"</h4><button type='button' class='close' data-dismiss='modal' onclick='cancel()'>&times;</button></div>";
+    strHtml += "<div class='modal-body'><textarea class='form-control' id='ippool' style='width:100%;margin:3px;' rows=10></textarea></div><div class='modal-footer'>";
+    strHtml += "<button type='button' class='btn btn-success btn-sm' data-dismiss='modal' onclick='ok()'>确 定</button>";
+    strHtml += "<button type='button' class='btn btn-danger btn-sm' data-dismiss='modal' onclick='cancel()'>取消</button></div></div></div></div>";
     inputFram.innerHTML = strHtml;
     document.body.appendChild(inputFram);
     document.body.appendChild(shield);
@@ -387,6 +386,7 @@ function loading(){
     //当点击资产管理下各视图链接时触发该功能
     top.document.getElementById("paneloading").style.display = "";
 }
+/*
 window.confirm = function(option)
 {
     var msg = option.msg;
@@ -440,5 +440,6 @@ window.confirm = function(option)
     alertFram.focus();
 }
 
+*/
 
 

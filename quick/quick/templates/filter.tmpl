@@ -18,10 +18,11 @@ function del_filter(filter) {
     document.forms["action"].submit();
 }
 </script>
-<ul id="filter-adder">
-  <li>
-    <label for="filter_field">键:</label>
-    <select id="filter_field" name="filter_field" class="filter">
+<div class="row" style="margin-top:10px;">
+  <div class="md-col-5">
+    <div class="form-group form-inline" id="filter-adder">
+    <label for="filter_field" style="margin-right:5px;">键:</label>
+    <select id="filter_field" name="filter_field" class="form-control form-control-sm">
       <option value=""></option>
       {% ifequal what "distro" %}<option value="arch">arch</option>
       <option value="name">name</option>
@@ -207,18 +208,29 @@ function del_filter(filter) {
       {% endfor %}
       {% endif %}
     </select>
-    <label for="filter_value"> 值: </label><input type="text" name="filter_value|{{ what }}" id="filter_value" onkeypress="javascript:if (event.keyCode == 13) add_filter();" />
-    <input class="button" type="button" name="filter_add" id="filter_add" onclick="javascript: add_filter();" value="过滤" />
-  </li>
-</ul>
+    </div>
+    </div>
+    <div class="md-col-5">
+    <div class="form-group form-inline">
+    <label for="filter_value" style="margin-right:5px;">值: </label><input type="text" name="filter_value|{{ what }}" id="filter_value" onkeypress="javascript:if (event.keyCode == 13) add_filter();" class="form-control form-control-sm" />
+    </div>
+    </div>
+    <div class="md-col-2">
+    <div class="form-group form-inline">
+    <input class="btn btn-primary btn-sm" type="button" name="filter_add" id="filter_add" onclick="javascript: add_filter();" value="过滤" />
+    </div>
+    </div>
+  </div>
+</div>
   {% if filters %}
-<ul id="filter-remover">
+  <div class="row">
+    <div class="md-col-12" style="margin-left:20px;margin-right:20px;">
     {% for key,value in filters.items %}
-  <li><a href="javascript:del_filter('{{ key }}');" title="remove">X</a> {{ key }} = {{ value }}</li>
+      <a style="margin-left:20px;" href="javascript:del_filter('{{ key }}');" title="remove"><span class="fa fa-times"></span></a> {{ key }} = {{ value }}
     {% endfor %}
-</ul>
+    </div>
+  </div>
   {% endif %}
 {% endif %}
-
 
 

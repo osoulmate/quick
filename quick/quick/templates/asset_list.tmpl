@@ -1,5 +1,6 @@
 {% extends "master.tmpl" %}
 {% block content %}
+<form id="action" method="POST" action="">{% csrf_token %}</form>
             <div class="content">
                 <div class="page-inner">
                     <div class="page-header">
@@ -53,7 +54,7 @@
                                         <form name="myform" method="post" action="/quick/{{ what }}/action">
                                           {% csrf_token %}
                                           <div class="table-responsive" id="listitems">
-                                          <table class="table table-bordered" onclick="javascript:hide();">
+                                          <table class="table table-bordered">
                                             <thead>
                                               <tr>
                                                 <th>
@@ -134,4 +135,5 @@
     </div>
 </div>
 {% endblock content %}
+
 
