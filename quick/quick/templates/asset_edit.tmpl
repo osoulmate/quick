@@ -7,7 +7,7 @@
                         <h4 class="page-title">资产管理</h4>
                         <ul class="breadcrumbs">
                             <li class="nav-home">
-                                <a href="#">
+                                <a href="/quick">
                                     <i class="flaticon-home"></i>
                                 </a>
                             </li>
@@ -21,9 +21,9 @@
                                 <i class="flaticon-right-arrow"></i>
                             </li>
                             <li class="nav-item">
-                            {% ifequal what "asset/ipsn" %}<a href="#">关联视图</a>{% endifequal %}
-                            {% ifequal what "asset/app" %}<a href="#">业务视图</a>{% endifequal %}
-                            {% ifequal what "asset/hardware" %}<a href="#">硬件视图</a>{% endifequal %}
+                            {% ifequal what "asset/union" %}<a href="/quick/asset/union/list">综合视图</a>{% endifequal %}
+                            {% ifequal what "asset/app" %}<a href="/quick/asset/app/list">业务视图</a>{% endifequal %}
+                            {% ifequal what "asset/hardware" %}<a href="/quick/asset/hardware/list">硬件视图</a>{% endifequal %}
                             </li>
                         </ul>
                     </div>
@@ -32,42 +32,51 @@
                         <form name="editform" method="post" action="/quick/{{ what }}/save">{% csrf_token %}
                             <div class="card">
                                 <div class="card-header">
-                                    <div class="card-title">{% ifequal editmode 'edit'  %}编辑{% else %}添加{% endifequal %}{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}</div>
+                                    <div class="card-title">{% ifequal action 'batch'  %}批量{% endifequal %}{% ifequal editmode 'edit'  %}编辑{% else %}添加{% endifequal %}{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}</div>
                                 </div>
                                 <div class="card-body">
-                                    {% for item in items %}
-                                    {% if item.0 == 'ip' or item.0 == 'sn'  %}
+                        {% for item in items %}
+                           {% if editable %}
+                                {% if item.0 != "uuid" and item.0 != "hardware_uuid" %}
                                     <div class="form-group">
-                                        {% if editable or what == 'asset/ipsn' %}
-                                        {% ifequal action "batch" %}
-                                        <label for="{{ item.0 }}pool">{{ item.3 }}池</label>
-                                        <textarea class="form-control" rows="5" id="{{ item.0 }}pool" name="{{ item.0 }}pool"></textarea>
-                                        {% else %}
                                         <label for="{{ item.0 }}">{{ item.3 }}</label>
                                         <input class="form-control" id="{{ item.0 }}" name="{{ item.0 }}" type="text"  value="{{ item.1 }}"/>
-                                        {% endifequal %}
-                                        {% else %}
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                {% ifequal action "batch" %}
+                                    {% if item.0 == 'ip' or item.0 == 'sn' %}
+                                    <div class="form-group">
+                                        <label for="{{ item.0 }}pool">{{ item.3 }}池</label>
+                                        <pre><textarea class="form-control" rows="5" id="{{ item.0 }}pool" name="{{ item.0 }}pool"></textarea></pre>
+                                    </div>
+                                    {% else %}
+                                    {% if item.0 != 'uuid' and item.0 != 'ipmi_ip' and item.0 != 'hardware_uuid' %}
+                                    <div class="form-group">
                                         <label for="{{ item.0 }}">{{ item.3 }}</label>
-                                        <input class="form-control" id="{{ item.0 }}" name="{{ item.0 }}" type="text" readonly="readonly" style="background-color:#eee" value="{{ item.1 }}"/>
-                                        {% endif %}
+                                        <input class="form-control" id="{{ item.0 }}" name="{{ item.0 }}" type="text" />
                                     </div>
                                     {% endif %}
-                                    {% if item.0 != 'id' and item.0 != 'ip' and item.0 != 'sn' %}
+                                    {% endif %}
+                                {% else %}
+                                    {% if item.0 == 'uuid' %}
+                                    <div class="form-group">
+                                        <label for="{{ item.0 }}">{{ item.3 }}</label>
+                                        <input class="form-control" id="{{ item.0 }}" name="{{ item.0 }}" type="text" readonly="readonly" style="background-color:#eee" value="{{ item.1 }}"/>
+                                    </div>
+                                    {% elif item.0 != 'uuid' and item.0 != 'hardware_uuid' %}
                                     <div class="form-group">
                                         <label for="{{ item.0 }}">{{ item.3 }}</label>
                                         <input class="form-control" id="{{ item.0 }}" name="{{ item.0 }}" type="text" value="{{ item.1 }}"/>
                                     </div>
                                     {% endif %}
-                                    {% endfor %}
+                                {% endifequal %}
+                            {% endif %}
+                         {% endfor %}
                                     <div class="form-group">
                                         {% if editmode == 'edit' %}
-                                        <input class="btn btn-success" type="submit" name="submit" onClick="on_form_submit();" value="更新" />
-                                        {% else %}
-                                        {% ifequal action "batch" %}
-                                        <input class="btn btn-success" type="submit" name="submit" onClick="on_form_submit();" value="更新" />
-                                        {% else %}
+                                        <input class="btn btn-success" type="submit" name="submit" onClick="on_form_submit();" value="更新" />{% else %}
                                         <input class="btn btn-success" type="submit" name="submit" onClick="on_form_submit();" value="添加" />
-                                        {% endifequal %}
                                         {% endif %}
                                         <input class="btn btn-danger" type="button" onClick="window.location='/quick/{{ what }}/list';" value="取消" />
                                         <input type="hidden" name="name" id="name" value="{{ name }}" />
@@ -81,5 +90,7 @@
                 </div>
             </div>
 {% endblock content %}
+
+
 
 

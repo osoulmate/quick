@@ -10,6 +10,7 @@ import simplejson
 import time
 import base64
 import xmlrpclib
+import hashlib
 import cobbler.utils as utils
 from quick.models import Users
 from login import login
@@ -21,14 +22,13 @@ def do_login(request):
     username = request.POST.get('username', '').strip()
     password = request.POST.get('password', '')
     nextsite = request.POST.get('next',None)
-    users = Users.objects.filter(username=username,password=password)
+    users = Users.objects.filter(username=username,password=hashlib.md5(password.encode(encoding='UTF-8')).hexdigest())
     if not users:
         return login(request,nextsite,message="用户名或密码错误")
     for user in users:
-        if user.is_active == 'disable':
+        if user.is_active == 'no':
             return login(request,nextsite,message="您的账号尚未激活，请联系管理员")
-        user.is_online = 'online'
-        user.save()
+
     url_cobbler_api = utils.local_get_cobbler_api_url()
     remote = xmlrpclib.Server(url_cobbler_api, allow_none=True)
 
@@ -47,10 +47,7 @@ def do_login(request):
         settings = remote.get_settings()
         exipry_time = settings['auth_token_expiration']
         request.session.set_expiry(exipry_time)
-        '''
-        启用单点登陆功能
-        '''
-#================================================================================================
+        #启用单点登陆功能
         try:
             sessions = Session.objects.all()
             for session in sessions:
@@ -65,13 +62,13 @@ def do_login(request):
                         Session.objects.filter(session_key=session.session_key).delete()
         except:
             return HttpResponse('something error!')
-#===============================================================================================
         if nextsite:
            return HttpResponseRedirect(nextsite)
         else:
            return HttpResponseRedirect("/quick")
     else:
         return login(request,nextsite,message="登录失败，请重试")
+
 
 
 

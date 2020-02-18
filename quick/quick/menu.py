@@ -26,7 +26,7 @@ menu = [
                 "menustate":"inactive",
                 "children":[{'title':'业务视图','url':'/quick/asset/app/list'     ,'menustate':'inactive'},
                             {'title':'硬件视图','url':'/quick/asset/hardware/list','menustate':'inactive'},
-                            {'title':'关联视图','url':'/quick/asset/ipsn/list'    ,'menustate':'inactive'}]
+                            {'title':'运维视图','url':'/quick/asset/union/list'    ,'menustate':'inactive'}]
             },
             {
                 "menutitle":"虚拟化",
@@ -75,7 +75,9 @@ menu = [
                 "menustate":"inactive",
                 "children":[{'title':'登录日志','url':'/quick/log/login' ,'menustate':'inactive'},
                             {'title':'操作日志','url':'/quick/log/manual','menustate':'inactive'},
+                            {'title':'资产日志','url':'/quick/log/asset','menustate':'inactive'},
                             {'title':'Events','url':'/quick/events','menustate':'inactive'}]
             }
 ]
+
 

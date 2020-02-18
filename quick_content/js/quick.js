@@ -146,13 +146,7 @@ function item_check_off(obj,num,what){
       }
     })
 }
-/*
-function display(){
-    $('#view_col').css('display',''); 
-}
-function hide(){
-    $('#view_col').css('display','none'); 
-}*/
+
 function items_check(obj) {
     obj.parentNode.parentNode.className=(obj.checked)? 'selected' : '';
 }
@@ -290,15 +284,7 @@ function action_multi_new(otype) {
         return;
     }
 }
-/*
-function get_data(what){
-    $.getJSON("/quick/ajax/"+what,function(result){
-        $.each(result, function(i, field){
-            console.log(field['fields'])
-        });
-    });
-}
-*/
+
 function batch_query(what){
     //设置遮罩层，可防止用户确认提示框前选择页面其它元素。
     if (what == 'asset/hardware'){
@@ -338,11 +324,27 @@ function batch_query(what){
         inputFram.style.display = "none";
         shield.style.display = "none";
         var ippool = document.getElementById("ippool").value
-        ippool = ippool.replace(/\r\n/g,",")
-        ippool = ippool.replace(/\n/g,",")
+        //ippool = ippool.replace(/\r\n/g,",")
+        //ippool = ippool.replace(/\n/g,",")
+        //ippool = ippool.replace(/\s/g,"")
         console.log(ippool)
-        document.forms['action'].action = '/quick/'+what+"/list?ippool="+ippool;
-        document.forms['action'].submit();
+        var csrfToken = $("[name='csrfmiddlewaretoken']").val();
+        $.ajax({
+        url: "/quick/ajax",
+        type: "POST",
+        headers: {"X-CSRFToken": csrfToken},
+        data: {
+            what  : what,
+            pool  : ippool,
+            action: "batch_query"
+        },
+        success: function (data,status) {
+            if (data == 'ok'){
+                window.location.reload(); 
+            }
+            //console.log("数据: \n" + data + "\n状态: " + status);
+        }
+        })
     }
     this.cancel = function(){
         inputFram.style.display = "none";
@@ -441,5 +443,7 @@ window.confirm = function(option)
 }
 
 */
+
+
 
 

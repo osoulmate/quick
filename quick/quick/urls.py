@@ -7,12 +7,12 @@ import views
 import install
 import users
 import assets
+import ajax
 import test
 import add_web_users
 urlpatterns = patterns('',
     (r'^$', index.index),
-    (r'^utils/random_mac$', views.random_mac),
-    (r'^utils/random_mac/virttype/(?P<virttype>.+)$', views.random_mac),
+    (r'^ajax$', ajax.ajax),
     (r'^events$', views.events),
     (r'^eventlog/(?P<event>.+)$', views.eventlog),
     (r'^iplist$', views.iplist),
@@ -28,13 +28,12 @@ urlpatterns = patterns('',
     (r'^login$', login.login),
     (r'^do_login$', do_login.do_login),
     (r'^logout$', do_logout.do_logout),
-
     (r'^test$', test.test),
     (r'^add_web_users$', add_web_users.add_web_users),
+    (r'^utils/random_mac$', views.random_mac),
+    (r'^utils/random_mac/virttype/(?P<virttype>.+)$', views.random_mac),
 
     (r'^(?P<what>\w+)/modifylist/(?P<pref>[!\w]+)/(?P<value>.+)$', views.modify_list),
-
-    (r'^ajax$', assets.ajax_query),
 
     (r'^(?P<obj>\w+)/(?P<what>\w+)/modifylist/(?P<pref>[!\w]+)/(?P<value>.+)$', assets.modify_list),
     (r'^asset/(?P<what>\w+)/list(/(?P<page>\d+))?', assets.asset_list),
@@ -114,6 +113,7 @@ urlpatterns = patterns('',
     (r'^(?P<what>\w+)/save$', views.generic_save),
 
 )
+
 
 
 

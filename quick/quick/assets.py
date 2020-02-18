@@ -10,46 +10,20 @@ from django.views.decorators.csrf import csrf_protect
 from django.db.models import Q
 from django.core import serializers
 from django.conf import settings
+from datetime import datetime
 import os
 import re
 import time
+import uuid
+import base64
 import pyexcel as pe
 import simplejson
 import oauth
+import utils
 from login import login
 from error_page import error_page
-import utils
 from quick.models import *
-#========================================================================
-@require_POST
-@csrf_protect
-def ajax_query(request):
-    """
-    json_data = request.session.get("%s_json_data"%what,"")
-    if json_data:
-        return HttpResponse(json_data)
-    else:
-        return HttpResponse('')
-    """
-    if request.POST.get('action', ''):
-        name  = request.POST.get('name', '')
-        value = request.POST.get('view', '')
-        what  = request.POST.get('what', '')
-        if what == 'asset/app':
-            app_temp = App_Temp.objects.get(id=1)
-            setattr(app_temp,name,value)
-            app_temp.save()
-        elif what == 'asset/hardware':
-            hd_temp = Hardware_Temp.objects.get(id=1)
-            setattr(hd_temp,name,value)
-            hd_temp.save()
-        elif what == 'asset/ipsn':
-            ipsn_temp = Ip_Sn_Temp.objects.get(id=1)
-            setattr(ipsn_temp,name,value)
-            ipsn_temp.save()
-        else:
-            pass
-        return HttpResponse('ok')
+
 #========================================================================
 def asset_list(request,what,page=None):
     """
@@ -59,110 +33,160 @@ def asset_list(request,what,page=None):
         return login(request, next="/quick/asset/%s/list"%what, expired=True)
     if page == None:
         page = int(request.session.get("%s_page"%what, 1))
-    limit = int(request.session.get("%s_limit"%what, 10))
-    ippool = request.GET.get('ippool', '')
-    iplist = ''
-    snlist = ''
-    if what == 'app' or what == 'ipsn':
-        sort_field =  sort_field_old =request.session.get("%s_sort_field"%what, "ip")
+    limit = int(request.session.get("%s_limit"%what, 5))
+    iplist = []
+    columns=[]
+    sort = ''
+    if what == 'app':
+        sort_field = request.session.get("%s_sort_field"%what, "ip")
+    elif what == 'hardware':
+        sort_field = request.session.get("%s_sort_field"%what, "sn")
+    elif what == 'union':
+        sort_field = request.session.get("%s_sort_field"%what, "ip")
     else:
-        sort_field =  sort_field_old =request.session.get("%s_sort_field"%what, "sn")
+        pass
     if sort_field.startswith("!"):
-        sort_field=sort_field.replace("!","-")
+        sort =sort_field.replace("!","-")
+    else:
+        sort =sort_field
     filters = simplejson.loads(request.session.get("%s_filters"%what, "{}"))
+    records = System.objects.filter(id=1)
+    user_profile = User_Profile.objects.filter(username=request.session['username'])
+    if not records:
+        return HttpResponse('no data!')
+    else:
+        records = records[0]
     batchactions = [["删除","delete","delete"],]
+    ippool = request.session.get('%s_batch_query'%what, '').strip()
+    if ippool:
+        iplist = ippool.split("\n")
+        request.session['%s_batch_query'%what] = ''
+    if user_profile:
+        user_profile = user_profile[0]
+    else:
+        return HttpResponse("unknown user view!")
     if what == 'app':
         fields = [f for f in App._meta.fields]
-        f = App_Temp.objects.get(id=1)
-        if ippool:
-            if ippool.strip()[-1] == ',':
-                ippool = ippool[0:-1]
-            iplist = ippool.split(",")
         if iplist:
             num_items = len(iplist)
             q = Q()
             q.connector = 'OR'
             for ip in iplist:
                 q.children.append(("ip",ip))
-            items = App.objects.filter(q).order_by("ip")
+            #items = App.objects.filter(q).order_by("ip")
+            items = App.objects.filter(q)
         else:
             if not filters:
-                app_temp = App_Temp.objects.get(id=1)
-                num_items = app_temp.num_items
-                num_items = int(num_items)
+                num_items = records.app_records
             else:
-                items = App.objects.filter(**filters).order_by(sort_field)
+                items = App.objects.filter(**filters).order_by(sort)
                 num_items = len(items)
             offset = (page -1 )*limit
             end = page*limit
-            items = App.objects.filter(**filters).order_by(sort_field)[offset:end]
+            items = App.objects.filter(**filters).order_by(sort)[offset:end]
         #json_data = serializers.serialize("json", items)
         #request.session["app_json_data"] = json_data
+        for field in fields:
+            if field.name == 'uuid' or field.name == 'ipmi_ip' or field.name == 'hardware_uuid' or field.name == 'remark':
+                k = "%s_%s"%(what,field.name)
+            else:
+                k = field.name
+            columns.append([field.name,field.verbose_name,getattr(user_profile,k,'on')])
+        items = __format_items(items,columns)
+        columns = __format_columns(columns,sort_field)
     elif what == 'hardware':
         fields = [f for f in Hardware._meta.fields]
-        f = Hardware_Temp.objects.get(id=1)
-        if ippool:
-            if ippool.strip()[-1] == ',':
-                ippool = ippool[0:-1]
-            snlist = ippool.split(',')
-        if snlist:
-            num_items = len(snlist)
+        if iplist:
+            num_items = len(iplist)
             q = Q()
             q.connector = 'OR'
-            for sn in snlist:
+            for sn in iplist:
                 q.children.append(("sn",sn.strip()))
-            items = Hardware.objects.filter(q).order_by("sn")
+            #items = Hardware.objects.filter(q).order_by("sn")
+            items = Hardware.objects.filter(q)
         else:
             if not filters:
-                hd_temp = Hardware_Temp.objects.get(id=1)
-                num_items = hd_temp.num_items
-                num_items = int(num_items)
+                num_items = records.hardware_records
             else:
-                items = Hardware.objects.filter(**filters).order_by(sort_field)
+                items = Hardware.objects.filter(**filters).order_by(sort)
                 num_items = len(items)
             offset = (page -1 )*limit
             end = page*limit
-            items = Hardware.objects.filter(**filters).order_by(sort_field)[offset:end]
-    elif what == 'ipsn':
-        fields = [f for f in Ip_Sn._meta.fields]
-        f = Ip_Sn_Temp.objects.get(id=1)
-        if ippool:
-            if ippool.strip()[-1] == ',':
-                ippool = ippool[0:-1]
-            iplist = ippool.split(",")
+            items = Hardware.objects.filter(**filters).order_by(sort)[offset:end]
+        for field in fields:
+            if field.name == 'uuid' or field.name == 'ipmi_ip' or field.name == 'remark':
+                k = "%s_%s"%(what,field.name)
+            else:
+                k = field.name
+            columns.append([field.name,field.verbose_name,getattr(user_profile,k,'on')])
+        items = __format_items(items,columns)
+        columns = __format_columns(columns,sort_field)
+    elif what == 'union':
+        app_columns = []
+        exculde = ['uuid','hardware_uuid','remark']
+        fields = [f for f in App._meta.fields]
+        for field in fields:
+            k = "yw_view_%s"%field.name
+            if field.name in exculde:
+                continue
+            app_columns.append([field.name,field.verbose_name,getattr(user_profile,k,'on')])
+
+        hd_columns = []
+        fields1 = [f for f in Hardware._meta.fields]
+        for field in fields1:
+            k = "yw_view_%s"%field.name
+            if field.name in exculde:
+                continue
+            if field.name == 'ipmi_ip':
+                continue
+            hd_columns.append([field.name,field.verbose_name,getattr(user_profile,k,'on')])
+
         if iplist:
             num_items = len(iplist)
             q = Q()
             q.connector = 'OR'
             for ip in iplist:
                 q.children.append(("ip",ip))
-            items = Ip_Sn.objects.filter(q).order_by("ip")
+            app_items = App.objects.filter(q).order_by("ip")
         else:
             if not filters:
-                ipsn_temp = Ip_Sn_Temp.objects.get(id=1)
-                num_items = ipsn_temp.num_items
-                num_items = int(num_items)
+                num_items = records.app_records
             else:
-                items = Ip_Sn.objects.filter(**filters).order_by(sort_field)
+                items = App.objects.filter(**filters).order_by(sort)
                 num_items = len(items)
             offset = (page -1 )*limit
             end = page*limit
-            items = Ip_Sn.objects.filter(**filters).order_by(sort_field)[offset:end]
+            app_items = App.objects.filter(**filters).order_by(sort)[offset:end]
+
+        hd_items = []
+        items = []
+        for app_item in app_items:
+            temp = []
+            hd_item = Hardware.objects.filter(uuid=app_item.hardware_uuid)
+            app_item = __format_items([app_item],app_columns)
+            if hd_item:
+                hd_item = __format_items(hd_item,hd_columns)
+                item = app_item[0] + hd_item[0]
+            else:
+                item = app_item[0]
+            items.append(item)
+        hd_columns = __format_columns(hd_columns,sort_field)
+        app_columns = __format_columns(app_columns,sort_field)
+        app_columns.extend(hd_columns)
+        columns = app_columns
     else:
-        return HttpResponse("not found!")
-    columns=[]
-    for field in fields:
-        columns.append([field.name,field.verbose_name,getattr(f,field.name,'on')])
+        pass
     t = get_template("asset_list.tmpl")
 
     html = t.render(RequestContext(request,{
         'what'           : "asset/%s"%what,
-        'columns'        : __format_columns(columns,sort_field_old),
-        'items'          : __format_items(items,columns),
+        'columns'        : columns,
+        'items'          : items,
         'pageinfo'       : __paginate(num_items,page=page,items_per_page=limit),
         'filters'        : filters,
         'limit'          : limit,
         'username'       : request.session['username'],
+        'location'       : request.META['HTTP_HOST'],
         'batchactions'   : batchactions,
         'menu'           : request.session['%s_menu'%request.session['username']]
     }))
@@ -177,109 +201,107 @@ def asset_save(request,what):
     editmode = request.POST.get('editmode', 'edit')
     iplist = ''
     snlist = ''
-    if what == 'app':
-        fields = [f for f in App._meta.fields]
-        kw = {}
-        for field in fields:
-            kw[field.name] = request.POST.get(field.name, "")
-        if not kw.get('ip',None):
-            ippool = request.POST.get("ippool", "")
-            if ippool:
-                iplist = ippool.split()
-                for field in fields:
-                    if not kw.get(field.name,None):
-                        kw.pop(field.name)
+    records = System.objects.filter(id=1)
+    urandom = open("/dev/urandom")
+    salt = base64.encodestring(urandom.read(25)) + str(time.time())
+    if not records:
+        return HttpResponse('no data!')
+    else:
+        records = records[0]
+    try:
+        if what == 'app':
+            fields = [f for f in App._meta.fields]
+            kw = {}
+            for field in fields:
+                if field.name == "uuid":
+                    continue
+                kw[field.name] = request.POST.get(field.name, "")
+            if not kw.get('ip',None):
+                ippool = request.POST.get("ippool", "")
+                if ippool:
+                    iplist = ippool.strip().split("\r\n")
+                    for field in fields:
+                        if field.name == 'uuid':
+                            continue
+                        if not kw.get(field.name,None):
+                            kw.pop(field.name)
+                else:
+                    return error_page(request,"IP不能为空")
+            if editmode != 'edit':
+                #单个新增
+                kw['uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,salt))).replace("-","")
+                app=App(**kw)
+                app.save()
+                records.app_records = records.app_records + 1
+                records.save()
             else:
-                return error_page(request,"IP不能为空")
-        if editmode != 'edit':
-            if iplist:
-                for ip in iplist:
-                    kw['ip'] = ip
+                if iplist:
+                    #批量更新
+                    for ip in iplist:
+                        app = App.objects.get(ip=ip)
+                        for k,v in kw.items():
+                            setattr(app, k , v)
+                        app.save()
+                else:
+                    #单个更新
                     app = App.objects.get(ip=kw['ip'])
                     for k,v in kw.items():
                         setattr(app, k , v)
                     app.save()
+        elif what == 'hardware':
+            fields = [f for f in Hardware._meta.fields]
+            kw = {}
+            for field in fields:
+                if field.name == "uuid":
+                    continue
+                kw[field.name] = request.POST.get(field.name,None)
+            if not kw.get('sn',None):
+                snpool = request.POST.get("snpool", "")
+                if snpool:
+                    snlist = snpool.strip().split('\r\n')
+                    for field in fields:
+                        if field.name == 'uuid':
+                            continue
+                        if not kw.get(field.name,None):
+                            kw.pop(field.name)
+                else:
+                    return error_page(request,"序列号不能为空")
+            if editmode != 'edit':
+                #单个新增
+                if not kw['ipmi_ip'] :
+                    return error_page(request,"IPMI地址不能为空！如没有IPMI地址，请用业务地址代替")
+                kw['uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,str(kw['ipmi_ip'])))).replace("-","")
+                hd=Hardware(**kw)
+                hd.save()
+                records.hardware_records = records.hardware_records + 1
+                records.save()
             else:
-                app=App(**kw)
-                app.save()
-                app_temp = App_Temp.objects.get(id=1)
-                app_temp.num_items = str(int(app_temp.num_items) + 1)
-                app_temp.save()
-        else:
-            app = App.objects.get(ip=kw['ip'])
-            for k,v in kw.items():
-                setattr(app, k , v)
-            app.save()
-    elif what == 'hardware':
-        fields = [f for f in Hardware._meta.fields]
-        kw = {}
-        for field in fields:
-            kw[field.name] = request.POST.get(field.name, "")
-        if not kw.get('sn',None):
-            snpool = request.POST.get("snpool", "")
-            if snpool:
-                snlist = snpool.split()
-                for field in fields:
-                    if not kw.get(field.name,None):
-                        kw.pop(field.name)
-            else:
-                return error_page(request,"序列号不能为空")
-        if editmode != 'edit':
-            if snlist:
-                for sn in snlist:
-                    kw['sn'] = sn
+                if snlist:
+                    #批量更新
+                    for sn in snlist:
+                        try:
+                            hd = Hardware.objects.get(sn=sn.strip())
+                            for k,v in kw.items():
+                                setattr(hd, k , v)
+                            hd.save()
+                        except Exception,e:
+                            return error_page(request,str(e))
+                else:
+                    #单个更新
                     hd = Hardware.objects.get(sn=kw['sn'])
+                    kw['uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,str(kw['ipmi_ip'])))).replace("-","")
                     for k,v in kw.items():
                         setattr(hd, k , v)
                     hd.save()
-            else:
-                hd=Hardware(**kw)
-                hd.save()
-                hd_temp = Hardware_Temp.objects.get(id=1)
-                hd_temp.num_items = str(int(hd_temp.num_items) + 1)
-                hd_temp.save()
+        elif what == 'union':
+            pass
         else:
-            hd = Hardware.objects.get(sn=kw['sn'])
-            for k,v in kw.items():
-                setattr(hd, k , v)
-            hd.save()
-    elif what == 'ipsn':
-        ip = request.POST.get('ip', "")
-        sn = request.POST.get('sn', "")
-        if sn == "" or ip == "":
-            ippool = request.POST.get("ippool", "")
-            snpool = request.POST.get("snpool", "")
-            if ippool and snpool:
-                iplist = ippool.split()
-                snlist = snpool.split()
-                if len(iplist) != len(snlist):
-                    return error_page(request,"IP和序列号个数不一致")
-            else:
-                return error_page(request,"IP和序列号不能为空")
-        if editmode != 'edit':
-            if iplist and snlist:
-                num = len(iplist)
-                for i in range(num):
-                    ipsn = Ip_Sn.objects.filter(ip=iplist[i])
-                    if ipsn:
-                        ipsn = ipsn[0]
-                        ipsn.sn = snlist[i]
-                        ipsn.save()
-                    else:
-                        return error_page(request,"%s不存在"%iplist[i])
-            else:
-                ipsn=Ip_Sn(sn=sn,ip=ip)
-                ipsn.save()
-                ipsn_temp = Ip_Sn_Temp.objects.get(id=1)
-                ipsn_temp.num_items = str(int(ipsn_temp.num_items) + 1)
-                ipsn_temp.save()
-        else:
-            ipsn = Ip_Sn.objects.get(ip=ip)
-            ipsn.sn = sn
-            ipsn.save()
+            pass
+    except Exception,e:
+        raise
+        return error_page(request,str(e))
     else:
-        pass
-    return HttpResponseRedirect('/quick/asset/%s/list'%what)
+        return HttpResponseRedirect('/quick/asset/%s/list'%what)
 # ======================================================================
 @require_POST
 @csrf_protect
@@ -288,129 +310,142 @@ def asset_import(request,what):
         return login(request, next="/quick/asset/%s/list"%what, expired=True)
     file = request.FILES['xlsfile']
     if file:
-        filepath = os.path.join(settings.MEDIA_ROOT, file.name)
-        with open(filepath,'wb') as f:
-            for info in file.chunks():
-                f.write(info)
+        if '.' not in file.name:
+            return HttpResponse("上传文件格式错误（仅支持xls格式文件）!")
+        if file.name.split('.')[1] != 'xls':
+            return HttpResponse("上传文件格式错误（仅支持xls格式文件）!")
+        else:
+            filepath = os.path.join(settings.MEDIA_ROOT, file.name)
+            try:
+                with open(str(filepath),'wb') as f:
+                    for info in file.chunks():
+                        f.write(info)
+            except Exception,e:
+                return HttpResponse(str(e))
     else:
-        return HttpResponse("上传失败!")
+        return HttpResponse("上传文件不能位空!")
     filename = os.path.join(settings.MEDIA_ROOT, file.name)
-    if not os.access(filename, os.F_OK):
+    if not os.access(str(filename), os.F_OK):
         return HttpResponse("文件不存在!")
-    book = pe.get_book(file_name=filename)
+    book = pe.get_book(file_name=str(filename))
+    urandom = open("/dev/urandom")
+    salt = base64.encodestring(urandom.read(25)) + str(time.time())
     i = 0
     v = ''
-    for sheet in book:
-        #if sheet.name == 'cmdb':
-        sheet.name_columns_by_row(0) 
-        records = sheet.to_records()
-    if what == 'app':
-        fields = [f for f in App._meta.fields]
-        kw={}
-        for record in records:
-            for field in fields:
-                v =  record[(field.verbose_name).decode(encoding='UTF-8',errors='strict')]
-                if field.name == 'ip' and v == '':
-                    continue
-                kw[field.name] = v
-            app=App(**kw)
-            app.save()
-        i = len(App.objects.all())
-        app_temp = App_Temp.objects.get(id=1)
-        app_temp.num_items = i
-        app_temp.save()
-    elif what == 'hardware':
-        fields = [f for f in Hardware._meta.fields]
-        kw = {}
-        for record in records:
-            for field in fields:
-                v =  record[(field.verbose_name).decode(encoding='UTF-8',errors='strict')]
-                if field.name == 'sn' and v == '':
-                    continue
-                kw[field.name] = v
-            hd=Hardware(**kw)
-            hd.save()
-        i = len(Hardware.objects.all())
-        hd_temp = Hardware_Temp.objects.get(id=1)
-        hd_temp.num_items = i
-        hd_temp.save()
-    elif what == 'ipsn':
-        fields = [f for f in Ip_Sn._meta.fields]
-        kw = {}
-        for record in records:
-            for field in fields:
-                if field.name != 'id':
-                    kw[field.name] = record[(field.verbose_name).decode(encoding='UTF-8',errors='strict')]
-            try:
-                if kw['ip'] == '' or kw['sn'] == '':
-                    continue
-                ipsn=Ip_Sn(**kw)
-                ipsn.save()
-            except:
-                return HttpResponse("重复数据(%s-%s)!"%(kw['ip'],kw['sn']))
-        i = len(Ip_Sn.objects.all())
-        ipsn_temp = Ip_Sn_Temp.objects.get(id=1)
-        ipsn_temp.num_items = i
-        ipsn_temp.save()
+    try:
+        for sheet in book:
+            #if sheet.name == 'cmdb':
+            sheet.name_columns_by_row(0) 
+            records = sheet.to_records()
+        if what == 'app':
+            fields = [f for f in App._meta.fields]
+            kw={}
+            for record in records:
+                for field in fields:
+                    v =  record.get((field.verbose_name).decode(encoding='UTF-8',errors='strict'),'N/R')
+                    if field.name == 'ip' and v == '':
+                        continue
+                    if not v:
+                        v = 'N/R'
+                    kw[field.name] = v
+                if kw['ipmi_ip'] == 'N/R' or kw['ipmi_ip'] == '':
+                    #IPMI地址不存在的APP表记录，其字段名'hardware_id'的值
+                    kw['ipmi_ip'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,salt))).replace("-","")
+                    kw['hardware_uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,salt))).replace("-","")
+                else:
+                    #IPMI地址存在的APP表记录，其字段名'hardware_id'的值
+                    kw['hardware_uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,str(kw['ipmi_ip'])))).replace("-","")
+                if kw['ip'] == 'N/R' or kw['ip'] == '':
+                    kw['ip'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,salt))).replace("-","")
+                try:
+                    salt = base64.encodestring(urandom.read(25)) + str(time.time())
+                    kw['uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,salt))).replace("-","")
+                    app=App(**kw)
+                    app.save()
+                except Exception,e:
+                    i = len(App.objects.all())
+                    app_temp = System.objects.get(id=1)
+                    app_temp.app_records = i
+                    app_temp.save()
+                    return HttpResponse([str(e),kw,'异常2'])
+            i = len(App.objects.all())
+            app_temp = System.objects.get(id=1)
+            app_temp.app_records = i
+            app_temp.save()
+        elif what == 'hardware':
+            fields = [f for f in Hardware._meta.fields]
+            kw = {}
+            for record in records:
+                for field in fields:
+                    v =  record.get((field.verbose_name).decode(encoding='UTF-8',errors='strict'),'N/R')
+                    #忽略SN为空的记录
+                    if field.name == 'sn' and v == '':
+                        continue
+                    if not v:
+                        v = 'N/R'
+                    kw[field.name] = v
+                if kw['ipmi_ip'] == 'N/R' or kw['ipmi_ip'] == '':
+                    kw['ipmi_ip'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,salt))).replace("-","")
+                try:
+                    salt = base64.encodestring(urandom.read(25)) + str(time.time())
+                    kw['uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,str(kw['ipmi_ip'])))).replace("-","")
+                    hd=Hardware(**kw)
+                    hd.save()
+                except Exception,e:
+                    i = len(Hardware.objects.all())
+                    hd_temp = System.objects.get(id=1)
+                    hd_temp.hardware_records = i
+                    hd_temp.save()
+                    return HttpResponse([str(e),kw,'异常2'])
+            i = len(Hardware.objects.all())
+            hd_temp = System.objects.get(id=1)
+            hd_temp.hardware_records = i
+            hd_temp.save()
+        else:
+            return HttpResponse('未知请求！')
+    except Exception,e:
+        return HttpResponse([str(e),'全局异常'])
     else:
-        pass
-    return HttpResponse(True)
+        return HttpResponse(True)
 # ======================================================================
 def asset_export(request,what):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/asset/%s/list"%what, expired=True)
-    file=open('/var/www/html/cmdb.xls','rb')  
-    response =HttpResponse(file)  
-    response['Content-Type']='application/octet-stream'  
-    response['Content-Disposition']='attachment;filename="cmmb.xls"'
-    return response
-    """
-    if what == 'app':
-        fields = [f for f in App._meta.fields]
-        kw = {}
-        for field in fields:
-            kw[field.name] = request.POST.get(field.name, "")
-        if not kw.get('ip',None):
-            return error_page(request,"IP不能为空")
-        if editmode != 'edit':
-            app=App(**kw)
-            app.save()
-        else:
-            app = App.objects.get(ip=kw['ip'])
-            for k,v in kw.items():
-                setattr(app, k , v)
-            app.save()
-    elif what == 'hardware':
-        fields = [f for f in Hardware._meta.fields]
-        kw = {}
-        for field in fields:
-            kw[field.name] = request.POST.get(field.name, "")
-        if not kw.get('sn',None):
-            return error_page(request,"序列号不能为空")
-        if editmode != 'edit':
-            hd=Hardware(**kw)
-            hd.save()
-        else:
-            hd = Hardware.objects.get(sn=kw['sn'])
-            for k,v in kw.items():
-                setattr(hd, k , v)
-            hd.save()
-    elif what == 'ipsn':
-        ip = request.POST.get('ip', "")
-        sn = request.POST.get('sn', "")
-        if sn == "" or ip == "":
-            return error_page(request,"IP和序列号不能为空")
-        if editmode != 'edit':
-            ipsn=Ip_Sn(sn=sn,ip=ip)
-            ipsn.save()
-        else:
-            ipsn = Ip_Sn.objects.get(ip=ip)
-            ipsn.sn = sn
-            ipsn.save()
+    app_items  = App.objects.all()
+    app_fields = [f for f in App._meta.fields]
+    hd_fields  = [f for f in Hardware._meta.fields]
+    save_data = []
+    try:
+        for app_item in app_items:
+            kw = {}
+            q = Q()
+            q.connector = 'OR'
+            q.children.append(("ipmi_ip",app_item.ipmi_ip))
+            q.children.append(("ipmi_ip",app_item.ip))
+            hd_item = Hardware.objects.filter(q)
+            hd_item = hd_item[0]
+            for app_field in app_fields:
+                k = (app_field.verbose_name).decode(encoding='UTF-8',errors='strict')
+                v = getattr(app_item,app_field.name,'')
+                kw[k] = v
+            for hd_field in hd_fields:
+                k = (hd_field.verbose_name).decode(encoding='UTF-8',errors='strict')
+                v = getattr(hd_item,hd_field.name,'')
+                kw[k] =v 
+            save_data.append(kw)
+            #order_output = [u"设备类型",u"资产编号",u"地域",u"所属机房名称",u"机房编号",u"机柜编号",u"设备功能",u"设备型号",u"设备角色",u"序列号","U位","IPMI地址","运维地址","业务IP","硬件配置","设备生产商","所属项目","是否采购维保","维保开始时间","维保结束时间","维保厂家","使用人","业务模块","业务系统","项目简称","集群","操作系统","主机型号","CPU型号","CPUcore（总）","CPU主频(单位GHZ)","内存容量(单位G)","内置硬盘容量(单位G)","MirrorDisk状态","FW版本","电源个数","风扇个数","内核版本","是否已虚拟化","备注","是否资源池化","网卡是否已绑定","是否安全加固","防火墙是否已关闭","ssh是否已升级 ","项目编号","上架日期","服务IP1地址","服务IP2地址","服务实例名","一级业务系统","二级业务系统","三级业务系统","运维接口人","运维团队","开发接口人","开发团队","业务接口人","业务部门","监控系统","是否为CDN设备","生命周期状态","环境","结算运维接口人","结算使用人","UUID","上联架顶","业务IP来源","云管来源IP","访问区","结算部门","IPV6信息","[属于]合同","节点类型"]
+        save_name = 'cmdb-%s.xls'%(str(datetime.now()).split(".")[0].replace(" ","").replace(":","").replace("-",""))
+        filename = os.path.join(settings.MEDIA_ROOT, save_name)
+        pe.save_as(records=save_data, dest_file_name=filename)
+        file=open(filename,'rb')
+    except Exception,e:
+        return HttpResponse(str(e))
     else:
-        pass
-    return HttpResponseRedirect('/quick/asset/%s/list'%what)
-    """
+        response =HttpResponse(file)  
+        response['Content-Type']='application/octet-stream'  
+        response['Content-Disposition']='attachment;filename="%s"'%save_name
+        return response
+
 # ======================================================================
 def asset_edit(request,what,obj_name=None,editmode='edit'):
     if not oauth.test_user_authenticated(request): 
@@ -419,19 +454,13 @@ def asset_edit(request,what,obj_name=None,editmode='edit'):
     if what == 'app':
         fields = [f for f in App._meta.fields]
         if obj_name:
-            item = App.objects.filter(ip=obj_name)
+            item = App.objects.filter(uuid=obj_name)
         else:
             item = ''
     elif what == 'hardware':
         fields = [f for f in Hardware._meta.fields]
         if obj_name:
-            item = Hardware.objects.filter(sn=obj_name)
-        else:
-            item = ''
-    elif what == 'ipsn':
-        fields = [f for f in Ip_Sn._meta.fields]
-        if obj_name:
-            item = Ip_Sn.objects.filter(id=obj_name)
+            item = Hardware.objects.filter(uuid=obj_name)
         else:
             item = ''
     else:
@@ -441,6 +470,9 @@ def asset_edit(request,what,obj_name=None,editmode='edit'):
         editable = False
     else:
         editable = True
+    if action == 'batch':
+        editmode = 'edit'
+        editable = False
     columns=[]
     for field in fields:
         columns.append([field.name,field.verbose_name])
@@ -470,33 +502,25 @@ def asset_edit(request,what,obj_name=None,editmode='edit'):
 def asset_delete(request,what,obj_name=None):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/asset/%s/list"%what, expired=True)
-    if what == 'app':
-        if obj_name:
-            App.objects.get(ip=obj_name).delete()
-            app_temp = App_Temp.objects.get(id=1)
-            app_temp.num_items = str(int(app_temp.num_items) - 1)
+    if not obj_name:
+        return HttpResponse("参数不能为空")
+    try:
+        if what == 'app':
+            App.objects.get(uuid=obj_name).delete()
+            app_temp = System.objects.get(id=1)
+            app_temp.app_records = app_temp.app_records - 1
             app_temp.save()
-        else:
-            return error_page(request,"未知操作")
-    elif what == 'hardware':
-        if obj_name:
-            Hardware.objects.get(sn=obj_name).delete()
-            hd_temp = Hardware_Temp.objects.get(id=1)
-            hd_temp.num_items = str(int(hd_temp.num_items) - 1)
+        elif what == 'hardware':
+            Hardware.objects.get(uuid=obj_name).delete()
+            hd_temp = System.objects.get(id=1)
+            hd_temp.hardware_records = hd_temp.hardware_records - 1
             hd_temp.save()
         else:
-            return error_page(request,"未知操作")
-    elif what == 'ipsn':
-        if obj_name:
-            Ip_Sn.objects.get(id=obj_name).delete()
-            ipsn_temp = Ip_Sn_Temp.objects.get(id=1)
-            ipsn_temp.num_items = str(int(ipsn_temp.num_items) - 1)
-            ipsn_temp.save()
-        else:
-            return error_page(request,"未知操作")
+            pass
+    except Exception,e:
+        return HttpResponse(str(e))
     else:
-        pass
-    return HttpResponseRedirect("/quick/asset/%s/list"%what)
+        return HttpResponseRedirect("/quick/asset/%s/list"%what)
 # ======================================================================
 
 @require_POST
@@ -507,33 +531,27 @@ def asset_domulti(request,what,multi_mode=None,multi_arg=None):
     names = request.POST.get('names', '').strip().split()
     if names == "":
         return error_page(request, "未选中任何对象")
-    if what == "app":
-        if multi_mode == "delete" and multi_arg == 'delete':
-            for name in names:
-                App.objects.get(ip=name).delete()
-            app_temp = App_Temp.objects.get(id=1)
-            app_temp.num_items = str(int(app_temp.num_items) - len(names))
-            app_temp.save()
-        else:
-            return error_page(request,"未知操作")
-    elif what == "hardware":
-        if multi_mode == "delete" and multi_arg == 'delete':
-            for name in names:
-                Hardware.objects.get(sn=name).delete()
-            hd_temp = Hardware_Temp.objects.get(id=1)
-            hd_temp.num_items = str(int(hd_temp.num_items) - len(names))
-            hd_temp.save()
-        else:
-            return error_page(request,"未知操作")
-    elif what == 'ipsn':
-        if multi_mode == "delete" and multi_arg == 'delete':
-            for name in names:
-                Ip_Sn.objects.get(id=name).delete()
-            ipsn_temp = Ip_Sn_Temp.objects.get(id=1)
-            ipsn_temp.num_items = str(int(ipsn_temp.num_items) - len(names))
-            ipsn_temp.save()
-        else:
-            return error_page(request,"未知操作")
+    try:
+        if what == "app":
+            if multi_mode == "delete" and multi_arg == 'delete':
+                for name in names:
+                    App.objects.get(uuid=name).delete()
+                app_temp = System.objects.get(id=1)
+                app_temp.app_records = app_temp.app_records - len(names)
+                app_temp.save()
+            else:
+                return error_page(request,"未知操作")
+        elif what == "hardware":
+            if multi_mode == "delete" and multi_arg == 'delete':
+                for name in names:
+                    Hardware.objects.get(uuid=name).delete()
+                hd_temp = System.objects.get(id=1)
+                hd_temp.hardware_records = hd_temp.hardware_records - len(names)
+                hd_temp.save()
+            else:
+                return error_page(request,"未知操作")
+    except Exception,e:
+        return HttpResponse(str(e))
     return HttpResponseRedirect("/quick/asset/%s/list"%what)
 # ======================================================================
 def modify_list(request, obj, what, pref, value=None):
@@ -545,7 +563,7 @@ def modify_list(request, obj, what, pref, value=None):
 
     if pref == "sort":
 
-        old_sort = request.session.get("%s_sort_field" % what,"name")
+        old_sort = request.session.get("%s_sort_field" % what,"")
         if old_sort.startswith("!"):
             old_sort = old_sort[1:]
             old_revsort = True
@@ -618,6 +636,8 @@ def host_list(request,what,page=None):
         hd_fields = [f for f in Hardware._meta.fields]
         hd_columns=[]
         for field in hd_fields:
+            if field.name == 'ipmi_ip' or field.name == 'uuid':
+                continue
             hd_columns.append([field.name,field.verbose_name,'on'])
         hd_items=[]
         app_items=[]
@@ -625,13 +645,10 @@ def host_list(request,what,page=None):
         if osip != '':
             app = App.objects.filter(ip=osip)
             if app:
-                ipsn = Ip_Sn.objects.filter(ip=app[0].ip)
                 app_items = __format_items(app,app_columns)
-                if ipsn:
-                    hd = Hardware.objects.filter(sn=ipsn[0].sn)
-                    hd_items = __format_items(hd,hd_columns)
-                    app_items.extend(hd_items)
-                items = app_items
+                hd = Hardware.objects.filter(uuid=app[0].hardware_uuid)
+                hd_items = __format_items(hd,hd_columns)
+                items = app_items + hd_items
     else:
         if what == 'group':
             items = Host_Group.objects.filter(**filters).order_by(sort_field)
@@ -914,9 +931,7 @@ def __format_items(items, column_names):
     for itemhash in items:
         row = []
         for fieldname,fieldverbosename,fieldstatus in column_names:
-            if fieldname == "ip":
-                html_element = "editlink"
-            elif fieldname == "sn":
+            if fieldname == "ip" or fieldname == "sn":
                 html_element = "editlink"
             else:
                 html_element = "text"
@@ -977,14 +992,8 @@ def __paginate(num_items=0,page=None,items_per_page=None,token=None):
             'start_item'  : start_item,
             'end_item'    : end_item,
             'items_per_page' : items_per_page,
-            'items_per_page_list' : [10,20,50,100,200,500],
+            'items_per_page_list' : [5,10,20,50,100,200,500],
             })
-
-
-
-
-
-
 
 
 

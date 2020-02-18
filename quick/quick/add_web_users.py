@@ -1,58 +1,28 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 from django.http import HttpResponse
-from quick.models import Users,App_Temp,Hardware_Temp,Ip_Sn_Temp
 from datetime import datetime
+import hashlib
+import uuid
+from quick.models import Users,User_Profile,System,Rights
 def add_web_users(request):
-    root = Users(username='root',password='root',email='root@163.com',name='张张',telephone='12345678910',
-    last_login=datetime.now(),is_superuser='yes',is_active='enable',is_online='offline',employee_id='00001')
-    root.save()
-    app_temp = App_Temp(ip                =  'on'
-                        ,osrelease         =  'on'
-                        ,ipmi_ip           =  'on'
-                        ,monitor           =  'on'
-                        ,app_level_1       =  'on'
-                        ,app_level_2       =  'on'
-                        ,app_level_3       =  'on'
-                        ,device_type       =  'on'
-                        ,order_ops_user    =  'on'
-                        ,ops_user          =  'on'
-                        ,ops_team          =  'on'
-                        ,dev_user          =  'on'
-                        ,dev_team          =  'on'
-                        ,app_user          =  'on'
-                        ,app_dept          =  'on'
-                        ,is_cdn            =  'on'
-                        ,environment       =  'on'
-                        ,life_cycle_status =  'on'
-                        ,num_items         =  '0')
-    app_temp.save()
-    hd_temp = Hardware_Temp(sn                     = 'on'
-    ,model                  = 'on'
-    ,vendor                 = 'on'
-    ,cpu_model              = 'on'
-    ,cpu_core               = 'on'
-    ,cpu_fre                = 'on'
-    ,memory                 = 'on'
-    ,net_card               = 'on'
-    ,disk                   = 'on'
-    ,location               = 'on'
-    ,engine_room            = 'on'
-    ,rack                   = 'on'
-    ,u_site                 = 'on'
-    ,order_maintenance      = 'on'
-    ,maintenance_start_time = 'on'
-    ,maintenance_end_time   = 'on'
-    ,maintenance_vendor     = 'on'
-    ,project_name           = 'on'
-    ,project_code           = 'on'
-    ,asset_tag              = 'on'
-    ,uplink                 = 'on'
-    ,num_items              = '0')
-    hd_temp.save()
-    ipsn_temp = Ip_Sn_Temp(ip= 'on',sn= 'on',num_items = '0')
-    ipsn_temp.save()
-    
-    return HttpResponse('已成功添加web用户账号(root:root)')
-    
+    try:
+        password = u"root"
+        password_md5 = hashlib.md5(password.encode(encoding='UTF-8')).hexdigest()
+        root = Users(employee_id='350001',username='root',password=password_md5,email='root@163.com',name='administrator',telephone='12345678910',sex=u'男',photo='none',token=str(uuid.uuid4()).replace('-',''),token_expire_time='2999-10-10 10:10:01',reset_token=str(uuid.uuid4()).replace('-',''),reset_token_expire_time='2999-10-10 10:10:01',is_superuser='yes',is_active='yes',registry_time=datetime.now())
+        root.save()
+        user = Users.objects.filter(username='root')
+        if user:
+            user = user[0]
+            user_profile = User_Profile(user_id=user.id,username=user.username)
+            user_profile.save()
+            system = System()
+            system.save()
+            right = Rights(name='host_single',menu1_title='主机管理',menu1_icon='fa fa-desktop',menu2_title='单机管理',menu2_url='/quick/host/single/list',desc='单机管理')
+            right.save()
+    except Exception, e:
+        return HttpResponse(str(e))
+    else:
+        return HttpResponse('已成功添加web用户账号(root:root)')
+
 
