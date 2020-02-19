@@ -160,8 +160,8 @@ function update_data() {
                                             </div>
                                             <div class="col-md-8">
                                                 <div class="form-group">
-                                                    <input type="text" class="form-control" id="hostsingle" name="groupname" placeholder="请输入主机IP..."/>
-                                                    <select class="form-control" id="hostgroup" name="groupname" style="display:none">
+                                                    <input type="text" class="form-control" id="hostsingle" name="batch_host" placeholder="请输入主机IP..."/>
+                                                    <select class="form-control" id="hostgroup" name="batch_multi_host" style="display:none">
                                                     {% for group in groups %}
                                                         <option>{{ group }}</option>
                                                     {% endfor %}
@@ -186,8 +186,8 @@ function update_data() {
                                             </div>
                                             <div class="col-md-8">
                                                 <div class="form-group">
-                                                    <input type="text" class="form-control"  name="scriptname" id="scriptsingle" placeholder="Ex: ls -l;pwd"/>
-                                                    <select class="form-control" id="scriptgroup" name="scriptname" style="display:none">
+                                                    <input type="text" class="form-control"  name="batch_cmd" id="scriptsingle" placeholder="Ex: ls -l;pwd"/>
+                                                    <select class="form-control" id="scriptgroup" name="batch_script" style="display:none">
                                                     {% for script in scripts %}
                                                         <option>{{ script }}</option>
                                                     {% endfor %}
@@ -301,6 +301,7 @@ function update_data() {
                 </div>
             </div>
 {% endblock content %}
+
 
 
 

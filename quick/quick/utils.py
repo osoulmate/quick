@@ -8,7 +8,7 @@ import gevent
 from threading import Thread
 import re
 import time
-from quick.models import List,Detail
+from quick.models import List,Detail,Batch,Script,Host_Group,Batch_Temp
 ERROR       = "ERROR"
 WARNING     = "WARNING"
 DEBUG       = "DEBUG"
@@ -275,6 +275,69 @@ def __get_host_info(name,ip,user,pwd,obj,iplist):
         except Exception,err:
             logger.eror(err)
         logger.info("End to collect Host(%s) info(vendor,mac,sn...)"%ip)
+def __quick_batch_exec(name,ip,user,pwd,cmd,is_script,owner,shell):
+    if is_script:
+        cmd_info = 'script_name:%s'%cmd
+    else:
+        cmd_info = cmd
+    logger = Logger()
+    logger.info("Host(%s) begin to exec  cmd(%s)"%(ip,cmd_info))
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        ssh.connect(ip,22,user,pwd,timeout=15)
+    except Exception,e:
+        logger.error("ssh host(%s) use username(%s) and password(%s) in port 22 failure !"%(ip,user,pwd))
+        batch_temp = Batch_Temp(name=name,ip=ip,status='failure',result=str(e),owner=owner)
+        batch_temp.save()
+        logger.info("Host(%s) end to exec  cmd(%s)"%(ip,cmd_info))
+    else:
+        if is_script == 'yes':
+            try:
+                filename = '/var/www/quick_content/temp/batch_script'
+                f = open(filename,'w')
+                f.write(cmd)
+                f.close()
+                local_path = filename
+                target_path = '/tmp/batch_script'
+                sftp = ssh.open_sftp()
+                sftp.put(local_path, target_path)
+                cmd = "sudo %s %s"%(shell,target_path)
+                logger.info("on host(%s) execute command(%s)"%(ip,cmd))
+                stdin, stdout, stderr = ssh.exec_command(cmd,bufsize=1,timeout=15,get_pty=True,environment=None)
+                strdata = stdout.read()
+                stderr  = stderr.read()
+                if stderr != '':
+                    logger.error("Host(%s) occur error(%s) in executing script"%(ip,stderr))
+                    e = stderr
+                else:
+                    logger.info("Host(%s) exec command(%s) success"%(ip,cmd_info))
+                    e = strdata
+                batch_temp = Batch_Temp(name=name,ip=ip,status='success',result=str(e),owner=owner)
+                batch_temp.save()
+                ssh.close()
+                logger.info("Host(%s) end to execute script"%ip,cmdinfo)
+            except Exception,err:
+                pass
+            return True
+        else:
+            try:
+                stdin, stdout, stderr = ssh.exec_command(cmd,bufsize=1,timeout=None,get_pty=True,environment=None)
+                strdata = stdout.read()
+                stderr  = stderr.read()
+                if stderr != '':
+                    logger.error("Host(%s) occur error(%s) in execute command(%s)"%(ip,stderr,cmd_info))
+                    e = stderr
+                else:
+                    logger.info("Host(%s) execute command(%s) success"%(ip,cmd_info))
+                    e = strdata
+                batch_temp = Batch_Temp(name=name,ip=ip,status='success',result=str(e),owner=owner)
+                batch_temp.save()
+                ssh.close()
+                logger.info("Host(%s) end to exec  cmd(%s)"%(ip,cmdinfo))
+            except Exception,err:
+                logger.error("Host(%s) occur error(%s) in executing command(%s)"%(ip,str(err)))
+                logger.info("Host(%s) end to exec  cmd(%s)"%(ip,cmd_info))
 def __start_task(thr_obj_fn,name):
     logger = Logger()
     logger.info("Start task(%s)"%name)
@@ -298,6 +361,13 @@ def background_qios(name):
         self.logger.info("i am in background_qios(%s)"%name)
         return __background_qios(name)
     return __start_task(runner,name)
+
+def background_exec(name):
+    def runner(self):
+        self.logger.info("i am in background_exec(%s)"%name)
+        return __background_exec(name)
+    return __start_task(runner,name)
+
 def __background_collect(name):
     tasks = List.objects.filter(name=name)
     gevent_list = []
@@ -318,6 +388,45 @@ def __background_qios(name):
             gevent_list.append(gevent.spawn(__quick_install_os,name,ip,task,ip_list))
         gevent.joinall(gevent_list)
         return True
+def __background_exec(name):
+    try:
+        logger = Logger()
+        batch = Batch.objects.filter(name=name)
+        logger.info("Batch (%s) in __exec"%name)
+        gevent_list = []
+        if batch:
+            batch = batch[0]
+            if batch.is_ip == 'no':
+                host_group = Host_Group.objects.filter(name=batch.ip_name)
+                if host_group:
+                    iplist = (host_group[0].content).split('\r\n')
+                    ip_list = iplist
+                    logger.info("Batch (%s) iplist(%s)"%(name,iplist))
+            else:
+                iplist = batch.ip_name
+                ip_list = generate_ip_list(iplist)
+            if batch.is_script == 'yes':
+                script = Script.objects.filter(name=batch.script_name)
+                if script:
+                    cmd = script[0].content
+                    if script[0].lang.lower() == "shell":
+                        shell = 'sh'
+                    elif script[0].lang.lower() == "python":
+                        shell = 'python'
+                else:
+                    return False
+            else:
+                cmd = batch.script_name
+                shell = 'sh'
+            for ip in ip_list:
+                gevent_list.append(gevent.spawn(__quick_batch_exec,name,ip.strip(),batch.osuser,batch.ospwd,cmd,batch.is_script,batch.owner,shell))
+            gevent.joinall(gevent_list)
+    except Exception,e:
+        logger.error("Batch (%s) occur error(%s) in exec_command(%s)"%(name,str(err),cmd))
+        return False
+    else:
+        return True
+
 class QuickThread(Thread):
     def __init__(self,name,logger):
         Thread.__init__(self)
@@ -426,3 +535,4 @@ def timers(diff=None):
     else:
         diff = '%d秒'%diff
     return diff
+

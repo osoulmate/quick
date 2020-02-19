@@ -199,12 +199,23 @@ class Host_Group(models.Model):
     owner = models.CharField(max_length=50,verbose_name='创建者')
 class Batch(models.Model):
     name = models.CharField(max_length=30,verbose_name='名称')
-    ip = models.GenericIPAddressField(verbose_name='IP')
-    command = models.TextField(verbose_name='命令')
+    ip_name = models.CharField(max_length=50,verbose_name='IP名称')
+    script_name = models.CharField(max_length=50,verbose_name='脚本名称')
     osuser = models.CharField(max_length=20,verbose_name='系统账号')
     ospwd = models.CharField(max_length=50,verbose_name='系统密码')
-    create_time = models.CharField(max_length=50,verbose_name='创建时间',default=datetime.now)
+    is_script = models.CharField(max_length=4,verbose_name='是否脚本')
+    is_ip     = models.CharField(max_length=4,verbose_name='是否IP')
     owner = models.CharField(max_length=50,verbose_name='创建者')
+    create_time = models.CharField(max_length=50,verbose_name='创建时间',default=datetime.now)
+class Batch_Temp(models.Model):
+    name = models.CharField(max_length=30,verbose_name='名称')
+    ip = models.GenericIPAddressField(verbose_name='IP')
+    status    = models.CharField(max_length=50,verbose_name='状态')
+    result    = models.TextField(verbose_name='返回结果')
+    owner = models.CharField(max_length=50,verbose_name='执行人')
+    create_time = models.CharField(max_length=50,verbose_name='执行时间',default=datetime.now)
+    class Meta:
+        unique_together=("name","ip")
 class Vcenter(models.Model):
     ip = models.GenericIPAddressField(verbose_name='IP')
     username = models.CharField(max_length=100,verbose_name='用户名')
@@ -422,5 +433,6 @@ class User_Profile(models.Model):
     install_usetime               = models.CharField(max_length=4,default='on')
     install_status                = models.CharField(max_length=4,default='on')
     install_owner                 = models.CharField(max_length=4,default='on')
+
 
 

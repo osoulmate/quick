@@ -672,37 +672,81 @@ def host_list(request,what,page=None):
             items = __format_items(items,columns)
         elif what == 'batch':
             if request.GET.get("action", ""):
-                """
-                tasks = Batch_Temp.objects.all()
-                for task in tasks:
-                    if task.status !='' or task.result != '':
-                        ip = task.ip
-                        status = task.status
-                        result = task.result
-                        Batch_Temp.get(ip=ip).delete()
-                        return HttpResponse([ip,status,result])
-                """
-                datas = request.session['testdata']
-                if datas:
-                    data = datas[0]
-                    datas.pop(0)
-                    request.session['testdata'] = datas
-                    result = {"ip":data[0],"status":data[1],"result":data[2]}
-                    return HttpResponse(simplejson.dumps(result,ensure_ascii=False),content_type="application/json,charset=utf-8")
-                return HttpResponse([])
+                iplist = request.session.get('batch_iplist',None)
+                batch_name = request.session.get('batch_name',None)
+                if iplist and batch_name:
+                    for ip in iplist:
+                        batch = Batch_Temp.objects.filter(name=batch_name,ip=ip)
+                        if batch:
+                            result = {"ip":ip,"status":batch[0].status,"result":batch[0].result}
+                            iplist.pop(0)
+                            request.session['batch_iplist'] = iplist
+                            return HttpResponse(simplejson.dumps(result,ensure_ascii=False),content_type="application/json,charset=utf-8")
+                        else:
+                            return HttpResponse([])
+                else:
+                    request.session['batch_name'] = ''
+                    request.session['batch_iplist'] = ''
+                    return HttpResponse([])
             elif request.POST.get("hosttype", ""):
+                host_group = Host_Group.objects.all()
+                for group in host_group:
+                    groups.append(group.name)
+                script = Script.objects.all()
+                for s in script:
+                    scripts.append(s.name)
                 hosttype = request.POST.get("hosttype", "")
                 scripttype = request.POST.get("scripttype", "")
-                groupname = request.POST.get("groupname", "")
-                scriptname = request.POST.get("scriptname", "")
+                multi_ip     = request.POST.get("batch_multi_host", "")
+                script_name = request.POST.get("batch_script", "")
                 host_user = request.POST.get("username", "")
                 host_pass = request.POST.get("password", "")
-                #if groupname and scriptname and host_user and host_pass:
-                    #return HttpResponse([hosttype,scripttype,groupname,scriptname,host_user,host_pass])
-                    #something bachgroud_exec()
+                single_ip =  request.POST.get("batch_host", "")
+                cmd = request.POST.get("batch_cmd", "")
+                if not host_user or not host_pass:
+                    return error_page(request,'用户名、密码不能为空!')
+                if single_ip and cmd:
+                    is_ip = 'yes'
+                    ip_name = single_ip.strip()
+                    script_name = cmd
+                    request.session['batch_iplist'] = [ip_name]
+                    ip_name = single_ip.strip()
+                    is_script = 'no'
+                elif single_ip and script_name:
+                    is_ip = 'yes'
+                    ip_name = single_ip.strip()
+                    request.session['batch_iplist'] = [ip_name]
+                    is_script = 'yes'
+                elif multi_ip and cmd:
+                    is_ip = 'no'
+                    ips = Host_Group.objects.filter(name=multi_ip)
+                    script_name = cmd
+                    ip_name = multi_ip
+                    if ips:
+                        request.session['batch_iplist'] = (ips[0].content).split("\r\n")
+                        is_script = 'no'
+                    else:
+                        return error_page(request,'未知主机组!')
+                elif multi_ip and script_name:
+                    is_ip = 'no'
+                    ips = Host_Group.objects.filter(name=multi_ip)
+                    ip_name = multi_ip
+                    if ips:
+                        request.session['batch_iplist'] = (ips[0].content).split("\r\n")
+                        is_script = 'yes'
+                    else:
+                        return error_page(request,'未知主机组!')
+                #return HttpResponse([[hosttype,scripttype,multi_ip,script_name,host_user,host_pass,cmd,single_ip]])
+                else:
+                    pass
+                batch_name = 'batch_%s'%(str(int(time.time())))
+                request.session['batch_name'] = batch_name
+                batch = Batch(name=batch_name,ip_name=ip_name,script_name=script_name,
+                               osuser=host_user,ospwd=host_pass,owner=request.session['username'],
+                               is_ip=is_ip,is_script=is_script)
+                batch.save()
+                utils.background_exec(batch_name)
             else:
-                testdata = [['192.168.1.5','success','haha'],['192.168.1.6','success','hahaha'],['192.168.1.7','failure','none']]
-                request.session['testdata'] = testdata
                 host_group = Host_Group.objects.all()
                 for group in host_group:
                     groups.append(group.name)
@@ -994,6 +1038,8 @@ def __paginate(num_items=0,page=None,items_per_page=None,token=None):
             'items_per_page' : items_per_page,
             'items_per_page_list' : [5,10,20,50,100,200,500],
             })
+
+
 
 
 
