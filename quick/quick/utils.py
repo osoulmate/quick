@@ -536,3 +536,12 @@ def timers(diff=None):
         diff = '%d秒'%diff
     return diff
 
+def is_valid_ip(strdata=None):
+    if not strdata:
+        return False
+    else:
+        if re.match(r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",strdata):
+            return True
+        else:
+            return False
+

@@ -245,6 +245,16 @@ def asset_save(request,what):
                 else:
                     #单个更新
                     app = App.objects.get(ip=kw['ip'])
+                    if kw['ipmi_ip'] == 'N/R' or kw['ipmi_ip'] == '':
+                        #IPMI地址不存在的APP表记录，其字段名'hardware_id'的值
+                        kw['ipmi_ip'] = 'N/R'
+                        kw['hardware_uuid'] = 'N/R'
+                    else:
+                        #IPMI地址存在的APP表记录，其字段名'hardware_id'的值
+                        if utils.is_valid_ip(kw['ipmi_ip']):
+                            kw['hardware_uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,str(kw['ipmi_ip'])))).replace("-","")
+                        else:
+                            return error_page(request,'无效的IP地址！')
                     for k,v in kw.items():
                         setattr(app, k , v)
                     app.save()
@@ -267,10 +277,12 @@ def asset_save(request,what):
                 else:
                     return error_page(request,"序列号不能为空")
             if editmode != 'edit':
-                #单个新增
-                if not kw['ipmi_ip'] :
-                    return error_page(request,"IPMI地址不能为空！如没有IPMI地址，请用业务地址代替")
-                kw['uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,str(kw['ipmi_ip'])))).replace("-","")
+                #单个新增 ,可增加IP地址合法性检查
+                if kw['ipmi_ip'] == 'N/R' or kw['ipmi_ip'] == '':
+                    kw['ipmi_ip'] = 'N/R'
+                    kw['uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,salt))).replace("-","")
+                else:
+                    kw['uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,str(kw['ipmi_ip'])))).replace("-","")
                 hd=Hardware(**kw)
                 hd.save()
                 records.hardware_records = records.hardware_records + 1
@@ -289,7 +301,19 @@ def asset_save(request,what):
                 else:
                     #单个更新
                     hd = Hardware.objects.get(sn=kw['sn'])
-                    kw['uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,str(kw['ipmi_ip'])))).replace("-","")
+                    if hd.ipmi_ip != kw['ipmi_ip']:
+                        if utils.is_valid_ip(kw['ipmi_ip']):
+                            kw['uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,str(kw['ipmi_ip'])))).replace("-","")
+                            is_exist = Hardware.objects.filter(uuid=kw['uuid'])
+                            if is_exist:
+                                return error_page(request,'重复的带外地址！')
+                            for field in fields:
+                                if field.name == "uuid" or field.name == 'ipmi_ip':
+                                    continue
+                                kw[field.name] = getattr(hd,field.name,'NULL')
+                            Hardware.objects.get(sn=kw['sn']).delete()
+                        else:
+                            return error_page(request,'无效的IP地址！')
                     for k,v in kw.items():
                         setattr(hd, k , v)
                     hd.save()
@@ -344,19 +368,17 @@ def asset_import(request,what):
                 for field in fields:
                     v =  record.get((field.verbose_name).decode(encoding='UTF-8',errors='strict'),'N/R')
                     if field.name == 'ip' and v == '':
-                        continue
+                        return HttpResponse('存在业务IP为空的记录，导入失败！')
                     if not v:
                         v = 'N/R'
                     kw[field.name] = v
                 if kw['ipmi_ip'] == 'N/R' or kw['ipmi_ip'] == '':
                     #IPMI地址不存在的APP表记录，其字段名'hardware_id'的值
-                    kw['ipmi_ip'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,salt))).replace("-","")
+                    kw['ipmi_ip'] = 'N/R'
                     kw['hardware_uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,salt))).replace("-","")
                 else:
                     #IPMI地址存在的APP表记录，其字段名'hardware_id'的值
                     kw['hardware_uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,str(kw['ipmi_ip'])))).replace("-","")
-                if kw['ip'] == 'N/R' or kw['ip'] == '':
-                    kw['ip'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,salt))).replace("-","")
                 try:
                     salt = base64.encodestring(urandom.read(25)) + str(time.time())
                     kw['uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,salt))).replace("-","")
@@ -380,15 +402,17 @@ def asset_import(request,what):
                     v =  record.get((field.verbose_name).decode(encoding='UTF-8',errors='strict'),'N/R')
                     #忽略SN为空的记录
                     if field.name == 'sn' and v == '':
-                        continue
+                        return HttpResponse('存在序列号为空的记录，导入失败！')
                     if not v:
                         v = 'N/R'
                     kw[field.name] = v
-                if kw['ipmi_ip'] == 'N/R' or kw['ipmi_ip'] == '':
-                    kw['ipmi_ip'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,salt))).replace("-","")
-                try:
+                if kw['ipmi_ip'] == '' or kw['ipmi_ip'] == 'N/R':
+                    kw['ipmi_ip'] = 'N/R'
                     salt = base64.encodestring(urandom.read(25)) + str(time.time())
+                    kw['uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,salt))).replace("-","")
+                else:
                     kw['uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,str(kw['ipmi_ip'])))).replace("-","")
+                try:
                     hd=Hardware(**kw)
                     hd.save()
                 except Exception,e:
@@ -1038,6 +1062,7 @@ def __paginate(num_items=0,page=None,items_per_page=None,token=None):
             'items_per_page' : items_per_page,
             'items_per_page_list' : [5,10,20,50,100,200,500],
             })
+
 
 
 
