@@ -58,9 +58,24 @@ setInterval(update_data,2000)
 function update_data() {
   $.get("/quick/host/batch/list?action='exec'",function(data,status){
     if (data){
-    console.log(data)
+    //console.log(data)
     var current_msg = $("#result").val();
-    var msg = format("{0}                  {1}                                     {2}", data.ip, data.status,data.result);
+    var msg = ''
+    var temp = data.result.split('\r\n')
+    //console.log(temp)
+    if (temp.length >1 ){
+        for(var i=0,len=temp.length; i<len; i++){
+            //console.log(temp[i])
+            if(i==0){
+                msg = format("{0}        {1}          {2}\n", data.ip, data.status,temp[0]);
+            }else{
+                msg = msg + format("                                          {0}\n",temp[i])
+            }
+        }
+        //console.log(msg)
+    }else{
+        msg = format("{0}        {1}          {2}", data.ip, data.status,data.result);
+    } 
     var append_msg = msg + "\n" + current_msg;
     $("#result").val(append_msg);
     }
@@ -301,6 +316,7 @@ function update_data() {
                 </div>
             </div>
 {% endblock content %}
+
 
 
 

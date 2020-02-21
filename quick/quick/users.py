@@ -9,10 +9,12 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect
 from django.core import serializers
 import simplejson
+import hashlib
+import uuid
 from datetime import datetime
 import install
 import assets
-from quick.models import Users,Groups,Rights,User_Group,Group_Right,User_Right
+from quick.models import Users,Groups,Rights,User_Group,Group_Right,User_Right,User_Profile
 from error_page import error_page
 import oauth
 from login import login
@@ -103,29 +105,33 @@ def user_save(request,what):
         is_active = request.POST.get('is_active', "")
         is_superuser = request.POST.get('is_superuser', "")
         if is_active:
-            is_active = 'enable'
+            is_active = 'yes'
         else:
-            is_active = 'disable'
+            is_active = 'no'
         if is_superuser:
             is_superuser='yes'
         else:
             is_superuser='no'
         if editmode != 'edit':
-            user=Users(username=username,password=pwd,email=email,name=name,employee_id='',
-                           telephone=telephone,last_login=datetime.now(),is_superuser=is_superuser,
-                           is_active=is_active,is_online='offline',registry_time=datetime.now())
-            user.save()
-            user = Users.objects.get(username=username)
-            if user and group_name_list:
-                for group_name in group_name_list:
-                    role = Groups.objects.get(name=group_name)
-                    user_role= User_Group(user_id=user.id,group_id=role.id)
-                    user_role.save()
-            if user and right_name_list:
-                for right_name in right_name_list:
-                    right = Rights.objects.get(name=right_name)
-                    user_right= User_Right(user_id=user.id,right_id=right.id)
-                    user_right.save()
+            password_md5 = hashlib.md5(pwd.encode(encoding='UTF-8')).hexdigest()
+            try:
+                user=Users(employee_id=employee_id,username=username,password=password_md5,email=email,name=name,telephone=telephone,sex='f',photo='none',token=str(uuid.uuid4()).replace('-',''),token_expire_time=str(uuid.uuid4()).replace('-',''),reset_token=str(uuid.uuid4()).replace('-',''),reset_token_expire_time=str(uuid.uuid4()).replace('-',''),is_superuser=is_superuser,is_active=is_active,registry_time=datetime.now())
+                user.save()
+                user = Users.objects.get(username=username)
+                user_profile = User_Profile(user_id=user.id,username=user.username)
+                user_profile.save()
+                if user and group_name_list:
+                    for group_name in group_name_list:
+                        role = Groups.objects.get(name=group_name)
+                        user_role= User_Group(user_id=user.id,group_id=role.id)
+                        user_role.save()
+                if user and right_name_list:
+                    for right_name in right_name_list:
+                        right = Rights.objects.get(name=right_name)
+                        user_right= User_Right(user_id=user.id,right_id=right.id)
+                        user_right.save()
+            except Exception,e:
+                return error_page(request,str(e))
         else:
             user = Users.objects.get(username=username)
             user.name = name
@@ -265,8 +271,9 @@ def user_list(request,what,page=None):
     else:
         return HttpResponse("not found!")
     columns=[]
+    exclude = ['password','id','employee_id','photo','token','token_expire_time','reset_token','reset_token_expire_time','sex']
     for field in fields:
-        if field.name == 'password' or field.name == 'id' or field.name == 'employee_id':
+        if field.name in exclude:
             continue
         columns.append([field.name,field.verbose_name,'on'])
     t = get_template("user_list.tmpl")
@@ -304,18 +311,20 @@ def user_domulti(request,what,multi_mode=None, multi_arg=None):
         elif multi_mode == "account" and multi_arg == 'disable':
             for username in names:
                 user = Users.objects.get(username=username)
-                user.is_active='disable'
+                user.is_active='no'
                 user.save()
         elif multi_mode == "account" and multi_arg == 'enable':
             for username in names:
                 user = Users.objects.get(username=username)
-                user.is_active='enable'
+                user.is_active='yes'
                 user.save()
         elif multi_mode == "account" and multi_arg == 'offline':
             for username in names:
+                '''
                 user = Users.objects.get(username=username)
                 user.is_online='offline'
                 user.save()
+                '''
         else:
             return error_page(request,"未知操作")
     elif what == "role":
@@ -343,14 +352,16 @@ def user_manual(request,what,action=None,name=None):
         return login(request, next="/quick/user/%s/list"%what, expired=True)
     if what == 'user':
         if action == "delete" and name:
-                user = Users.objects.get(username=name)
-                User_Right.objects.filter(user_id=user.id).delete()
-                User_Group.objects.filter(user_id=user.id).delete()
-                user.delete()
+            user = Users.objects.get(username=name)
+            User_Right.objects.filter(user_id=user.id).delete()
+            User_Group.objects.filter(user_id=user.id).delete()
+            user.delete()
         elif action == "offline" and name:
-                user = Users.objects.get(username=name)
-                user.is_online='offline'
-                user.save()
+            '''
+            user = Users.objects.get(username=name)
+            user.is_online='offline'
+            user.save()
+            '''
         else:
             return error_page(request,"未知操作")
     elif what == 'role':
@@ -456,6 +467,7 @@ def myinfo(request):
         'menu'           : request.session['%s_menu'%request.session['username']]
     }))
     return HttpResponse(html)
+
 
 
 

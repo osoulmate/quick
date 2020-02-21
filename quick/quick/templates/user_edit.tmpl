@@ -42,8 +42,8 @@ function on_form_submit()
                             </li>
                             <li class="nav-item">
                                 {% ifequal what 'user/user'  %}<a href="/quick/user/user/list/">用户管理</a>{% endifequal %}
-                                {% ifequal what 'user/role'  %}<a href="/quick/user/user/list/">角色管理</a>{% endifequal %}
-                                {% ifequal what 'user/right'  %}<a href="/quick/user/user/list/">权限管理</a>{% endifequal %}
+                                {% ifequal what 'user/role'  %}<a href="/quick/user/role/list/">角色管理</a>{% endifequal %}
+                                {% ifequal what 'user/right'  %}<a href="/quick/user/right/list/">权限管理</a>{% endifequal %}
                             </li>
                         </ul>
                     </div>
@@ -82,6 +82,16 @@ function on_form_submit()
                                                 <div class="form-group col-md-4">
                                                     <br/><br/>
                                                     <p class="form-text text-muted">由字母、数字、下划线组成</p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="name">员工ID</label>
+                                                    <input type="text" class="form-control" id="employee_id" name="employee_id" value="{{ item.employee_id }}"/>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <p class="form-text text-muted"></p>
                                                 </div>
                                             </div>
                                             <div class="row">
@@ -126,7 +136,7 @@ function on_form_submit()
                                             </div>
                                             <div class="row">
                                                 <div class="form-group col-md-8">
-                                                    {% ifequal item.is_active "enable" %}
+                                                    {% ifequal item.is_active "yes" %}
                                                     <input type="checkbox" name="is_active" id="is_active" checked>&nbsp;
                                                     {% else %}
                                                     <input type="checkbox" name="is_active" id="is_active" >&nbsp;
@@ -338,6 +348,7 @@ function on_form_submit()
                 </div>
             </div>
 {% endblock content %}
+
 
 
 

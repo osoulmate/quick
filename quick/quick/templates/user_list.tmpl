@@ -7,7 +7,7 @@
                         <h4 class="page-title">用户管理</h4>
                         <ul class="breadcrumbs">
                             <li class="nav-home">
-                                <a href="#">
+                                <a href="/quick">
                                     <i class="flaticon-home"></i>
                                 </a>
                             </li>
@@ -22,13 +22,13 @@
                             </li>
                             <li class="nav-item">
                                 {% ifequal what "user/user" %}
-                                <a href="#">用户列表</a>
+                                <a href="/quick/user/user/list">用户列表</a>
                                 {% endifequal %}
                                 {% ifequal what "user/role" %}
-                                <a href="#">角色列表</a>
+                                <a href="/quick/user/role/list">角色列表</a>
                                 {% endifequal %}
                                 {% ifequal what "user/right" %}
-                                <a href="#">权限列表</a>
+                                <a href="/quick/user/right/list">权限列表</a>
                                 {% endifequal %}
                             </li>
                         </ul>
@@ -84,12 +84,15 @@
                                                 </td>
                                                 {% for value in item %}
                                                 <td>
-                                                    {% if value.1 == 'yes' %}是
-                                                    {% elif value.1 == 'no' %}否
-                                                    {% elif value.1 == 'enable' %}启用
-                                                    {% elif value.1 == 'disable' %}禁用
-                                                    {% elif value.1 == 'online' %}在线
-                                                    {% elif value.1 == 'offline' %}离线
+
+                                                    {% if value.1 == 'yes' %}
+                                                    {% ifequal value.0  'is_active' %}启用
+                                                    {% else %} 是
+                                                    {% endifequal %}
+                                                    {% elif value.1 == 'no' %}
+                                                    {% ifequal value.0 'is_active' %}禁用
+                                                    {% else %} 否
+                                                    {% endifequal %}
                                                     {% else %} {{value.1}}
                                                     {% endif %}
                                                 </td>
@@ -118,6 +121,7 @@
                 </div>
             </div>
 {% endblock content %}
+
 
 
 
