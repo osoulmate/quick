@@ -491,6 +491,7 @@ $(document).ready(function()
                         <div class="card-title">{% ifequal editmode 'edit'  %}编辑{% else %}添加{% endifequal %}{{ what|capfirst }}{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}</div>
                     </div>
                     <div class="card-body">
+                        {% ifnotequal what 'setting' %}
                         <ul class="nav nav-pills nav-secondary" id="pills-tab" role="tablist">
                         {% for key,value in sections.items|sort %}
                             <li class="nav-item">
@@ -515,6 +516,7 @@ $(document).ready(function()
                             </li>
                         {% endfor %}
                         </ul>
+                        {% endifnotequal %}
                         <div class="tab-content mt-2 mb-3" id="pills-tabContent">
                         {% for key,value in sections.items|sort %}
                             {% ifequal value.name "General" %}
@@ -656,4 +658,5 @@ $(document).ready(function()
     </div>
 </div>
 {% endblock content %}
+
 

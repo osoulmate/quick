@@ -75,9 +75,21 @@ def ajax(request):
                     task = User_Profile.objects.get(username=request.session['username'])
                     setattr(task,k,v)
                     task.save()
+        elif what == 'myinfo':
+            if action == 'setup':
+                header_style = request.POST.get('header',None)
+                body_style = request.POST.get('body',None)
+                style = User_Profile.objects.get(username=request.session['username'])
+                if header_style:
+                    setattr(style,'topbar',header_style)
+                    style.save()
+                if body_style:
+                    setattr(style,'background',body_style)
+                    style.save()
     except Exception,e:
         return HttpResponse(str(e))
     else:
         return HttpResponse('ok')
+
 
 
