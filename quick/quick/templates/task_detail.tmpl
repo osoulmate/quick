@@ -7,7 +7,7 @@
                         <h4 class="page-title">系统安装</h4>
                         <ul class="breadcrumbs">
                             <li class="nav-home">
-                                <a href="#">
+                                <a href="/quick">
                                     <i class="flaticon-home"></i>
                                 </a>
                             </li>
@@ -21,7 +21,7 @@
                                 <i class="flaticon-right-arrow"></i>
                             </li>
                             <li class="nav-item">
-                                <a href="#">任务详情</a>
+                                <a href="/quick/install/detail/list">任务详情</a>
                             </li>
                         </ul>
                     </div>
@@ -56,13 +56,21 @@
                                                   <label for="itemsall"> <i></i></label> 
                                                 </th>
                                                 {% for value in columns %}
+                                                {% if value.4 == 'on' %}
                                                 <th>
                                                   <a href="javascript:action_sort('{{ what }}','{{ value.0 }}');">{{ value.2 }}</a>
                                                   {% ifequal value.1 "asc" %}&darr;{% endifequal %}
                                                   {% ifequal value.1 "desc" %}&uarr;{% endifequal %}
                                                 </th>
+                                                {% else %}
+                                                <th style="display:none;">
+                                                  <a href="javascript:action_sort('{{ what }}','{{ value.0 }}');">{{ value.2 }}</a>
+                                                  {% ifequal value.1 "asc" %}&darr;{% endifequal %}
+                                                  {% ifequal value.1 "desc" %}&uarr;{% endifequal %}
+                                                </th>
+                                                {% endif %}
                                                 {% endfor %}
-                                                <th style="width:180px;"><a href="javascript:;">操作</a></th>
+                                                <th style="width:200px;"><a href="javascript:;">操作</a></th>
                                               </tr>
                                             </thead>
                                             <tbody>
@@ -73,6 +81,7 @@
                                                   <label for="{{ item.0.1 }}-{{ item.1.1 }}"> <i></i></label> 
                                                 </td>
                                             {% for value in item %}
+                                              {% if value.4 == 'on' %}
                                               {% ifequal value.0 "name" %}
                                               <td><a href="/quick/install/edit/{{ value.1 }}">{{ value.1 }}</a></td>
                                               {% endifequal %}
@@ -85,13 +94,14 @@
                                               {% if value.2 == "text" and value.0 == "usetime" %}
                                               <td id="{{ item.0.1 }}-{{ item.1.1 }}|usetime" class="quick-usetime">{{ value.1 }}</td>
                                               {% endif %}
-
                                               {% if value.2 == "text" and value.0 == "status" %}
                                               <td id="{{ item.0.1 }}-{{ item.1.1 }}|progress" class="quick-progress" title={{ value.1 }}>{{ value.1 }}</td>
                                               {% endif %}
-
                                               {% if value.2 == "text" and value.0 != "status" and value.0 != "usetime"%}
                                               <td title="{{ value.1 }}">{{ value.1 }}</td>
+                                              {% endif %}
+                                              {% else %}
+                                              <td style="display:none;" title="{{ value.1 }}">{{ value.1 }}</td>
                                               {% endif %}
                                             {% endfor %}
                                                 <td>
@@ -116,6 +126,7 @@
                 </div>
             </div>
 {% endblock content %}
+
 
 
 

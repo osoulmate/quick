@@ -1,13 +1,19 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 from django.http import HttpResponseRedirect
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_protect
 import simplejson
 import oauth
 from login import login
 from error_page import error_page
 # ======================================================================
+@require_POST
+@csrf_protect
 def modify_list(request, obj, what, pref, value=None):
     if not oauth.test_user_authenticated(request): 
+        if what in ['login','manual','asset'] and obj == 'log':
+            return login(request, next="/quick/%s/%s"%(obj,what), expired=True)
         return login(request, next="/quick/%s/%s/list"%(obj,what), expired=True)
 
     if pref == "sort":
@@ -56,6 +62,7 @@ def modify_list(request, obj, what, pref, value=None):
         return HttpResponseRedirect("/quick/%s/%s"%(obj,what))
     # redirect to the list page
     return HttpResponseRedirect("/quick/%s/%s/list" % (obj,what))
+
 
 
 

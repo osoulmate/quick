@@ -16,7 +16,7 @@ import oauth
 import utils
 from login import login
 from error_page import error_page
-from quick.models import List,Detail,Users
+from quick.models import *
 #========================================================================
 @csrf_protect
 def task_edit(request,task_name=None, editmode='edit'):
@@ -98,17 +98,37 @@ def tasklist(request,what,page=None):
         sort_field=sort_field.replace("!","-")
     filters = simplejson.loads(request.session.get("%s_filters" % what, "{}"))
     user = Users.objects.get(username=request.session['username'])
+    columns=[]
     if user.is_superuser=='no':
         filters['owner'] = request.session['username']
+    user_profile = User_Profile.objects.filter(username=request.session['username'])
+    if user_profile:
+        user_profile = user_profile[0]
+    else:
+        return HttpResponse("unknown user view!")
     now = int(time.time())
     if what == "resume":
-        columns = [ "name","ips","usetime","status","owner"]
+        include_columns = [ "name","ips","usetime","status","owner"]
+        fields = [f for f in List._meta.fields]
+        for field in fields:
+            if field.name in include_columns:
+                k = "install_%s"%field.name
+                columns.append([field.name,field.verbose_name,getattr(user_profile,k,'on')])
+            else:
+                continue
         batchactions = [["删除","delete","delete"],]
         tasks = List.objects.filter(flag='resume',**filters).order_by(sort_field)
         t = "task_list.tmpl"
 
     if what == 'detail':
-        columns = [ "name","ip","mac","hardware_model","hardware_sn","apply_template","usetime","status","owner"]
+        include_columns = [ "name","ip","mac","hardware_model","hardware_sn","apply_template","usetime","status","owner"]
+        fields = [f for f in Detail._meta.fields]
+        for field in fields:
+            if field.name in include_columns:
+                k = "install_%s"%field.name
+                columns.append([field.name,field.verbose_name,getattr(user_profile,k,'on')])
+            else:
+                continue
         batchactions = [["删除","delete","delete"],
                         ["开机","power","on"],
                         ["关机","power","off"],
@@ -124,17 +144,23 @@ def tasklist(request,what,page=None):
         tasks = Detail.objects.filter(**filters).order_by(sort_field)
         t = "task_detail.tmpl"
     if what == 'history':
-        columns = [ "name","ips","usetime","status","owner"]
+        include_columns = [ "name","ips","usetime","status","owner"]
+        fields = [f for f in List._meta.fields]
+        for field in fields:
+            if field.name in include_columns:
+                k = "install_%s"%field.name
+                columns.append([field.name,field.verbose_name,getattr(user_profile,k,'on')])
+            else:
+                continue
         batchactions = [["删除","delete","delete"],]
         tasks = List.objects.filter(flag='history',**filters).order_by(sort_field)
         t = "task_history.tmpl"
-
     (items,pageinfo) = __paginate(tasks,page=page,items_per_page=limit)
     if filters.get('owner',''):
         del filters['owner']
     t = get_template(t)
     html = t.render(RequestContext(request,{
-        'what'     : 'install/%s'%what,
+        'what'           : 'install/%s'%what,
         'columns'        : __format_columns(columns,sort_field_old),
         'items'          : __format_items(items,columns),
         'pageinfo'       : pageinfo,
@@ -415,86 +441,11 @@ def task_domulti(request, what, multi_mode=None, multi_arg=None):
         return error_page(request,"未知操作")
     return HttpResponseRedirect("/quick/install/%s/list"%what)
 # ======================================================================
-@require_POST
-@csrf_protect
-def modify_list(request, what, pref, value=None):
-    """
-    本功能用于修改任务列表、任务详情、历史任务页面显示的条目数和条目排序准则
-    """
-    if not oauth.test_user_authenticated(request): 
-        return login(request, next="/quick/install/%s/list" %what, expired=True)
-
-    if pref == "sort":
-
-        old_sort = request.session.get("%s_sort_field" % what,"name")
-        if old_sort.startswith("!"):
-            old_sort = old_sort[1:]
-            old_revsort = True
-        else:
-            old_revsort = False
-
-        if old_sort == value and not old_revsort:
-            value = "!" + value
-        request.session["%s_sort_field" % what] = value
-        request.session["%s_page" % what] = 1
-
-    elif pref == "limit":
-        # 每页显示的条目数
-        request.session["%s_limit" % what] = int(value)
-        request.session["%s_page" % what] = 1
-
-    elif pref == "page":
-        # 当前页面数字
-        request.session["%s_page" % what] = int(value)
-
-    elif pref in ("addfilter","removefilter"):
-        # filters limit what we show in the lists
-        # they are stored in json format for marshalling
-        filters = simplejson.loads(request.session.get("%s_filters" % what, "{}"))
-        if pref == "addfilter":
-            (field_name, field_value) = value.split(":", 1)
-            # add this filter
-            filters[field_name] = field_value
-        else:
-            # remove this filter, if it exists
-            if filters.has_key(value):
-                del filters[value]
-        # save session variable
-        request.session["%s_filters" % what] = simplejson.dumps(filters)
-        # since we changed what is viewed, reset the page
-        request.session["%s_page" % what] = 1
-
-    else:
-        return error_page(request, "无效请求")
-
-    # redirect to the list page
-    return HttpResponseRedirect("/quick/install/%s/list" % what)
-#==================================================================================
-
-
 def __format_columns(column_names,sort_field):
     """
 
     """
     dataset = []
-    name_translate={
-        "name":"任务名称",
-        "ips":"IP",
-        'notice_mail':'通知邮箱',
-        'drive_path':'驱动路径',
-        'netmask':'掩码',
-        'gateway':'网关',
-        'ipmi_ip':'带外地址',
-        'vendor':'厂商',
-        "usetime":"已用时间",
-        "status":"状态/进度",
-        "owner":"创建者",
-        "ip":"主机IP",
-        "mac":"主机MAC",
-        "hardware_model":"硬件型号",
-        "hardware_sn":"硬件SN",
-        "apply_template":"应用模板"
-    }
     # Default is sorting on name
     if sort_field is not None:
         sort_name = sort_field
@@ -507,32 +458,29 @@ def __format_columns(column_names,sort_field):
     else:
         sort_order = "asc"
     i=0
-    for fieldname in column_names:
+    for fieldname,fieldverbosename,fieldstatus in column_names:
         i=i+1
         fieldorder = "none"
         if fieldname == sort_name:
             fieldorder = sort_order
-        dataset.append([fieldname,fieldorder,name_translate[fieldname],i,'on'])
+        dataset.append([fieldname,fieldorder,fieldverbosename,i,fieldstatus])
     return dataset
 
 
 #==================================================================================
 
 def __format_items(items, column_names):
-    """
-
-    """
     dataset = []
     for itemhash in items:
         row = []
-        for fieldname in column_names:
+        for fieldname,fieldverbosename,fieldstatus in column_names:
             if fieldname == "name":
                 html_element = "name"
             elif fieldname in [ "ip", "apply_template" ]:
                 html_element = "editlink"
             else:
                 html_element = "text"
-            row.append([fieldname,itemhash.__dict__[fieldname],html_element])
+            row.append([fieldname,itemhash.__dict__[fieldname],html_element,fieldverbosename,fieldstatus])
         dataset.append(row)
     return dataset
 
@@ -609,6 +557,7 @@ def __mail(task_name,to):
     msg.attach_alternative(html_content, "text/html")
     msg.send()
     return 1
+
 
 
 
