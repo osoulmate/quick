@@ -178,7 +178,7 @@ def task_save(request,editmode='edit'):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/install/save/%s" % task_name, expired=True)
     editmode = request.POST.get('editmode', 'edit')
-    osip = request.POST.get('osip', "").replace('\n','').replace('\r','').replace(' ','')
+    osip = request.POST.get('osip', "").replace('\n','').replace('\r','')
     if osip == '':
         return error_page(request, "IP地址不能为空")
     else:
