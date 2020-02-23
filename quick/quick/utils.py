@@ -338,6 +338,7 @@ def __quick_batch_exec(name,ip,user,pwd,cmd,is_script,owner,shell):
             except Exception,err:
                 logger.error("Host(%s) occur error(%s) in executing command(%s)"%(ip,str(err)))
                 logger.info("Host(%s) end to exec  cmd(%s)"%(ip,cmd_info))
+            return True
 def __start_task(thr_obj_fn,name):
     logger = Logger()
     logger.info("Start task(%s)"%name)
