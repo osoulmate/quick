@@ -21,38 +21,24 @@
                                     </div>
                                 </div>
                                 <div class="card-body">
-                                <form name="editform" method="post" action="/quick/user/{{ what }}">{% csrf_token %}
+                                <form name="editform" method="post" action="/quick/user/save">{% csrf_token %}
                                 <div class="tab-content mt-2 mb-3" id="pills-tabContent">
                                     <div class="tab-pane fade show active" id="tab-profile" role="tabpanel" aria-labelledby="profile">
                                         <div class="row mt-3">
                                         {% for item in items %}
-                                            {% if item.0 == 'username' or item.0 == 'employee_id' %}
+                                            {% if item.0 == 'username' %}
                                             <div class="col-md-6">
                                                 <div class="form-group form-group-default">
                                                     <label for="{{ item.0 }}">{{ item.3 }}</label>
                                                     <input class="form-control"  id="{{ item.0 }}" name="{{ item.0 }}" type="text" style="background:#ccc;" readonly value="{{ item.1 }}">
                                                 </div>
                                             </div>
-                                            {% elif item.0 == 'name' or item.0 == 'email' %}
+                                            {% elif item.0 == 'sex' %}
                                             <div class="col-md-6">
                                                 <div class="form-group form-group-default">
                                                     <label for="{{ item.0 }}">{{ item.3 }}</label>
-                                                    <input class="form-control" id="{{ item.0 }}" name="{{ item.0 }}" type="text" value="{{ item.1 }}">
-                                                </div>
-                                            </div>
-                                            {% elif item.0 == 'birth' %}
-                                            <div class="col-md-4">
-                                                <div class="form-group form-group-default">
-                                                    <label for="{{ item.0 }}">{{ item.3 }}</label>
-                                                    <input type="text" class="form-control" value="02/02/2020" id="{{ item.0 }}" name="{{ item.0 }}" placeholder="出生日期">
-                                                </div>
-                                            </div>
-                                            {% elif item.0 == 'sex' %}
-                                            <div class="col-md-4">
-                                                <div class="form-group form-group-default">
-                                                    <label for="{{ item.0 }}">{{ item.3 }}</label>
-                                                    <select class="form-control" id="{{ item.0 }}">
-                                                        {% if item.1 == 'f' %}
+                                                    <select class="form-control" id="{{ item.0 }}" name="{{ item.0 }}">
+                                                        {% if item.1 == '女' %}
                                                         <option selected>女</option>
                                                         <option>男</option>
                                                         {% else %}
@@ -62,24 +48,25 @@
                                                     </select>
                                                 </div>
                                             </div>
-                                            {% elif item.0 == 'telephone' %}
-                                            <div class="col-md-4">
+                                            {% elif item.0 == 'addr' %}
+                                            <div class="col-md-12">
                                                 <div class="form-group form-group-default">
                                                     <label for="{{ item.0 }}">{{ item.3 }}</label>
-                                                    <input type="text" class="form-control" value="13312231981" id="{{ item.0 }}" name="{{ item.0 }}" placeholder="Phone">
+                                                    <input type="text" class="form-control" value="{{ item.1 }}" name="address" placeholder="Address">
+                                                </div>
+                                            </div>
+                                            {% else %}
+                                            <div class="col-md-6">
+                                                <div class="form-group form-group-default">
+                                                    <label for="{{ item.0 }}">{{ item.3 }}</label>
+                                                    <input class="form-control" id="{{ item.0 }}" name="{{ item.0 }}" type="text" value="{{ item.1 }}">
                                                 </div>
                                             </div>
                                             {% endif %}
                                             {% endfor %}
-                                            <div class="col-md-12">
-                                                <div class="form-group form-group-default">
-                                                    <label>地址</label>
-                                                    <input type="text" class="form-control" value="地球、中国、上海" name="address" placeholder="Address">
-                                                </div>
-                                            </div>
                                         </div>
                                         <div class="text-right mt-3 mb-3">
-                                            <input class="btn btn-success" type="submit" name="submit" onClick="on_form_submit();" value="更新" />
+                                            <input class="btn btn-success" type="submit" name="submit" value="更新" />
                                             <input class="btn btn-danger" type="button" onClick="window.location='/quick/user/{{ what }}';" value="取消" />
                                         </div>
                                     </div>
@@ -121,6 +108,7 @@
                                         </ul>
                                     </div>
                                 </div>
+                                <form name="editform" method="post" action="/quick/user/save">{% csrf_token %}
                                 <div class="card-body">
                                         <div class="row mt-3">
                                             <div class="col-md-12">
@@ -139,10 +127,11 @@
                                             </div>
                                         </div>
                                         <div class="text-right mt-3 mb-3">
-                                            <input class="btn btn-success" type="submit" name="submit" onClick="on_form_submit();" value="重置" />
+                                            <input class="btn btn-success" type="submit" name="submit" value="重置" />
                                             <input class="btn btn-danger" type="button" onClick="window.location='/quick/user/{{ what }}';" value="取消" />
                                         </div>
                                 </div>
+                                </form>
                             </div>
                             {% endifequal %}
                         </div>
@@ -207,5 +196,6 @@ $('.changeBackgroundColor').on('click', function(){
 </script>
 {% endifequal %}
 {% endblock content %}
+
 
 

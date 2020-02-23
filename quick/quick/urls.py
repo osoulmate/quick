@@ -2,6 +2,7 @@ from django.conf.urls import patterns
 import login
 import do_login
 import do_logout
+import common
 import index
 import views
 import install
@@ -35,7 +36,7 @@ urlpatterns = patterns('',
 
     (r'^(?P<what>\w+)/modifylist/(?P<pref>[!\w]+)/(?P<value>.+)$', views.modify_list),
 
-    (r'^(?P<obj>\w+)/(?P<what>\w+)/modifylist/(?P<pref>[!\w]+)/(?P<value>.+)$', assets.modify_list),
+    (r'^(?P<obj>\w+)/(?P<what>\w+)/modifylist/(?P<pref>[!\w]+)/(?P<value>.+)$', common.modify_list),
     (r'^asset/(?P<what>\w+)/list(/(?P<page>\d+))?', assets.asset_list),
     (r'^asset/(?P<what>\w+)/edit/(?P<obj_name>.+)$', assets.asset_edit, {'editmode': 'edit'}),
     (r'^asset/(?P<what>\w+)/edit$', assets.asset_edit, {'editmode': 'new'}),
@@ -56,10 +57,7 @@ urlpatterns = patterns('',
     (r'^presence/save$', assets.presence_save),
     (r'^virtual/list(/(?P<page>\d+))?$', assets.virtual_list),
 
-    (r'^log/login(/(?P<page>\d+))?$', users.log_login),
-    (r'^log/manual(/(?P<page>\d+))?$', users.log_manual),
-
-
+    (r'^log/(?P<what>\w+)(/(?P<page>\d+))?$', users.logit),
     (r'^ippool/list(/(?P<page>\d+))?$', assets.ippool_list),
     (r'^ippool/edit$', assets.ippool_edit, {'editmode':'new'}),
     (r'^ippool/edit/(?P<ip>.+)$', assets.ippool_edit, {'editmode':'edit'}),
@@ -90,14 +88,15 @@ urlpatterns = patterns('',
     (r'^install/execute/(?P<task_name>.+)$', install.task_execute),
     (r'^install/(?P<what>\w+)/delete/(?P<task_name>.+)$', install.task_delete),
     (r'^install/(?P<what>\w+)/multi/(?P<multi_mode>.+)/(?P<multi_arg>.+)$', install.task_domulti),
-    (r'^install/(?P<what>\w+)/modifylist/(?P<pref>[!\w]+)/(?P<value>.+)$', install.modify_list),
+    #(r'^install/(?P<what>\w+)/modifylist/(?P<pref>[!\w]+)/(?P<value>.+)$', install.modify_list),
     (r'^install/(?P<what>\w+)/list(/(?P<page>\d+))?', install.tasklist),
 
     (r'^user/changepwd$', users.changepwd),
     (r'^user/myinfo$', users.myinfo),
+    (r'^user/save$', users.my_save),
     (r'^user/(?P<what>\w+)/edit$', users.user_edit, {'editmode':'new'}),
     (r'^user/(?P<what>\w+)/edit/(?P<obj_name>.+)$', users.user_edit, {'editmode':'edit'}),
-    (r'^user/(?P<what>\w+)/modifylist/(?P<pref>[!\w]+)/(?P<value>.+)$', users.modify_list),
+    #(r'^user/(?P<what>\w+)/modifylist/(?P<pref>[!\w]+)/(?P<value>.+)$', users.modify_list),
     (r'^user/(?P<what>\w+)/list/(/(?P<page>\d+))?$', users.user_list),
     (r'^user/(?P<what>\w+)/save$', users.user_save),
     (r'^user/(?P<what>\w+)/multi/(?P<multi_mode>.+)/(?P<multi_arg>.+)$', users.user_domulti),
@@ -113,6 +112,7 @@ urlpatterns = patterns('',
     (r'^(?P<what>\w+)/save$', views.generic_save),
 
 )
+
 
 
 

@@ -322,8 +322,8 @@ def modify_list(request, what, pref, value=None):
     This function modifies the session object to
     store these preferences persistently.
     """
-    if not oauth.test_user_authenticated(request): return login(request, next="/quick/%s/modifylist/%s/%s" % (what,pref,str(value)), expired=True)
-
+    if not oauth.test_user_authenticated(request): 
+        return login(request, next="/quick/%s/modifylist/%s/%s" % (what,pref,str(value)), expired=True)
 
     # what preference are we tweaking?
 
@@ -1225,4 +1225,5 @@ def generic_save(request,what):
         return error_page(request, str(e))
 
     return HttpResponseRedirect('/quick/%s/list' % what)
+
 

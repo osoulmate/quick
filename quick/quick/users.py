@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime
 import install
 import assets
-from quick.models import Users,Groups,Rights,User_Group,Group_Right,User_Right,User_Profile
+from quick.models import *
 from error_page import error_page
 import oauth
 from login import login
@@ -431,11 +431,6 @@ def modify_list(request, what, pref, value=None):
     return HttpResponseRedirect("/quick/user/%s/list" % what)
 #==================================================================================
 
-def log_login(request,page=None):
-    pass
-def log_manual(request,page=None):
-    pass
-
 def changepwd(request):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/user/changepwd", expired=True)
@@ -446,14 +441,17 @@ def changepwd(request):
         'menu'           : request.session['%s_menu'%request.session['username']]
     }))
     return HttpResponse(html)
+
 def myinfo(request):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/user/myinfo", expired=True)
     item = Users.objects.filter(username = request.session['username'])
     fields = [f for f in Users._meta.fields]
     columns=[]
+    exclude = ['id','last_login','is_superuser','is_active','registry_time','password',
+                         'photo','token','token_expire_time','reset_token','reset_token_expire_time']
     for field in fields:
-        if field.name in ['id','last_login','is_superuser','is_active','is_online','registry_time','password']:
+        if field.name in exclude:
             continue
         columns.append([field.name,field.verbose_name])
     newitem = []
@@ -468,9 +466,105 @@ def myinfo(request):
     }))
     return HttpResponse(html)
 
+@require_POST
+@csrf_protect
+def my_save(request):
+    username = request.POST.get('username','')
+    if username:
+        try:
+            user = Users.objects.get(username=username)
+            fields = [f for f in Users._meta.fields]
+            kw = {}
+            exclude = ['id','last_login','is_superuser','is_active','registry_time','password',
+                         'photo','token','token_expire_time','reset_token','reset_token_expire_time']
+            for field in fields:
+                if field.name in exclude:
+                    continue
+                kw[field.name] = request.POST.get(field.name, "")
+            for k,v in kw.items():
+                setattr(user, k , v)
+            user.save()
+        except Exception,e:
+            pass
+        return HttpResponseRedirect('/quick/user/myinfo')
+    if request.POST.get('newpwd','') and request.POST.get('newpwd2',''):
+        user = Users.objects.get(username = request.session['username'])
+        newpwd = request.POST.get('newpwd','')
+        newpwd2 = request.POST.get('newpwd2','')
+        if newpwd == newpwd2:
+            user.password = password_md5 = hashlib.md5(newpwd.encode(encoding='UTF-8')).hexdigest()
+            user.save()
+            return HttpResponseRedirect('/quick/user/changepwd')
+        else:
+            return error_page(request,'两次输入密码不一致！')
 
+#==================================================================================
 
-
-
-
+def logit(request,what,page=None):
+    if not oauth.test_user_authenticated(request): 
+        return login(request, next="/quick/%s"%what, expired=True)
+    if page == None:
+        page = int(request.session.get("%s_page"%what, 1))
+    limit = int(request.session.get("%s_limit"%what ,10))
+    sort_field = sort_field_old = request.session.get("%s_sort_field"%what, "id")
+    if sort_field.startswith("!"):
+        sort_field=sort_field.replace("!","-")
+    filters = simplejson.loads(request.session.get("%s_filters"%what, "{}"))
+    num_items  = request.session.get("%s_num_items"%what,None)
+    if what == 'manual':
+        fields = [f for f in Manual_Log._meta.fields]
+        if not num_items:
+            items = Manual_Log.objects.filter(**filters).order_by(sort_field)
+            json_data = serializers.serialize("json", items)
+            request.session["%s_json_data"%what] = json_data
+            num_items = request.session["%s_num_items"%what] = len(items)
+            items = items[:limit]
+        else:
+            offset = (page -1 )*limit
+            end = page*limit
+            items = Manual_Log.objects.filter(**filters).order_by(sort_field)[offset:end]
+    elif what == 'login':
+        fields = [f for f in Login_Log._meta.fields]
+        if not num_items:
+            items = Login_Log.objects.filter(**filters).order_by(sort_field)
+            json_data = serializers.serialize("json", items)
+            request.session["%s_json_data"%what] = json_data
+            num_items = request.session["%s_num_items"%what] = len(items)
+            items = items[:limit]
+        else:
+            offset = (page -1 )*limit
+            end = page*limit
+            items = Login_Log.objects.filter(**filters).order_by(sort_field)[offset:end]
+    elif what == 'asset':
+        fields = [f for f in Asset_Log._meta.fields]
+        if not num_items:
+            items = Asset_Log.objects.filter(**filters).order_by(sort_field)
+            json_data = serializers.serialize("json", items)
+            request.session["%s_json_data"%what] = json_data
+            num_items = request.session["%s_num_items"%what] = len(items)
+            items = items[:limit]
+        else:
+            offset = (page -1 )*limit
+            end = page*limit
+            items = Asset_Log.objects.filter(**filters).order_by(sort_field)[offset:end]
+    else:
+        pass
+    columns=[]
+    exclude = []
+    for field in fields:
+        if field.name in exclude:
+            continue
+        columns.append([field.name,field.verbose_name,'on'])
+    t = get_template("logit.tmpl")
+    html = t.render(RequestContext(request,{
+        'what'           : 'log/%s'%what,
+        'columns'        : assets.__format_columns(columns,sort_field_old),
+        'items'          : assets.__format_items(items,columns),
+        'pageinfo'       : assets.__paginate(num_items,page=page,items_per_page=limit),
+        'filters'        : filters,
+        'limit'          : limit,
+        'username'       : request.session['username'],
+        'menu'           : request.session['%s_menu'%request.session['username']]
+    }))
+    return HttpResponse(html)
 

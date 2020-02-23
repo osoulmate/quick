@@ -629,6 +629,8 @@ def modify_list(request, obj, what, pref, value=None):
         return error_page(request, "无效请求")
 
     # redirect to the list page
+    if what in ['login','manual','asset']:
+        return HttpResponseRedirect("/quick/log/%s"%what)
     return HttpResponseRedirect("/quick/%s/%s/list" % (obj,what))
 #==================================================================================
 
