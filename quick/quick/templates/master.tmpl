@@ -27,6 +27,8 @@
     <script src="/quick_content/assets/js/core/bootstrap.min.js"></script>
     <!-- jQuery UI -->
     <script src="/quick_content/assets/js/plugin/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
+    <!-- Chart JS -->
+    <script src="/quick_content/assets/js/plugin/chart.js/chart.min.js"></script>
     <!-- Bootstrap Notify -->
     <script src="/quick_content/assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
     <!-- jQuery Scrollbar -->
@@ -92,6 +94,13 @@
                             </a>
                         </li>
                         <li class="nav-item dropdown hidden-caret">
+                            <span class="nav-link dropdown-toggle" id="online_user" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">在线人数: {{ online_user }}</span>
+                        </li>
+                        <li class="nav-item dropdown hidden-caret">
+                            <a class="nav-link dropdown-toggle" href="#" id="handbook" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">手册下载
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown hidden-caret">
                             <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-envelope"></i>
                             </a>
@@ -128,23 +137,14 @@
                         <li class="nav-item dropdown hidden-caret">
                             <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-bell"></i>
-                                <span class="notification">6</span>
+                                <span class="notification">2</span>
                             </a>
                             <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
                                 <li>
-                                    <div class="dropdown-title">你有6条未读消息</div>
+                                    <div class="dropdown-title">你有2条未读消息</div>
                                 </li>
                                 <li>
                                     <div class="notif-center">
-                                        <a href="#">
-                                            <div class="notif-icon notif-primary"> <i class="fa fa-user-plus"></i> </div>
-                                            <div class="notif-content">
-                                                <span class="block">
-                                                    有新注册用户
-                                                </span>
-                                                <span class="time">5 分钟前</span> 
-                                            </div>
-                                        </a>
                                         <a href="#">
                                             <div class="notif-icon notif-success"> <i class="fa fa-comment"></i> </div>
                                             <div class="notif-content">
@@ -221,7 +221,7 @@
                             <a href="/quick">
                                 <i class="fas fa-home"></i>
                                 <p>首页</p>
-                                <span class="badge badge-count">5</span>
+                                <span class="badge badge-count">0</span>
                             </a>
                         </li>
                         {% for url in menu %}
@@ -400,6 +400,7 @@
     </script>
 </body>
 </html>
+
 
 
 
