@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 02110-1301  USA
 """
 
-QUICK_SERVER = 'localhost'
+QUICK_SERVER = '192.168.31.120'
 QUICK_USER   = 'cobbler'
 QUICK_PASS   = 'cobbler'
 import os
@@ -727,7 +727,7 @@ def notice_server(strdata,server,report=None):
         try:
             subprocess_call([
                             'curl',
-                            '%s/quick/task/notice/install_%s'%(server,strdata)
+                            '%s/quick/install/notice/install_%s'%(server,strdata)
                         ])
         except:
             traceback.print_exc()
