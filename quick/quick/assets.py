@@ -447,15 +447,15 @@ def asset_export(request,what):
             q.children.append(("ipmi_ip",app_item.ipmi_ip))
             q.children.append(("ipmi_ip",app_item.ip))
             hd_item = Hardware.objects.filter(q)
-            hd_item = hd_item[0]
             for app_field in app_fields:
                 k = (app_field.verbose_name).decode(encoding='UTF-8',errors='strict')
                 v = getattr(app_item,app_field.name,'')
                 kw[k] = v
-            for hd_field in hd_fields:
-                k = (hd_field.verbose_name).decode(encoding='UTF-8',errors='strict')
-                v = getattr(hd_item,hd_field.name,'')
-                kw[k] =v 
+            if hd_item:
+                for hd_field in hd_fields:
+                    k = (hd_field.verbose_name).decode(encoding='UTF-8',errors='strict')
+                    v = getattr(hd_item[0],hd_field.name,'')
+                    kw[k] =v 
             save_data.append(kw)
             #order_output = [u"设备类型",u"资产编号",u"地域",u"所属机房名称",u"机房编号",u"机柜编号",u"设备功能",u"设备型号",u"设备角色",u"序列号","U位","IPMI地址","运维地址","业务IP","硬件配置","设备生产商","所属项目","是否采购维保","维保开始时间","维保结束时间","维保厂家","使用人","业务模块","业务系统","项目简称","集群","操作系统","主机型号","CPU型号","CPUcore（总）","CPU主频(单位GHZ)","内存容量(单位G)","内置硬盘容量(单位G)","MirrorDisk状态","FW版本","电源个数","风扇个数","内核版本","是否已虚拟化","备注","是否资源池化","网卡是否已绑定","是否安全加固","防火墙是否已关闭","ssh是否已升级 ","项目编号","上架日期","服务IP1地址","服务IP2地址","服务实例名","一级业务系统","二级业务系统","三级业务系统","运维接口人","运维团队","开发接口人","开发团队","业务接口人","业务部门","监控系统","是否为CDN设备","生命周期状态","环境","结算运维接口人","结算使用人","UUID","上联架顶","业务IP来源","云管来源IP","访问区","结算部门","IPV6信息","[属于]合同","节点类型"]
         save_name = 'cmdb-%s.xls'%(str(datetime.now()).split(".")[0].replace(" ","").replace(":","").replace("-",""))
@@ -1062,6 +1062,7 @@ def __paginate(num_items=0,page=None,items_per_page=None,token=None):
             'items_per_page' : items_per_page,
             'items_per_page_list' : [5,10,20,50,100,200,500],
             })
+
 
 
 
