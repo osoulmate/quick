@@ -251,6 +251,12 @@ def __get_host_info(name,ip,user,pwd,obj,iplist):
             subtasks = Detail.objects.filter(name=name,ip=ip)
             if subtasks:
                 for subtask in subtasks:
+                    if len(hardware_model) > 50:
+                        hardware_model = hardware_model[-50]
+                    if len(sn) > 150:
+                        hardware_model = hardware_model[-150]
+                    if len(product_name) > 50:
+                        product_name = product_name[-50]
                     subtask.mac            = mac
                     subtask.hardware_model = product_name
                     subtask.hardware_sn    = sn
@@ -545,4 +551,5 @@ def is_valid_ip(strdata=None):
             return True
         else:
             return False
+
 

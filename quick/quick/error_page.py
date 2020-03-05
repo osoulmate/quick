@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-
 from django.template.loader import get_template
 from django.template import RequestContext
 from django.http import HttpResponse
-
+import simplejson
 import oauth
 from login import login
 
@@ -15,6 +14,7 @@ def error_page(request,message):
     """
     if not oauth.test_user_authenticated(request): 
         return login(request,expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
     # FIXME: test and make sure we use this rather than throwing lots of tracebacks for
     # field errors
     t = get_template('error_page.tmpl')
@@ -23,8 +23,8 @@ def error_page(request,message):
     html = t.render(RequestContext(request,{
         'version' : oauth.remote.extended_version(request.session['cobbler_token'])['version'],
         'message' : message,
-        'username': request.session['username'],
-        'menu' : request.session['%s_menu'%request.session['username']]
+        'meta' : meta
     }))
     return HttpResponse(html)
+
 

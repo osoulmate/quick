@@ -36,8 +36,7 @@ def task_created(request):
     t = get_template("task_created.tmpl")
     html = t.render(RequestContext(request,{
         'version'  : oauth.remote.extended_version(request.session['cobbler_token'])['version'],
-        'username' : request.session['username'],
-        'menu' : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 
@@ -304,10 +303,9 @@ def genlist(request, what, page=None):
         'pageinfo'       : pageditems["pageinfo"],
         'filters'        : filters,
         'version'        : oauth.remote.extended_version(request.session['cobbler_token'])['version'],
-        'username'       : request.session['username'],
         'limit'          : limit,
         'batchactions'   : batchactions,
-        'menu' : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 
@@ -534,8 +532,7 @@ def import_prompt(request):
     t = get_template('import.tmpl')
     html = t.render(RequestContext(request,{
         'version'  : oauth.remote.extended_version(request.session['cobbler_token'])['version'],
-        'username' : request.session['username'],
-        'menu' : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 
@@ -550,9 +547,8 @@ def check(request):
     t = get_template('check.tmpl')
     html = t.render(RequestContext(request,{
         'version': oauth.remote.extended_version(request.session['cobbler_token'])['version'],
-        'username' : request.session['username'],
         'results'  : results,
-        'menu' : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 
@@ -600,9 +596,8 @@ def ksfile_list(request, page=None):
         'what':'ksfile',
         'ksfiles': ksfile_list,
         'version': oauth.remote.extended_version(request.session['cobbler_token'])['version'],
-        'username': request.session['username'],
         'item_count': len(ksfile_list[0]),
-        'menu' : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 
@@ -633,8 +628,7 @@ def ksfile_edit(request, ksfile_name=None, editmode='edit'):
         'editable'    : editable,
         'editmode'    : editmode,
         'version'     : oauth.remote.extended_version(request.session['cobbler_token'])['version'],
-        'username'    : request.session['username'],
-        'menu' : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 
@@ -689,8 +683,7 @@ def snippet_list(request, page=None):
         'what'     : 'snippet',
         'snippets' : snippet_list,
         'version'  : oauth.remote.extended_version(request.session['cobbler_token'])['version'],
-        'username' : request.session['username'],
-        'menu' : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 
@@ -721,8 +714,7 @@ def snippet_edit(request, snippet_name=None, editmode='edit'):
         'editable'     : editable,
         'editmode'     : editmode,
         'version'      : oauth.remote.extended_version(request.session['cobbler_token'])['version'],
-        'username'     : request.session['username'],
-        'menu' : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 
@@ -776,8 +768,7 @@ def setting_list(request):
     html = t.render(RequestContext(request,{
          'settings' : results,
          'version'  : oauth.remote.extended_version(request.session['cobbler_token'])['version'],
-         'username' : request.session['username'],
-         'menu' : request.session['%s_menu'%request.session['username']]
+         'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 
@@ -816,9 +807,8 @@ def setting_edit(request, setting_name=None):
         'editmode'        : 'edit',
         'editable'        : True,
         'version'         : oauth.remote.extended_version(request.session['cobbler_token'])['version'],
-        'username'        : request.session['username'],
         'name'            : setting_name,
-        'menu' : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 
@@ -864,8 +854,7 @@ def events(request):
     html = t.render(RequestContext(request,{
         'results'  : events2,
         'version'  : oauth.remote.extended_version(request.session['cobbler_token'])['version'],
-        'username' : request.session['username'],
-        'menu' : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 
@@ -894,8 +883,7 @@ def iplist(request):
     html = t.render(RequestContext(request,{
         'results'  : iplist,
         'version'  : oauth.remote.extended_version(request.session['cobbler_token'])['version'],
-        'username' : request.session['username'],
-        'menu' : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 
@@ -924,8 +912,7 @@ def eventlog(request, event=0):
        'eventid'    : event,
        'eventtime'  : eventtime,
        'version'    : oauth.remote.extended_version(request.session['cobbler_token'])['version'],
-       'username'  : request.session['username'],
-       'menu' : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }
     html = t.render(RequestContext(request,vars))
     return HttpResponse(html)
@@ -1101,9 +1088,8 @@ def generic_edit(request, what=None, obj_name=None, editmode="new"):
         'interface_names' : inames,
         'interface_length': len(inames),
         'version'         : oauth.remote.extended_version(request.session['cobbler_token'])['version'],
-        'username'        : request.session['username'],
         'name'            : obj_name,
-        'menu' : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
  
     return HttpResponse(html)
@@ -1225,5 +1211,6 @@ def generic_save(request,what):
         return error_page(request, str(e))
 
     return HttpResponseRedirect('/quick/%s/list' % what)
+
 
 

@@ -31,6 +31,7 @@ def asset_list(request,what,page=None):
     """
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/asset/%s/list"%what, expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
     if page == None:
         page = int(request.session.get("%s_page"%what, 1))
     limit = int(request.session.get("%s_limit"%what, 5))
@@ -51,7 +52,7 @@ def asset_list(request,what,page=None):
         sort =sort_field
     filters = simplejson.loads(request.session.get("%s_filters"%what, "{}"))
     records = System.objects.filter(id=1)
-    user_profile = User_Profile.objects.filter(username=request.session['username'])
+    user_profile = User_Profile.objects.filter(username=meta['username'])
     if not records:
         return HttpResponse('no data!')
     else:
@@ -185,10 +186,9 @@ def asset_list(request,what,page=None):
         'pageinfo'       : __paginate(num_items,page=page,items_per_page=limit),
         'filters'        : filters,
         'limit'          : limit,
-        'username'       : request.session['username'],
         'location'       : request.META['HTTP_HOST'],
         'batchactions'   : batchactions,
-        'menu'           : request.session['%s_menu'%request.session['username']]
+        'meta'           : meta
     }))
     return HttpResponse(html)
 
@@ -516,8 +516,7 @@ def asset_edit(request,what,obj_name=None,editmode='edit'):
         'editmode'        : editmode,
         'editable'        : editable,
         'items'           : newitem,
-        'username'        : request.session['username'],
-        'menu'            : request.session['%s_menu'%request.session['username']]
+        'meta'            : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 # ======================================================================
@@ -638,6 +637,7 @@ def host_list(request,what,page=None):
     """
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/host/%s/list"%what, expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
     columns=[]
     groups = []
     scripts = []
@@ -707,11 +707,11 @@ def host_list(request,what,page=None):
                             request.session['batch_iplist'] = iplist
                             return HttpResponse(simplejson.dumps(result,ensure_ascii=False),content_type="application/json,charset=utf-8")
                         else:
-                            return HttpResponse([])
+                            return HttpResponse([[]])
                 else:
                     request.session['batch_name'] = ''
                     request.session['batch_iplist'] = ''
-                    return HttpResponse([])
+                    return HttpResponse([[]])
             elif request.POST.get("hosttype", ""):
                 host_group = Host_Group.objects.all()
                 for group in host_group:
@@ -727,21 +727,22 @@ def host_list(request,what,page=None):
                 host_pass = request.POST.get("password", "")
                 single_ip =  request.POST.get("batch_host", "")
                 cmd = request.POST.get("batch_cmd", "")
+                #return HttpResponse([[hosttype,scripttype,multi_ip,script_name,host_user,host_pass,cmd,single_ip]])
                 if not host_user or not host_pass:
                     return error_page(request,'用户名、密码不能为空!')
-                if single_ip and cmd:
+                if single_ip and cmd and hosttype == '0' and scripttype == '0':
                     is_ip = 'yes'
                     ip_name = single_ip.strip()
                     script_name = cmd
                     request.session['batch_iplist'] = [ip_name]
                     ip_name = single_ip.strip()
                     is_script = 'no'
-                elif single_ip and script_name:
+                elif single_ip and script_name and hosttype == '0' and scripttype == '1':
                     is_ip = 'yes'
                     ip_name = single_ip.strip()
                     request.session['batch_iplist'] = [ip_name]
                     is_script = 'yes'
-                elif multi_ip and cmd:
+                elif multi_ip and cmd and hosttype == '1' and scripttype == '0':
                     is_ip = 'no'
                     ips = Host_Group.objects.filter(name=multi_ip)
                     script_name = cmd
@@ -751,7 +752,7 @@ def host_list(request,what,page=None):
                         is_script = 'no'
                     else:
                         return error_page(request,'未知主机组!')
-                elif multi_ip and script_name:
+                elif multi_ip and script_name and hosttype == '1' and scripttype == '1':
                     is_ip = 'no'
                     ips = Host_Group.objects.filter(name=multi_ip)
                     ip_name = multi_ip
@@ -760,13 +761,12 @@ def host_list(request,what,page=None):
                         is_script = 'yes'
                     else:
                         return error_page(request,'未知主机组!')
-                #return HttpResponse([[hosttype,scripttype,multi_ip,script_name,host_user,host_pass,cmd,single_ip]])
                 else:
-                    pass
+                    return error_page(request,'无效请求')
                 batch_name = 'batch_%s'%(str(int(time.time())))
                 request.session['batch_name'] = batch_name
                 batch = Batch(name=batch_name,ip_name=ip_name,script_name=script_name,
-                               osuser=host_user,ospwd=host_pass,owner=request.session['username'],
+                               osuser=host_user,ospwd=host_pass,owner=meta['username'],
                                is_ip=is_ip,is_script=is_script)
                 batch.save()
                 utils.background_exec(batch_name)
@@ -791,11 +791,10 @@ def host_list(request,what,page=None):
         'pageinfo'       : __paginate(num_items,page=page,items_per_page=limit),
         'filters'        : filters,
         'limit'          : limit,
-        'username'       : request.session['username'],
         'batchactions'   : batchactions,
         'scripts'        : scripts,
         'groups'         : groups,
-        'menu'           : request.session['%s_menu'%request.session['username']]
+        'meta'           : meta
     }))
     return HttpResponse(html)
 
@@ -838,8 +837,7 @@ def host_edit(request,what,obj_name=None,editmode='edit'):
         'editmode'        : editmode,
         'editable'        : editable,
         'items'           : newitem,
-        'username'        : request.session['username'],
-        'menu'            : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 #==================================================================================
@@ -848,6 +846,7 @@ def host_edit(request,what,obj_name=None,editmode='edit'):
 def host_save(request,what,editmode='edit'):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/host/%s/list"%what, expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
     editmode = request.POST.get('editmode', 'edit')
     if what == 'group':
         fields = [f for f in Host_Group._meta.fields]
@@ -860,7 +859,7 @@ def host_save(request,what,editmode='edit'):
             return error_page(request,"名称不能为空!")
         if editmode != 'edit':
             kw['create_time'] = time.time()
-            kw['owner']       = request.session['username']
+            kw['owner']       = meta['username']
             hg=Host_Group(**kw)
             hg.save()
         else:
@@ -880,7 +879,7 @@ def host_save(request,what,editmode='edit'):
             return error_page(request,"名称不能为空!")
         if editmode != 'edit':
             kw['create_time'] = time.time()
-            kw['owner']       = request.session['username']
+            kw['owner']       = meta['username']
             st=Script(**kw)
             st.save()
         else:
@@ -941,9 +940,8 @@ def ippool_list(request,page=None):
         'pageinfo'       : __paginate(num_items,page=page,items_per_page=limit),
         'filters'        : filters,
         'limit'          : limit,
-        'username'       : request.session['username'],
         'batchactions'   : batchactions,
-        'menu'           : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 #==================================================================================

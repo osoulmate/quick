@@ -78,8 +78,7 @@ def task_edit(request,task_name=None, editmode='edit'):
         'editable'          : editable,
         'tasks'             : tasks,
         'osarch'            : archs,
-        'username'          : request.session['username'],
-        'menu'              : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 #========================================================================
@@ -89,7 +88,7 @@ def tasklist(request,what,page=None):
     """
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/install/%s/list"%what, expired=True)
-
+    meta = simplejson.loads(request.session['quick_meta'])
     if page == None:
         page = int(request.session.get("%s_page" % what, 1))
     limit = int(request.session.get("%s_limit" % what, 10))
@@ -97,11 +96,11 @@ def tasklist(request,what,page=None):
     if sort_field.startswith("!"):
         sort_field=sort_field.replace("!","-")
     filters = simplejson.loads(request.session.get("%s_filters" % what, "{}"))
-    user = Users.objects.get(username=request.session['username'])
+    user = Users.objects.get(username=meta['username'])
     columns=[]
     if user.is_superuser=='no':
-        filters['owner'] = request.session['username']
-    user_profile = User_Profile.objects.filter(username=request.session['username'])
+        filters['owner'] = meta['username']
+    user_profile = User_Profile.objects.filter(username=meta['username'])
     if user_profile:
         user_profile = user_profile[0]
     else:
@@ -166,10 +165,9 @@ def tasklist(request,what,page=None):
         'pageinfo'       : pageinfo,
         'filters'        : filters,
         'limit'          : limit,
-        'username'       : request.session['username'],
         'batchactions'   : batchactions,
         'location'       : request.META['HTTP_HOST'],
-        'menu'           : request.session['%s_menu'%request.session['username']]
+        'meta'           : meta
     }))
     return HttpResponse(html)
 
@@ -177,6 +175,7 @@ def tasklist(request,what,page=None):
 def task_save(request,editmode='edit'):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/install/save/%s" % task_name, expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
     editmode = request.POST.get('editmode', 'edit')
     osip = request.POST.get('osip', "").replace('\n','').replace('\r','')
     if osip == '':
@@ -201,12 +200,12 @@ def task_save(request,editmode='edit'):
         task_name = 'task_'+ str(now)
         task = List(name=task_name,ips=osip,osuser=osuser,ospwd=ospwd,osarch=osarch,osbreed=osbreed,
             osrelease=osrelease,ospart=ospart,ospackages=ospackages,osenv=osenv,raid=raid,start_time='0',
-            usetime='0',status='任务初始化',notice_mail=mail,drive_path=path,owner=request.session['username'],flag='resume')
+            usetime='0',status='任务初始化',notice_mail=mail,drive_path=path,owner=meta['username'],flag='resume')
         task.save()
         if osenv == 'reinstall-no-dhcp':
             utils.background_collect(task_name)
         else:
-            utils.generate_data(osip,task_name,profile,'0','等待上线',request.session['username'])
+            utils.generate_data(osip,task_name,profile,'0','等待上线',meta['username'])
     else:
         name  = request.POST.get('name', "")
         task = List.objects.get(name=name)
@@ -223,7 +222,7 @@ def task_save(request,editmode='edit'):
         task.notice_mail = mail
         task.drive_path = path
         #task.start_time = '0'
-        task.owner = request.session['username']
+        task.owner = meta['username']
         task.save()
         if osenv == 'reinstall-no-dhcp':
             utils.background_collect(name)
@@ -557,6 +556,7 @@ def __mail(task_name,to):
     msg.attach_alternative(html_content, "text/html")
     msg.send()
     return 1
+
 
 
 

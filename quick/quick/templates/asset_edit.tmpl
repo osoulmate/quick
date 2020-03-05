@@ -32,7 +32,7 @@
                         <form name="editform" method="post" action="/quick/{{ what }}/save">{% csrf_token %}
                             <div class="card">
                                 <div class="card-header">
-                                    <div class="card-title">{% ifequal action 'batch'  %}批量{% endifequal %}{% ifequal editmode 'edit'  %}编辑{% else %}添加{% endifequal %}{%ifequal editmode 'edit' %}: {{ name }}{% endifequal %}</div>
+                                    <div class="card-title">{% if action == 'batch'  %}批量编辑{% elif editmode == 'edit'  %}编辑:{{ name }}{% else %}新增资产{% endif %}</div>
                                 </div>
                                 <div class="card-body">
                         {% for item in items %}
@@ -90,6 +90,7 @@
                 </div>
             </div>
 {% endblock content %}
+
 
 
 

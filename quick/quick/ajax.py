@@ -3,6 +3,7 @@
 from django.http import HttpResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect
+import simplejson
 import oauth
 from login import login
 from error_page import error_page
@@ -20,6 +21,7 @@ def ajax(request):
     """
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick", expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
     what  = request.POST.get('what', '')
     action = request.POST.get('action', '')
     try:
@@ -31,7 +33,7 @@ def ajax(request):
                     special_col = ['uuid','ipmi_ip','remark','hardware_uuid']
                     if k in special_col:
                         k = 'app_%s'%k
-                    app_temp = User_Profile.objects.get(username=request.session['username'])
+                    app_temp = User_Profile.objects.get(username=meta['username'])
                     setattr(app_temp,k,v)
                     app_temp.save()
             elif action == 'batch_query':
@@ -46,7 +48,7 @@ def ajax(request):
                     special_col = ['uuid','ipmi_ip','remark']
                     if k in special_col:
                         k = 'hardware_%s'%k
-                    hd_temp = User_Profile.objects.get(username=request.session['username'])
+                    hd_temp = User_Profile.objects.get(username=meta['username'])
                     setattr(hd_temp,k,v)
                     hd_temp.save()
             elif action == 'batch_query':
@@ -59,7 +61,7 @@ def ajax(request):
                 v = request.POST.get('view', '')
                 if k !='' and v != '':
                     k = 'yw_view_%s'%k
-                    yw_temp = User_Profile.objects.get(username=request.session['username'])
+                    yw_temp = User_Profile.objects.get(username=meta['username'])
                     setattr(yw_temp,k,v)
                     yw_temp.save()
             elif action == 'batch_query':
@@ -72,14 +74,14 @@ def ajax(request):
                 v = request.POST.get('view', '')
                 if k !='' and v != '':
                     k = 'install_%s'%k
-                    task = User_Profile.objects.get(username=request.session['username'])
+                    task = User_Profile.objects.get(username=meta['username'])
                     setattr(task,k,v)
                     task.save()
         elif what == 'myinfo':
             if action == 'setup':
                 header_style = request.POST.get('header',None)
                 body_style = request.POST.get('body',None)
-                style = User_Profile.objects.get(username=request.session['username'])
+                style = User_Profile.objects.get(username=meta['username'])
                 if header_style:
                     setattr(style,'topbar',header_style)
                     style.save()
@@ -90,6 +92,7 @@ def ajax(request):
         return HttpResponse(str(e))
     else:
         return HttpResponse('ok')
+
 
 
 

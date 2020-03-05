@@ -12,7 +12,7 @@ import base64
 import xmlrpclib
 import hashlib
 import cobbler.utils as utils
-from quick.models import Users
+from quick.models import Users,User_Profile
 from login import login
 import menu
 
@@ -35,14 +35,12 @@ def do_login(request):
     shared_secret = utils.get_shared_secret()
     cobbler_token = remote.login("",shared_secret)
     if cobbler_token:
-        request.session['username'] = username
         urandom = open("/dev/urandom")
         b64 = base64.encodestring(urandom.read(25))
         urandom.close()
         b64 = b64.replace("\n","")
         request.session[b64] = (time.time(), username)
         request.session['token'] = b64
-        request.session['%s_menu'%username] = menu.menu
         request.session['cobbler_token'] = cobbler_token
         settings = remote.get_settings()
         exipry_time = settings['auth_token_expiration']
@@ -50,6 +48,9 @@ def do_login(request):
         #启用单点登陆功能
         try:
             sessions = Session.objects.all()
+            online = len(sessions)
+            if online == 0:
+                online = online + 1
             for session in sessions:
                 if session.session_key == request.session.session_key:
                     continue
@@ -58,16 +59,30 @@ def do_login(request):
                     session_data_decode = base64.b64decode(session_data)
                     ds = session_data_decode.split(':',1)[1]
                     session_data_json = simplejson.loads(ds)
-                    if session_data_json['username'] == request.session['username']:
-                        Session.objects.filter(session_key=session.session_key).delete()
-        except:
-            return HttpResponse('something error!')
+                    if session_data_json.has_key('quick_meta'):
+                        meta_old = session_data_json['quick_meta']
+                        if meta_old :
+                            meta_old = simplejson.loads(meta_old)
+                            if meta_old['username'] == username:
+                                Session.objects.filter(session_key=session.session_key).delete()
+            user_profile = User_Profile.objects.filter(username=username)
+            if user_profile:
+                bg = user_profile[0].background
+                topbar = user_profile[0].topbar
+            else:
+                bg = 'bg1'
+                topbar = 'light-blue'
+            meta = {"online":online,"username":username,"usermail":user.email,"menu":menu.menu,"notice":2,"bg":bg,"topbar":topbar}
+            request.session['quick_meta'] = simplejson.dumps(meta)
+        except Exception as e:
+            return HttpResponse(str(e))
         if nextsite:
            return HttpResponseRedirect(nextsite)
         else:
            return HttpResponseRedirect("/quick")
     else:
         return login(request,nextsite,message="登录失败，请重试")
+
 
 
 

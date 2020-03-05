@@ -7,7 +7,7 @@
                         <h4 class="page-title">系统安装</h4>
                         <ul class="breadcrumbs">
                             <li class="nav-home">
-                                <a href="#">
+                                <a href="/quick">
                                     <i class="flaticon-home"></i>
                                 </a>
                             </li>
@@ -80,10 +80,15 @@
                                                     <p class="form-text text-muted">重装系统的账号，新装场景可不填</p>
                                                 </div>
                                             </div>
-                                            <div class="row">
+                                            <div class="row login" style="background:none;">
                                                 <div class="form-group col-md-8">
-                                                    <label for="ospass">密码</label>
-                                                    <input type="password" class="form-control" id="ospass" name="ospass" value="{{ tasks.ospwd }}"/>
+                                                    <label for="ospass" class="placeholder"><b>密码</b></label>
+                                                    <div class="position-relative">
+                                                        <input type="password" class="form-control" id="ospass" name="ospass" value="{{ tasks.ospwd }}"/>
+                                                        <div class="show-password">
+                                                            <i class="flaticon-interface"></i>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                                 <div class="form-group col-md-4">
                                                     <br/><br/>
@@ -223,5 +228,6 @@
                 </div>
             </div>
 {% endblock content %}
+
 
 

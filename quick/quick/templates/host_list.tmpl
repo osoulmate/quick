@@ -1,5 +1,6 @@
 {% extends "master.tmpl" %}
 {% block content %}
+{% ifequal what "host/batch" %}
 <script>
     $(document).ready(function() {
         $('input[type=radio][name=hosttype]').change(function() {
@@ -57,7 +58,7 @@ function format(source, params) {
 setInterval(update_data,2000)
 function update_data() {
   $.get("/quick/host/batch/list?action='exec'",function(data,status){
-    if (data){
+    if (data != '[]'){
     //console.log(data)
     var current_msg = $("#result").val();
     var msg = ''
@@ -82,6 +83,7 @@ function update_data() {
   });
 }
 </script>
+{% endifequal %}
 <form id="action" method="POST" action="">{% csrf_token %}</form>
             <div class="content">
                 <div class="page-inner">
@@ -218,9 +220,14 @@ function update_data() {
                                             <input type="text" class="form-control" id="username" name="username" placeholder="username">
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-4 login" style="background:none;">
                                         <div class="form-group">
-                                            <input type="password" class="form-control" id="password" name="password" placeholder="Password">
+                                            <div class="position-relative">
+                                                <input type="password" class="form-control" id="password" name="password" placeholder="Password">
+                                                <div class="show-password">
+                                                    <i class="flaticon-interface"></i>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
@@ -316,6 +323,7 @@ function update_data() {
                 </div>
             </div>
 {% endblock content %}
+
 
 
 

@@ -80,8 +80,7 @@ def user_edit(request,what,obj_name=None, editmode='edit'):
         'rights'          : rights,
         'have_groups'     : have_groups,
         'have_rights'     : have_rights,
-        'username'        : request.session['username'],
-        'menu'            : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 #========================================================================
@@ -134,11 +133,15 @@ def user_save(request,what):
                 return error_page(request,str(e))
         else:
             user = Users.objects.get(username=username)
+            if user.password == pwd:
+                password = pwd
+            else:
+                password = hashlib.md5(pwd.encode(encoding='UTF-8')).hexdigest()
             user.name = name
             user.telephone = telephone
             user.is_active = is_active
             user.is_superuser = is_superuser
-            user.password = pwd
+            user.password = password
             user.email = email
             user.save()
             User_Group.objects.filter(user_id=user.id).delete()
@@ -284,9 +287,8 @@ def user_list(request,what,page=None):
         'pageinfo'       : assets.__paginate(num_items,page=page,items_per_page=limit),
         'filters'        : filters,
         'limit'          : limit,
-        'username'       : request.session['username'],
         'batchactions'   : batchactions,
-        'menu'           : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 
@@ -436,16 +438,16 @@ def changepwd(request):
         return login(request, next="/quick/user/changepwd", expired=True)
     t = get_template("personal.tmpl")
     html = t.render(RequestContext(request,{
-        'what'           : "changepwd",
-        'username'       : request.session['username'],
-        'menu'           : request.session['%s_menu'%request.session['username']]
+        'what' : "changepwd",
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
 
 def myinfo(request):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/user/myinfo", expired=True)
-    item = Users.objects.filter(username = request.session['username'])
+    meta = simplejson.loads(request.session['quick_meta'])
+    item = Users.objects.filter(username=meta['username'])
     fields = [f for f in Users._meta.fields]
     columns=[]
     exclude = ['id','last_login','is_superuser','is_active','registry_time','password',
@@ -461,16 +463,28 @@ def myinfo(request):
     html = t.render(RequestContext(request,{
         'what'           : "myinfo",
         'items'          : newitem,
-        'username'       : request.session['username'],
-        'menu'           : request.session['%s_menu'%request.session['username']]
+        'meta'           : meta
     }))
     return HttpResponse(html)
 
 @require_POST
 @csrf_protect
 def my_save(request):
-    username = request.POST.get('username','')
-    if username:
+    if not oauth.test_user_authenticated(request): 
+        return login(request, next="/quick/user/myinfo", expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
+    username = meta['username']
+    if request.POST.get('newpwd','') and request.POST.get('newpwd2',''):
+        user = Users.objects.get(username = username)
+        newpwd = request.POST.get('newpwd','')
+        newpwd2 = request.POST.get('newpwd2','')
+        if newpwd == newpwd2:
+            user.password = password_md5 = hashlib.md5(newpwd.encode(encoding='UTF-8')).hexdigest()
+            user.save()
+            return HttpResponseRedirect('/quick/user/changepwd')
+        else:
+            return error_page(request,'两次输入密码不一致！')
+    else:
         try:
             user = Users.objects.get(username=username)
             fields = [f for f in Users._meta.fields]
@@ -487,17 +501,6 @@ def my_save(request):
         except Exception,e:
             pass
         return HttpResponseRedirect('/quick/user/myinfo')
-    if request.POST.get('newpwd','') and request.POST.get('newpwd2',''):
-        user = Users.objects.get(username = request.session['username'])
-        newpwd = request.POST.get('newpwd','')
-        newpwd2 = request.POST.get('newpwd2','')
-        if newpwd == newpwd2:
-            user.password = password_md5 = hashlib.md5(newpwd.encode(encoding='UTF-8')).hexdigest()
-            user.save()
-            return HttpResponseRedirect('/quick/user/changepwd')
-        else:
-            return error_page(request,'两次输入密码不一致！')
-
 #==================================================================================
 
 def logit(request,what,page=None):
@@ -563,8 +566,8 @@ def logit(request,what,page=None):
         'pageinfo'       : assets.__paginate(num_items,page=page,items_per_page=limit),
         'filters'        : filters,
         'limit'          : limit,
-        'username'       : request.session['username'],
-        'menu'           : request.session['%s_menu'%request.session['username']]
+        'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
+
 

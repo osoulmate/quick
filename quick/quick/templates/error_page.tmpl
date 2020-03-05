@@ -11,7 +11,7 @@
                                 <div class="card-body">
 									<p>{{ message }}</p>
 									<p class="errormsg">cobbler版本: {{ version }}</p>
-									<p class="errormsg">当前用户: {{ username }}</p>
+									<p class="errormsg">当前用户: {{ meta.username }}</p>
 									<p><a href="javascript: history.go(-1)">返回</a></p>
                                 </div>
                             </div>
@@ -20,4 +20,5 @@
                 </div>
             </div>
 {% endblock content %}
+
 
