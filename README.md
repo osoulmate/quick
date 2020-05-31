@@ -127,7 +127,11 @@ forever start /usr/share/quick/extend/webssh2/index.js
 chmod +x /usr/bin/novnc                               #赋予novnc文件可执行权限
 service novnc start                                   #启动novnc服务
 ```
-23. 登陆平台
+23. 添加定时任务，清除过期会话
+```
+*/1 * * * * /usr/bin/python2 /usr/share/quick/manage.py clearsessions >> /var/log/quick/sessions.log
+```
+24. 登陆平台
     使用浏览器访问http://localhost/quick
 
 
