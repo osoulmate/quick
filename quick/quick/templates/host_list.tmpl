@@ -62,7 +62,7 @@ function update_data() {
     //console.log(data)
     var current_msg = $("#result").val();
     var msg = ''
-    var temp = data.result.split('\r\n')
+    var temp = data.result.split('\n')
     //console.log(temp)
     if (temp.length >1 ){
         for(var i=0,len=temp.length; i<len; i++){
@@ -70,7 +70,7 @@ function update_data() {
             if(i==0){
                 msg = format("{0}        {1}          {2}\n", data.ip, data.status,temp[0]);
             }else{
-                msg = msg + format("                                          {0}\n",temp[i])
+                msg = msg + format("                                        {0}\n",temp[i])
             }
         }
         //console.log(msg)
@@ -323,6 +323,7 @@ function update_data() {
                 </div>
             </div>
 {% endblock content %}
+
 
 
 

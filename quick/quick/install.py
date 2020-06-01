@@ -255,11 +255,11 @@ def task_execute(request,task_name=None):
                 utils.add_cobbler_system(oauth.remote,request.session['cobbler_token'],task_name,
                     task.ospart,task.ospackages,task.raid)
                 oauth.remote.background_sync({"verbose":"True"},request.session['cobbler_token'])
-            utils.add_vnc_token(ip_list=ip_list)
             if task.usetime =='0':
                 task.start_time = now
                 task.status = '执行中...'
                 task.save()
+                utils.add_vnc_token(ip_list=ip_list)
             return HttpResponseRedirect('/quick/install/resume/list')
         else:
             return error_page(request,"任务不存在")
@@ -556,6 +556,7 @@ def __mail(task_name,to):
     msg.attach_alternative(html_content, "text/html")
     msg.send()
     return 1
+
 
 
 

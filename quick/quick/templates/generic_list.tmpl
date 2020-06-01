@@ -1,5 +1,18 @@
 {% extends "master.tmpl" %}
 {% block content %}
+<style>
+#batchactions{
+    margin-top:2px;
+    font-size:80%;
+    border: solid 1px #ddd;
+    appearance:none;
+    -moz-appearance:none;
+    -webkit-appearance:none;
+    padding: 5px 18px 5px 5px;
+    background: url("http://ourjs.github.io/static/2015/arrow.png") no-repeat scroll right center transparent;
+    }
+#batchactions::-ms-expand { display: none; }
+</style>
 <form id="action" method="POST" action="">{% csrf_token %}</form>
             <div class="content">
                 <div class="page-inner">
@@ -46,6 +59,11 @@
                                           {% ifequal what "profile" %}
                                           <a class="btn btn-primary" href="/quick/sub{{what}}/edit">创建sub-{{ what }}</a>
                                           {% endifequal %}
+    <select id="batchactions">
+      <option value="" selected="selected">Batch Actions</option>
+      {% for title,action,value in batchactions %}<option value="{{ action }}|{{ value }}">{{ title }}</option>{% endfor %}
+    </select>
+    <a class="btn btn-primary" href="javascript:;" onclick="javascript:action_multi('{{ what }}')" />GO</a>
                                         </div>
                                         <div class="card-tools">
                                           {% include "paginate.tmpl" %}
@@ -139,5 +157,6 @@
                 </div>
             </div>
 {% endblock content %}
+
 
 

@@ -25,7 +25,6 @@ pip install --index http://pypi.douban.com/simple/ pymysql --trusted-host pypi.d
 pip install --index http://pypi.douban.com/simple/ pyexcel --trusted-host pypi.douban.com
 pip install --index http://pypi.douban.com/simple/ pyexcel-xls --trusted-host pypi.douban.com
 pip install --index http://pypi.douban.com/simple/ pyexcel-io --trusted-host pypi.douban.com
-pip install --index http://pypi.douban.com/simple/ pyexcel-xlsx --trusted-host pypi.douban.com
 ```
 3. 下载并安装mysql安装源
 ```
@@ -134,4 +133,6 @@ service novnc start                                   #启动novnc服务
 24. 登陆平台
     使用浏览器访问http://localhost/quick
 
+**Tips**
 
+在有DHCP网络环境下进行裸机系统安装时，要注意system中是否有多个名字不同的配置文件但主机MAC地址相同的情况。如果有，则要先删除无效的配置文件，否则裸机启动时获得的IP将与要分配的IP不一致。

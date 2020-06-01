@@ -95,9 +95,9 @@
                                                 </td>
                                                 {% ifequal what "asset/union" %}
                                                 <td>
-                                                   <a class="btn btn-primary btn-xs" target="_blank" href="http://{{ location }}:8022/ssh/host/{{ item.0.1 }}">SSH</a></li>
+                                                   <a class="btn btn-primary btn-xs" target="_blank" href="http://{{ location }}:8022/ssh/{{ item.0.1 }}">SSH</a></li>
                                                    <a class="btn btn-primary btn-xs" target="_blank" href="http://{{ location }}:6080/vnc.html?path=?token=sys-{{ item.0.1 }}">VNC</a></li>
-                                                   <a class="btn btn-primary btn-xs" target="_blank" href="http://{{ location }}:8022/ssh/host/{{ location }}">SOL</a>
+                                                   <a class="btn btn-primary btn-xs" target="_blank" href="http://{{ location }}:8022/ssh/{{ location }}">SOL</a>
                                                    <a class="btn btn-primary btn-xs" target="_blank" href="http://{{ item.2.1 }}">BMC</a>
                                                 </td>
                                                 {% endifequal %}
@@ -149,6 +149,7 @@
     </div>
 </div>
 {% endblock content %}
+
 
 
 

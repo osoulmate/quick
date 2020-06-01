@@ -153,8 +153,12 @@ def __quick_install_os(name,ip,obj,ip_list):
             use_para = " -r "
         local_path = '/usr/share/quick/agent/%s'%use_shell
         target_path = '/tmp/qios'
-        sftp = ssh.open_sftp()
-        sftp.put(local_path, target_path)
+        try:
+            sftp = ssh.open_sftp()
+            sftp.put(local_path, target_path)
+        except Exception,err:
+            logger.error("Host(%s) occur error(%s) in uploading script"%(ip,str(err)))
+            return True
         if 'ubuntu' in obj.osrelease.lower():
             use_para += ' --embed'
         cmd = "sudo %s /tmp/qios --release='%s' --vncpassword='hellovnc' --sshpassword='hellossh' %s --reboot --report"%(py,obj.osrelease,use_para)
@@ -282,68 +286,70 @@ def __get_host_info(name,ip,user,pwd,obj,iplist):
             logger.eror(err)
         logger.info("End to collect Host(%s) info(vendor,mac,sn...)"%ip)
 def __quick_batch_exec(name,ip,user,pwd,cmd,is_script,owner,shell):
-    if is_script:
-        cmd_info = 'script_name:%s'%cmd
+    if is_script == 'yes':
+        cmd_info = 'script(%s)'%cmd[0]
     else:
-        cmd_info = cmd
+        cmd_info = 'command(%s)'%cmd
     logger = Logger()
-    logger.info("Host(%s) begin to exec  cmd(%s)"%(ip,cmd_info))
+    logger.info("Host(%s) begin to exec %s"%(ip,cmd_info))
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
         ssh.connect(ip,22,user,pwd,timeout=15)
     except Exception,e:
-        logger.error("ssh host(%s) use username(%s) and password(%s) in port 22 failure !"%(ip,user,pwd))
+        logger.error("To ssh host(%s) use username(%s) and password(%s) in port 22 failure!"%(ip,user,pwd))
         batch_temp = Batch_Temp(name=name,ip=ip,status='failure',result=str(e),owner=owner)
         batch_temp.save()
-        logger.info("Host(%s) end to exec  cmd(%s)"%(ip,cmd_info))
+        logger.info("Host(%s) end to exec %s!"%(ip,cmd_info))
     else:
         if is_script == 'yes':
             try:
                 filename = '/var/www/quick_content/temp/batch_script'
                 f = open(filename,'w')
-                f.write(cmd)
+                f.write(cmd[1])
                 f.close()
                 local_path = filename
                 target_path = '/tmp/batch_script'
                 sftp = ssh.open_sftp()
                 sftp.put(local_path, target_path)
                 cmd = "sudo %s %s"%(shell,target_path)
-                logger.info("on host(%s) execute command(%s)"%(ip,cmd))
-                stdin, stdout, stderr = ssh.exec_command(cmd,bufsize=1,timeout=15,get_pty=True,environment=None)
+                stdin, stdout, stderr = ssh.exec_command(cmd,bufsize=1,timeout=15,get_pty=False,environment=None)
                 strdata = stdout.read()
                 stderr  = stderr.read()
                 if stderr != '':
-                    logger.error("Host(%s) occur error(%s) in executing script"%(ip,stderr))
+                    logger.error("Host(%s) occur error(%s) in executing script!"%(ip,stderr))
                     e = stderr
                 else:
-                    logger.info("Host(%s) exec command(%s) success"%(ip,cmd_info))
+                    logger.info("Host(%s) exec %s success!"%(ip,cmd_info))
                     e = strdata
                 batch_temp = Batch_Temp(name=name,ip=ip,status='success',result=str(e),owner=owner)
                 batch_temp.save()
-                ssh.close()
-                logger.info("Host(%s) end to execute script"%ip,cmdinfo)
             except Exception,err:
-                pass
+                logger.error("Host(%s) occur error(%s) in executing script!"%(ip,str(err)))
+                batch_temp = Batch_Temp(name=name,ip=ip,status='failure',result=str(err),owner=owner)
+                batch_temp.save()
+            ssh.close()
+            logger.info("Host(%s) end to execute %s!"%(ip,cmd_info))
             return True
         else:
             try:
-                stdin, stdout, stderr = ssh.exec_command(cmd,bufsize=1,timeout=None,get_pty=True,environment=None)
+                stdin, stdout, stderr = ssh.exec_command(cmd,bufsize=1,timeout=15,get_pty=False,environment=None)
                 strdata = stdout.read()
                 stderr  = stderr.read()
                 if stderr != '':
-                    logger.error("Host(%s) occur error(%s) in execute command(%s)"%(ip,stderr,cmd_info))
+                    logger.error("Host(%s) occur error (%s) in executing (%s)!"%(ip,stderr,cmd_info))
                     e = stderr
+                    status = 'failure'
                 else:
-                    logger.info("Host(%s) execute command(%s) success"%(ip,cmd_info))
+                    logger.info("Host(%s) execute %s success!"%(ip,cmd_info))
                     e = strdata
-                batch_temp = Batch_Temp(name=name,ip=ip,status='success',result=str(e),owner=owner)
+                    status = 'success'
+                batch_temp = Batch_Temp(name=name,ip=ip,status=str(status),result=str(e),owner=owner)
                 batch_temp.save()
-                ssh.close()
-                logger.info("Host(%s) end to exec  cmd(%s)"%(ip,cmdinfo))
             except Exception,err:
-                logger.error("Host(%s) occur error(%s) in executing command(%s)"%(ip,str(err)))
-                logger.info("Host(%s) end to exec  cmd(%s)"%(ip,cmd_info))
+                logger.error("Host(%s) occur error(%s) in executing (%s)!"%(ip,str(err),cmd_info))
+            ssh.close()
+            logger.info("Host(%s) end to exec %s!"%(ip,cmd_info))
             return True
 def __start_task(thr_obj_fn,name):
     logger = Logger()
@@ -399,7 +405,7 @@ def __background_exec(name):
     try:
         logger = Logger()
         batch = Batch.objects.filter(name=name)
-        logger.info("Batch (%s) in __exec"%name)
+        logger.info("Batch (%s) in __background_exec"%name)
         gevent_list = []
         if batch:
             batch = batch[0]
@@ -415,7 +421,7 @@ def __background_exec(name):
             if batch.is_script == 'yes':
                 script = Script.objects.filter(name=batch.script_name)
                 if script:
-                    cmd = script[0].content
+                    cmd = [batch.script_name,script[0].content]
                     if script[0].lang.lower() == "shell":
                         shell = 'sh'
                     elif script[0].lang.lower() == "python":
@@ -429,7 +435,7 @@ def __background_exec(name):
                 gevent_list.append(gevent.spawn(__quick_batch_exec,name,ip.strip(),batch.osuser,batch.ospwd,cmd,batch.is_script,batch.owner,shell))
             gevent.joinall(gevent_list)
     except Exception,e:
-        logger.error("Batch (%s) occur error(%s) in exec_command(%s)"%(name,str(err),cmd))
+        logger.error("Batch (%s) occur error(%s)!"%(name,str(err)))
         return False
     else:
         return True
@@ -447,6 +453,7 @@ class QuickThread(Thread):
             self.logger.info("End task(%s)"%self.name)
             return rc
         except:
+            self.logger.error("End task(%s) exit(0)!"%self.name)
             return False
 def add_vnc_token(ip_list,path='/usr/share/quick/extend/novnc/vnc_tokens',token='token',port='5901'):
     for ip in ip_list:
@@ -551,5 +558,6 @@ def is_valid_ip(strdata=None):
             return True
         else:
             return False
+
 
 
