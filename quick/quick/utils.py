@@ -319,15 +319,17 @@ def __quick_batch_exec(name,ip,user,pwd,cmd,is_script,owner,shell):
                 if stderr != '':
                     logger.error("Host(%s) occur error(%s) in executing script!"%(ip,stderr))
                     e = stderr
+                    status = 'failure'
                 else:
                     logger.info("Host(%s) exec %s success!"%(ip,cmd_info))
                     e = strdata
-                batch_temp = Batch_Temp(name=name,ip=ip,status='success',result=str(e),owner=owner)
-                batch_temp.save()
+                    status = 'success'
             except Exception,err:
                 logger.error("Host(%s) occur error(%s) in executing script!"%(ip,str(err)))
-                batch_temp = Batch_Temp(name=name,ip=ip,status='failure',result=str(err),owner=owner)
-                batch_temp.save()
+                status = 'failure'
+                e = err
+            batch_temp = Batch_Temp(name=name,ip=ip,status=str(status),result=str(e),owner=owner)
+            batch_temp.save()
             ssh.close()
             logger.info("Host(%s) end to execute %s!"%(ip,cmd_info))
             return True
@@ -344,10 +346,12 @@ def __quick_batch_exec(name,ip,user,pwd,cmd,is_script,owner,shell):
                     logger.info("Host(%s) execute %s success!"%(ip,cmd_info))
                     e = strdata
                     status = 'success'
-                batch_temp = Batch_Temp(name=name,ip=ip,status=str(status),result=str(e),owner=owner)
-                batch_temp.save()
             except Exception,err:
                 logger.error("Host(%s) occur error(%s) in executing (%s)!"%(ip,str(err),cmd_info))
+                status = 'failure'
+                e = err
+            batch_temp = Batch_Temp(name=name,ip=ip,status=str(status),result=str(e),owner=owner)
+            batch_temp.save()
             ssh.close()
             logger.info("Host(%s) end to exec %s!"%(ip,cmd_info))
             return True
@@ -558,6 +562,7 @@ def is_valid_ip(strdata=None):
             return True
         else:
             return False
+
 
 
 
