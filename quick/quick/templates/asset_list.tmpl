@@ -36,7 +36,7 @@
                                         {% ifnotequal what "asset/union" %}
                                         <a class="btn btn-primary" href="/quick/{{ what }}/edit">新增</a>
                                         <a id="import" class="btn btn-primary" href="javascript:;" data-import-type="{{ what }}">导入</a>
-                                        <a id="export" class="btn btn-primary" href="/quick/{{ what }}/export">导出</a>
+                                        <a id="export" class="btn btn-primary" href="javascript:;" data-export-type="{{ what }}">导出</a>
                                         {% for title,action,value in batchactions %}
                                         {% if action == "delete" %}
                                         <a class="btn btn-primary" id="batchactions" href="javascript:;" value="{{ action }}|{{ value }}" onclick="javascript:action_multi_new('{{ what }}')">{{ title }}</a>
@@ -149,11 +149,5 @@
     </div>
 </div>
 {% endblock content %}
-
-
-
-
-
-
 
 

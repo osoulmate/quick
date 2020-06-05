@@ -40,7 +40,7 @@ menu = [
                 "menuicon" :"fa-globe",
                 "menustate":"inactive",
                 "children":[{'title':'地址池','url':'/quick/ippool/list','menustate':'inactive'},
-                            {'title':'存储池','url':'/quick/storge/list','menustate':'inactive'}]
+                            {'title':'存储池','url':'/quick/storage/list','menustate':'inactive'}]
             },
             {
                 "menutitle":"配置管理",
@@ -79,5 +79,6 @@ menu = [
                             {'title':'Events','url':'/quick/events','menustate':'inactive'}]
             }
 ]
+
 
 

@@ -36,6 +36,7 @@
     });
 function format(source, params) {
     if (arguments.length === 1) {
+	    //console.log("只有1个参数")
         return function () {
             var args = $.makeArray(arguments);
             args.unshift(source);
@@ -44,15 +45,32 @@ function format(source, params) {
     }
     if (arguments.length > 2 && params.constructor !== Array) {
         params = $.makeArray(arguments).slice(1);
+		//console.log("参数大于2")
     }
     if (params.constructor !== Array) {
         params = [params];
+		//console.log(params)
     }
     $.each(params, function (i, n) {
         source = source.replace(new RegExp("\\{" + i + "\\}", "g"), function () {
+			//console.log(params instanceof Array)
+			//console.log("i="+i)
+			if (params instanceof Array && params.length>1 && i==0 ){
+				ip_len = n.length
+				if (ip_len<15){
+					for(var j=ip_len-1;j<15;j++){
+						//console.log(n)
+						n = n+" "
+					}
+					//console.log("ip len:"+n.length)
+					return n
+				}
+			}
+		    //console.log(n)
             return n;
         });
     });
+	//console.log("source:"+source)
     return source;
 };
 setInterval(update_data,2000)
@@ -323,6 +341,7 @@ function update_data() {
                 </div>
             </div>
 {% endblock content %}
+
 
 
 

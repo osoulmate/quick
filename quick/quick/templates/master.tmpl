@@ -49,7 +49,7 @@
             <!-- Logo Header -->
             <div class="logo-header">
                 
-                <a href="../index.html" class="logo">
+                <a href="/quick" class="logo">
                     <img src="/quick_content/assets/img/logoname.svg" alt="navbar brand" class="navbar-brand">
                 </a>
                 <button class="navbar-toggler sidenav-toggler ml-auto" type="button" data-toggle="collapse" data-target="collapse" aria-expanded="false" aria-label="Toggle navigation">
@@ -344,8 +344,30 @@
                         }
                     });
                 });
+                $('#export').click(function(e){
+                    var what = $('#export').data('export-type')
+                    console.log(what)
+                    var url = "/quick/" + what + "/export";
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', url, true);//get请求，请求地址，是否异步
+                    xhr.responseType = "blob";    // 返回类型blob
+                    xhr.onload = function () {// 请求完成处理函数
+                        if (this.status === 200) {
+                            $("#uploading").hide()
+                            var blob = this.response;// 获取返回值
+                            var a = document.createElement('a');
+                            var mydate = new Date();
+                            var savename ="cmdb-" + mydate.getFullYear() + mydate.getMonth() + mydate.getDate() +mydate.getHours() +mydate.getMinutes()+".xls" 
+                            a.download = savename;
+                            a.href=window.URL.createObjectURL(blob);
+                            a.click();
+                        }
+                    };
+                    // 发送ajax请求
+                    xhr.send();
+                    $("#uploading").show()
+                    });
             };
-
             return {
                 //== Init
                 init: function() {
@@ -397,6 +419,8 @@
     <script src="/quick_content/assets/js/ready.min.js"></script>
 </body>
 </html>
+
+
 
 
 

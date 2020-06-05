@@ -54,7 +54,7 @@ def asset_list(request,what,page=None):
     records = System.objects.filter(id=1)
     user_profile = User_Profile.objects.filter(username=meta['username'])
     if not records:
-        return HttpResponse('no data!')
+        return error_page(request,"系统设置记录为空！")
     else:
         records = records[0]
     batchactions = [["删除","delete","delete"],]
@@ -65,17 +65,18 @@ def asset_list(request,what,page=None):
     if user_profile:
         user_profile = user_profile[0]
     else:
-        return HttpResponse("unknown user view!")
+        return error_page(request,"未知的用户视图！")
     if what == 'app':
         fields = [f for f in App._meta.fields]
         if iplist:
-            num_items = len(iplist)
+            #num_items = len(iplist)
             q = Q()
             q.connector = 'OR'
             for ip in iplist:
                 q.children.append(("ip",ip))
             #items = App.objects.filter(q).order_by("ip")
             items = App.objects.filter(q)
+            num_items = len(items)
         else:
             if not filters:
                 num_items = records.app_records
@@ -98,13 +99,14 @@ def asset_list(request,what,page=None):
     elif what == 'hardware':
         fields = [f for f in Hardware._meta.fields]
         if iplist:
-            num_items = len(iplist)
+            #num_items = len(iplist)
             q = Q()
             q.connector = 'OR'
             for sn in iplist:
                 q.children.append(("sn",sn.strip()))
             #items = Hardware.objects.filter(q).order_by("sn")
             items = Hardware.objects.filter(q)
+            num_items = len(items)
         else:
             if not filters:
                 num_items = records.hardware_records
@@ -205,7 +207,7 @@ def asset_save(request,what):
     urandom = open("/dev/urandom")
     salt = base64.encodestring(urandom.read(25)) + str(time.time())
     if not records:
-        return HttpResponse('no data!')
+        return error_page(request,"系统设置记录为空！")
     else:
         records = records[0]
     try:
@@ -345,7 +347,7 @@ def asset_import(request,what):
                     for info in file.chunks():
                         f.write(info)
             except Exception,e:
-                return HttpResponse(str(e))
+                return error_page(request,str(e))
     else:
         return HttpResponse("上传文件不能位空!")
     filename = os.path.join(settings.MEDIA_ROOT, file.name)
@@ -525,6 +527,7 @@ def asset_edit(request,what,obj_name=None,editmode='edit'):
 def asset_delete(request,what,obj_name=None):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/asset/%s/list"%what, expired=True)
+    target = "asset"
     if not obj_name:
         return HttpResponse("参数不能为空")
     try:
@@ -538,12 +541,18 @@ def asset_delete(request,what,obj_name=None):
             hd_temp = System.objects.get(id=1)
             hd_temp.hardware_records = hd_temp.hardware_records - 1
             hd_temp.save()
+        elif what == "group":
+            target = "host"
+            Host_Group.objects.get(name=obj_name).delete()
+        elif what == "script":
+            target = "host"
+            Script.objects.get(name=obj_name).delete()
         else:
-            pass
+            return error_page(request,"未知操作")
     except Exception,e:
-        return HttpResponse(str(e))
+        return error_page(request,str(e))
     else:
-        return HttpResponseRedirect("/quick/asset/%s/list"%what)
+        return HttpResponseRedirect("/quick/%s/%s/list"%(target,what))
 # ======================================================================
 
 @require_POST
@@ -552,6 +561,7 @@ def asset_domulti(request,what,multi_mode=None,multi_arg=None):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/asset/%s/list"%what, expired=True)
     names = request.POST.get('names', '').strip().split()
+    target = "asset"
     if names == "":
         return error_page(request, "未选中任何对象")
     try:
@@ -573,9 +583,23 @@ def asset_domulti(request,what,multi_mode=None,multi_arg=None):
                 hd_temp.save()
             else:
                 return error_page(request,"未知操作")
+        elif what == "group":
+            target = "host"
+            if multi_mode == "delete" and multi_arg == 'delete':
+                for name in names:
+                    Host_Group.objects.get(name=name).delete()
+            else:
+                return error_page(request,"未知操作")
+        elif what == "script":
+            target = "host"
+            if multi_mode == "delete" and multi_arg == 'delete':
+                for name in names:
+                    Script.objects.filter(name=name).delete()
+            else:
+                return error_page(request,"未知操作")
     except Exception,e:
-        return HttpResponse(str(e))
-    return HttpResponseRedirect("/quick/asset/%s/list"%what)
+        return error_page(request,str(e))
+    return HttpResponseRedirect("/quick/%s/%s/list"%(target,what))
 # ======================================================================
 def modify_list(request, obj, what, pref, value=None):
     """
@@ -895,15 +919,19 @@ def host_save(request,what,editmode='edit'):
     return HttpResponseRedirect('/quick/host/%s/list'%what)
 #==================================================================================
 def presence_list(request,page=None):
+    return error_page(request,"尚未开放此功能")
     pass
 #==================================================================================
 def presence_edit(request,sn=None, editmode='edit'):
+    return error_page(request,"尚未开放此功能")
     pass
 #==================================================================================
 def presence_save(request,editmode='edit'):
+    return error_page(request,"尚未开放此功能")
     pass
 #==================================================================================
 def virtual_list(request,page=None):
+    return error_page(request,"尚未开放此功能")
     pass
 #==================================================================================
 def ippool_list(request,page=None):
@@ -912,6 +940,7 @@ def ippool_list(request,page=None):
     """
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/ippool/list", expired=True)
+    return error_page(request,"开发中")
     what = 'ippool'
     if page == None:
         page = int(request.session.get("%s_page" % what, 1))
@@ -957,11 +986,14 @@ def storage_list(request,page=None):
     """
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/storage/list", expired=True)
+    return error_page(request,"尚未开放此功能")
     pass
 def storage_edit(request,sn=None, editmode='edit'):
+    return error_page(request,"尚未开放此功能")
     pass
 #==================================================================================
 def storage_save(request,editmode='edit'):
+    return error_page(request,"尚未开放此功能")
     pass
 
 #==================================================================================
@@ -1060,14 +1092,6 @@ def __paginate(num_items=0,page=None,items_per_page=None,token=None):
             'items_per_page' : items_per_page,
             'items_per_page_list' : [5,10,20,50,100,200,500],
             })
-
-
-
-
-
-
-
-
 
 
 

@@ -50,6 +50,8 @@ urlpatterns = patterns('',
     (r'^host/(?P<what>\w+)/edit/(?P<obj_name>.+)$', assets.host_edit, {'editmode': 'edit'}),
     (r'^host/(?P<what>\w+)/edit$', assets.host_edit, {'editmode': 'new'}),
     (r'^host/(?P<what>\w+)/save$', assets.host_save),
+    (r'^host/(?P<what>\w+)/delete/(?P<obj_name>.+)$', assets.asset_delete),
+    (r'^host/(?P<what>\w+)/multi/(?P<multi_mode>.+)/(?P<multi_arg>.+)$', assets.asset_domulti),
 
     (r'^presence/list(/(?P<page>\d+))?$', assets.presence_list),
     (r'^presence/edit$', assets.presence_edit, {'editmode':'new'}),
@@ -112,8 +114,6 @@ urlpatterns = patterns('',
     (r'^(?P<what>\w+)/save$', views.generic_save),
 
 )
-
-
 
 
 

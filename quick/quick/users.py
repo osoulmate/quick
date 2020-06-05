@@ -510,6 +510,7 @@ def logit(request,what,page=None):
         page = int(request.session.get("%s_page"%what, 1))
     limit = int(request.session.get("%s_limit"%what ,10))
     sort_field = sort_field_old = request.session.get("%s_sort_field"%what, "id")
+    batchactions = [["删除","delete","delete"]]
     if sort_field.startswith("!"):
         sort_field=sort_field.replace("!","-")
     filters = simplejson.loads(request.session.get("%s_filters"%what, "{}"))
@@ -566,8 +567,10 @@ def logit(request,what,page=None):
         'pageinfo'       : assets.__paginate(num_items,page=page,items_per_page=limit),
         'filters'        : filters,
         'limit'          : limit,
+        'batchactions'   : batchactions,
         'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
+
 
 
