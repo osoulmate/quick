@@ -17,7 +17,6 @@
             }
         });
     </script>
-    
     <!-- CSS Files -->
     <link rel="stylesheet" href="/quick_content/assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="/quick_content/assets/css/azzara.min.css">
@@ -26,7 +25,7 @@
     <div class="wrapper wrapper-login">
         <div class="container container-login animated fadeIn">
             <h3 class="text-center"><img src="/quick_content/img/logo.png" width="185" /></h3>
-            <form action="/quick/do_login" method="post">{% csrf_token %}
+            <form id="login_form" action="/quick/do_login" method="post">{% csrf_token %}
             {% if next %}<input type="hidden" name="next" value="{{ next|escape }}" />{% endif %}
             <div class="login-form">
                 <div class="form-group">
@@ -48,7 +47,7 @@
                         <input type="checkbox" class="custom-control-input" id="rememberme">
                         <label class="custom-control-label m-0" for="rememberme">记住密码</label>
                     </div>
-                    <input class="btn btn-primary col-md-5 float-right mt-3 mt-sm-0 fw-bold" type="submit" value="登陆" />
+                    <input class="btn btn-primary col-md-5 float-right mt-3 mt-sm-0 fw-bold" type="submit" onclick="do_login()" value="登陆" />
                 </div>
                 <div class="login-account">
                     <span class="msg">还没有账号?</span>
@@ -56,6 +55,7 @@
                 {% if message %}
                     <p style="color:red;">{{ message }}</p>
                 {% endif %}
+					<p style="color:red;" id="tips"></p>
                 </div>
             </div>
             </form>
@@ -112,6 +112,8 @@
     <script src="/quick_content/assets/js/core/popper.min.js"></script>
     <script src="/quick_content/assets/js/core/bootstrap.min.js"></script>
     <script src="/quick_content/assets/js/ready.js"></script>
+    <script src="/quick_content/js/cookie.js"></script>
 </body>
 </html>
+
 
