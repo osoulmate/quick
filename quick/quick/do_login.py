@@ -71,6 +71,8 @@ def do_login(request):
                             meta_old = simplejson.loads(meta_old)
                             if meta_old['username'] == username:
                                 Session.objects.filter(session_key=session.session_key).delete()
+                                login_log = Login_Log(time=now,action='登出',user=username,status='成功',ip=request.META['REMOTE_ADDR'],remark='账号在另一区域登陆')
+                                login_log.save()
             user_profile = User_Profile.objects.filter(username=username)
             if user_profile:
                 bg = user_profile[0].background
@@ -94,5 +96,6 @@ def do_login(request):
         login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='令牌无效')
         login_log.save()
         return login(request,nextsite,message="登录失败，请重试")
+
 
 

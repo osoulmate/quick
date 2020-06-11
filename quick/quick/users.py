@@ -505,7 +505,7 @@ def my_save(request):
 
 def logit(request,what,page=None):
     if not oauth.test_user_authenticated(request): 
-        return login(request, next="/quick/%s"%what, expired=True)
+        return login(request, next="/quick/log/%s"%what, expired=True)
     if page == None:
         page = int(request.session.get("%s_page"%what, 1))
     limit = int(request.session.get("%s_limit"%what ,10))
@@ -571,6 +571,7 @@ def logit(request,what,page=None):
         'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
+
 
 
 
