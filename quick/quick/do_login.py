@@ -12,7 +12,7 @@ import base64
 import xmlrpclib
 import hashlib
 import cobbler.utils as utils
-from quick.models import Users,User_Profile
+from quick.models import Users,User_Profile,Login_Log
 from login import login
 import menu
 
@@ -23,10 +23,16 @@ def do_login(request):
     password = request.POST.get('password', '')
     nextsite = request.POST.get('next',None)
     users = Users.objects.filter(username=username,password=hashlib.md5(password.encode(encoding='UTF-8')).hexdigest())
+    now = datetime.now()
+    now = now.strftime("%Y-%m-%d %H:%M:%S")
     if not users:
+        login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='用户名或密码错误')
+        login_log.save()
         return login(request,nextsite,message="用户名或密码错误")
     for user in users:
         if user.is_active == 'no':
+            login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='用户账号未激活')
+            login_log.save()
             return login(request,nextsite,message="您的账号尚未激活，请联系管理员")
 
     url_cobbler_api = utils.local_get_cobbler_api_url()
@@ -75,15 +81,18 @@ def do_login(request):
             meta = {"online":online,"username":username,"usermail":user.email,"menu":menu.menu,"notice":2,"bg":bg,"topbar":topbar}
             request.session['quick_meta'] = simplejson.dumps(meta)
         except Exception as e:
+            login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='系统异常')
+            login_log.save()
             return HttpResponse(str(e))
+        login_log = Login_Log(time=now,action='登入',user=username,status='成功',ip=request.META['REMOTE_ADDR'],remark='正常登陆')
+        login_log.save()
         if nextsite:
            return HttpResponseRedirect(nextsite)
         else:
            return HttpResponseRedirect("/quick")
     else:
+        login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='令牌无效')
+        login_log.save()
         return login(request,nextsite,message="登录失败，请重试")
-
-
-
 
 

@@ -28,6 +28,7 @@ urlpatterns = patterns('',
     (r'^check$', views.check),
     (r'^login$', login.login),
     (r'^do_login$', do_login.do_login),
+    (r'^logout1$', do_logout.do_logout_timeout),
     (r'^logout$', do_logout.do_logout),
     (r'^test$', test.test),
     (r'^add_web_users$', add_web_users.add_web_users),
@@ -114,6 +115,7 @@ urlpatterns = patterns('',
     (r'^(?P<what>\w+)/save$', views.generic_save),
 
 )
+
 
 
 

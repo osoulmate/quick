@@ -3,6 +3,11 @@ var run_once = 0
 var now = new Date()
 var page_load = -1
 */
+var lastTime = new Date().getTime();
+
+var currentTime = new Date().getTime();
+
+var timeOut = 5 * 60 * 1000;
 /* show tasks not yet recorded, update task found time in hidden field */
 function get_latest_task_info() {
   var username = document.getElementById("username").value
@@ -87,6 +92,7 @@ function update() {
 function go_go_gadget() {
     setInterval(get_latest_task_info,2000)
     setInterval(function(){ update() }, 1000);
+    window.setInterval(testTime, 1000);
     top.document.getElementById("paneloading").style.display = "none";
     try {
        page_onload()
@@ -96,6 +102,9 @@ function go_go_gadget() {
 }
 
 function page_onload() { 
+    window.document.onmousemove = function() {
+        lastTime = new Date().getTime(); //更新操作时间
+    }
     var submitting = false;
     $(window).bind("submit", function () {
         submitting = true;
@@ -106,6 +115,16 @@ function page_onload() {
             return "您有未保存的更改";
        }
     });
+}
+function testTime() {
+
+currentTime = new Date().getTime(); //更新当前时间
+
+if (currentTime - lastTime > timeOut) { //判断是否超时
+    console.log("超时");
+    document.forms["menuaction"].action = "/quick/logout1";
+    document.forms["menuaction"].submit();
+}
 }
 
 function items_check_all(){
@@ -443,4 +462,5 @@ window.confirm = function(option)
 }
 
 */
+
 

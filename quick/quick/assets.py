@@ -24,6 +24,8 @@ from login import login
 from error_page import error_page
 from quick.models import *
 
+now = datetime.now()
+now = now.strftime("%Y-%m-%d %H:%M:%S")
 #========================================================================
 def asset_list(request,what,page=None):
     """
@@ -201,6 +203,8 @@ def asset_save(request,what):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/asset/%s/list"%what, expired=True)
     editmode = request.POST.get('editmode', 'edit')
+    meta = simplejson.loads(request.session['quick_meta'])
+    username = meta['username']
     iplist = ''
     snlist = ''
     records = System.objects.filter(id=1)
@@ -214,6 +218,7 @@ def asset_save(request,what):
         if what == 'app':
             fields = [f for f in App._meta.fields]
             kw = {}
+            old_kw = {}
             for field in fields:
                 if field.name == "uuid":
                     continue
@@ -236,14 +241,24 @@ def asset_save(request,what):
                 app.save()
                 records.app_records = records.app_records + 1
                 records.save()
+                manual_log = Manual_Log(time=now,user=username,action='单个资产新增',remark='业务视图')
+                manual_log.save()
             else:
                 if iplist:
                     #批量更新
                     for ip in iplist:
                         app = App.objects.get(ip=ip)
                         for k,v in kw.items():
+                            old_v = getattr(app, k)
+                            old_kw[k] = old_v
                             setattr(app, k , v)
                         app.save()
+                        before_update = simplejson.dumps(old_kw)
+                        after_update = simplejson.dumps(kw)
+                        asset_Log = Asset_Log(time=now,name="业务视图",key=request.POST.get("uuid", ""),before_update=before_update,after_update=after_update,action='更新',user=username,job_id=request.POST.get("remark", ""),remark='业务视图')
+                        asset_Log.save()
+                    manual_log = Manual_Log(time=now,user=username,action='批量资产更新',remark='业务视图')
+                    manual_log.save()
                 else:
                     #单个更新
                     app = App.objects.get(ip=kw['ip'])
@@ -258,11 +273,20 @@ def asset_save(request,what):
                         else:
                             return error_page(request,'无效的IP地址！')
                     for k,v in kw.items():
+                        old_v = getattr(app, k)
+                        old_kw[k] = old_v
                         setattr(app, k , v)
                     app.save()
+                    before_update = simplejson.dumps(old_kw)
+                    after_update = simplejson.dumps(kw)
+                    asset_Log = Asset_Log(time=now,name="业务视图",key=request.POST.get("uuid", ""),before_update=before_update,after_update=after_update,action='更新',user=username,job_id=request.POST.get("remark", ""),remark='业务视图')
+                    asset_Log.save()
+                    manual_log = Manual_Log(time=now,user=username,action='单个资产更新',remark='业务视图')
+                    manual_log.save()
         elif what == 'hardware':
             fields = [f for f in Hardware._meta.fields]
             kw = {}
+            old_kw = {}
             for field in fields:
                 if field.name == "uuid":
                     continue
@@ -289,6 +313,8 @@ def asset_save(request,what):
                 hd.save()
                 records.hardware_records = records.hardware_records + 1
                 records.save()
+                manual_log = Manual_Log(time=now,user=username,action='单个资产新增',remark='硬件视图')
+                manual_log.save()
             else:
                 if snlist:
                     #批量更新
@@ -296,10 +322,18 @@ def asset_save(request,what):
                         try:
                             hd = Hardware.objects.get(sn=sn.strip())
                             for k,v in kw.items():
+                                old_v = getattr(hd, k)
+                                old_kw[k] = old_v
                                 setattr(hd, k , v)
                             hd.save()
+                            before_update = simplejson.dumps(old_kw)
+                            after_update = simplejson.dumps(kw)
+                            asset_Log = Asset_Log(time=now,name="硬件视图",key=request.POST.get("uuid", ""),before_update=before_update,after_update= after_update,action='更新',user=username,job_id=request.POST.get("remark", ""),remark='硬件视图')
+                            asset_Log.save()
                         except Exception,e:
                             return error_page(request,str(e))
+                    manual_log = Manual_Log(time=now,user=username,action='批量资产更新',remark='硬件视图')
+                    manual_log.save()
                 else:
                     #单个更新
                     hd = Hardware.objects.get(sn=kw['sn'])
@@ -308,6 +342,8 @@ def asset_save(request,what):
                             kw['uuid'] = (str(uuid.uuid3(uuid.NAMESPACE_DNS,str(kw['ipmi_ip'])))).replace("-","")
                             is_exist = Hardware.objects.filter(uuid=kw['uuid'])
                             if is_exist:
+                                manual_log = Manual_Log(time=now,user=username,action='单个资产更新',remark='重复的带外地址')
+                                manual_log.save()
                                 return error_page(request,'重复的带外地址！')
                             for field in fields:
                                 if field.name == "uuid" or field.name == 'ipmi_ip':
@@ -315,10 +351,20 @@ def asset_save(request,what):
                                 kw[field.name] = getattr(hd,field.name,'NULL')
                             Hardware.objects.get(sn=kw['sn']).delete()
                         else:
+                            manual_log = Manual_Log(time=now,user=username,action='单个资产更新',remark='带外地址格式错误')
+                            manual_log.save()
                             return error_page(request,'无效的IP地址！')
                     for k,v in kw.items():
+                        old_v = getattr(hd, k)
+                        old_kw[k] = old_v
                         setattr(hd, k , v)
                     hd.save()
+                    before_update = simplejson.dumps(old_kw)
+                    after_update = simplejson.dumps(kw)
+                    asset_Log = Asset_Log(time=now,name="硬件视图",key=request.POST.get("uuid", ""),before_update=before_update,after_update=after_update,action='更新',user=username,job_id=request.POST.get("remark", ""),remark='硬件视图')
+                    asset_Log.save()
+                    manual_log = Manual_Log(time=now,user=username,action='单个资产更新',remark='硬件视图')
+                    manual_log.save()
         elif what == 'union':
             pass
         else:
@@ -335,10 +381,12 @@ def asset_import(request,what):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/asset/%s/list"%what, expired=True)
     file = request.FILES['xlsfile']
+    meta = simplejson.loads(request.session['quick_meta'])
+    username = meta['username']
     if file:
-        if '.' not in file.name:
-            return HttpResponse("上传文件格式错误（仅支持xls格式文件）!")
-        if file.name.split('.')[1] != 'xls':
+        if '.' not in file.name or file.name.split('.')[1] != 'xls':
+            manual_log = Manual_Log(time=now,user=username,action='导入文件',remark='上传文件格式错误')
+            manual_log.save()
             return HttpResponse("上传文件格式错误（仅支持xls格式文件）!")
         else:
             filepath = os.path.join(settings.MEDIA_ROOT, file.name)
@@ -349,7 +397,9 @@ def asset_import(request,what):
             except Exception,e:
                 return error_page(request,str(e))
     else:
-        return HttpResponse("上传文件不能位空!")
+        manual_log = Manual_Log(time=now,user=username,action='导入文件',remark='上传文件为空')
+        manual_log.save()
+        return HttpResponse("上传文件不能为空!")
     filename = os.path.join(settings.MEDIA_ROOT, file.name)
     if not os.access(str(filename), os.F_OK):
         return HttpResponse("文件不存在!")
@@ -370,6 +420,8 @@ def asset_import(request,what):
                 for field in fields:
                     v =  record.get((field.verbose_name).decode(encoding='UTF-8',errors='strict'),'N/R')
                     if field.name == 'ip' and v == '':
+                        manual_log = Manual_Log(time=now,user=username,action='导入文件',remark='业务IP为空，导入失败')
+                        manual_log.save()
                         return HttpResponse('存在业务IP为空的记录，导入失败！')
                     if not v:
                         v = 'N/R'
@@ -391,6 +443,8 @@ def asset_import(request,what):
                     app_temp = System.objects.get(id=1)
                     app_temp.app_records = i
                     app_temp.save()
+                    manual_log = Manual_Log(time=now,user=username,action='导入文件',remark='部分成功')
+                    manual_log.save()
                     return HttpResponse([str(e),kw,'异常2'])
             i = len(App.objects.all())
             app_temp = System.objects.get(id=1)
@@ -430,13 +484,19 @@ def asset_import(request,what):
         else:
             return HttpResponse('未知请求！')
     except Exception,e:
+        manual_log = Manual_Log(time=now,user=username,action='导入文件',remark='失败')
+        manual_log.save()
         return HttpResponse([str(e),'全局异常'])
     else:
+        manual_log = Manual_Log(time=now,user=username,action='导入文件',remark='成功')
+        manual_log.save()
         return HttpResponse(True)
 # ======================================================================
 def asset_export(request,what):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/asset/%s/list"%what, expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
+    username = meta['username']
     app_items  = App.objects.all()
     app_fields = [f for f in App._meta.fields]
     hd_fields  = [f for f in Hardware._meta.fields]
@@ -465,11 +525,15 @@ def asset_export(request,what):
         pe.save_as(records=save_data, dest_file_name=filename)
         file=open(filename,'rb')
     except Exception,e:
+        manual_log = Manual_Log(time=now,user=username,action='导出文件',remark='失败')
+        manual_log.save()
         return HttpResponse(str(e))
     else:
         response =HttpResponse(file)  
         response['Content-Type']='application/octet-stream'  
         response['Content-Disposition']='attachment;filename="%s"'%save_name
+        manual_log = Manual_Log(time=now,user=username,action='导出文件',remark='成功')
+        manual_log.save()
         return response
 
 # ======================================================================
@@ -527,6 +591,8 @@ def asset_edit(request,what,obj_name=None,editmode='edit'):
 def asset_delete(request,what,obj_name=None):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/asset/%s/list"%what, expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
+    username = meta['username']
     target = "asset"
     if not obj_name:
         return HttpResponse("参数不能为空")
@@ -536,17 +602,25 @@ def asset_delete(request,what,obj_name=None):
             app_temp = System.objects.get(id=1)
             app_temp.app_records = app_temp.app_records - 1
             app_temp.save()
+            manual_log = Manual_Log(time=now,user=username,action='删除资产',remark='业务视图')
+            manual_log.save()
         elif what == 'hardware':
             Hardware.objects.get(uuid=obj_name).delete()
             hd_temp = System.objects.get(id=1)
             hd_temp.hardware_records = hd_temp.hardware_records - 1
             hd_temp.save()
+            manual_log = Manual_Log(time=now,user=username,action='删除资产',remark='硬件视图')
+            manual_log.save()
         elif what == "group":
             target = "host"
             Host_Group.objects.get(name=obj_name).delete()
+            manual_log = Manual_Log(time=now,user=username,action='删除主机组',remark='主机管理')
+            manual_log.save()
         elif what == "script":
             target = "host"
             Script.objects.get(name=obj_name).delete()
+            manual_log = Manual_Log(time=now,user=username,action='删除脚本',remark='主机管理')
+            manual_log.save()
         else:
             return error_page(request,"未知操作")
     except Exception,e:
@@ -560,6 +634,8 @@ def asset_delete(request,what,obj_name=None):
 def asset_domulti(request,what,multi_mode=None,multi_arg=None):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/asset/%s/list"%what, expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
+    username = meta['username']
     names = request.POST.get('names', '').strip().split()
     target = "asset"
     if names == "":
@@ -572,6 +648,8 @@ def asset_domulti(request,what,multi_mode=None,multi_arg=None):
                 app_temp = System.objects.get(id=1)
                 app_temp.app_records = app_temp.app_records - len(names)
                 app_temp.save()
+                manual_log = Manual_Log(time=now,user=username,action='批量删除资产',remark='业务视图')
+                manual_log.save()
             else:
                 return error_page(request,"未知操作")
         elif what == "hardware":
@@ -581,6 +659,8 @@ def asset_domulti(request,what,multi_mode=None,multi_arg=None):
                 hd_temp = System.objects.get(id=1)
                 hd_temp.hardware_records = hd_temp.hardware_records - len(names)
                 hd_temp.save()
+                anual_log = Manual_Log(time=now,user=username,action='批量删除资产',remark='硬件视图')
+                manual_log.save()
             else:
                 return error_page(request,"未知操作")
         elif what == "group":
@@ -588,6 +668,8 @@ def asset_domulti(request,what,multi_mode=None,multi_arg=None):
             if multi_mode == "delete" and multi_arg == 'delete':
                 for name in names:
                     Host_Group.objects.get(name=name).delete()
+                manual_log = Manual_Log(time=now,user=username,action='批量删除主机组',remark='主机管理')
+                manual_log.save()
             else:
                 return error_page(request,"未知操作")
         elif what == "script":
@@ -595,6 +677,8 @@ def asset_domulti(request,what,multi_mode=None,multi_arg=None):
             if multi_mode == "delete" and multi_arg == 'delete':
                 for name in names:
                     Script.objects.filter(name=name).delete()
+                manual_log = Manual_Log(time=now,user=username,action='批量删除脚本',remark='业务视图')
+                manual_log.save()
             else:
                 return error_page(request,"未知操作")
     except Exception,e:
@@ -662,6 +746,7 @@ def host_list(request,what,page=None):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/host/%s/list"%what, expired=True)
     meta = simplejson.loads(request.session['quick_meta'])
+    username = meta['username']
     columns=[]
     groups = []
     scripts = []
@@ -794,6 +879,8 @@ def host_list(request,what,page=None):
                                is_ip=is_ip,is_script=is_script)
                 batch.save()
                 utils.background_exec(batch_name)
+                manual_log = Manual_Log(time=now,user=username,action='批处理',remark='主机管理')
+                manual_log.save()
             else:
                 host_group = Host_Group.objects.all()
                 for group in host_group:
@@ -871,6 +958,7 @@ def host_save(request,what,editmode='edit'):
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/host/%s/list"%what, expired=True)
     meta = simplejson.loads(request.session['quick_meta'])
+    username = meta['username']
     editmode = request.POST.get('editmode', 'edit')
     if what == 'group':
         fields = [f for f in Host_Group._meta.fields]
@@ -886,12 +974,16 @@ def host_save(request,what,editmode='edit'):
             kw['owner']       = meta['username']
             hg=Host_Group(**kw)
             hg.save()
+            manual_log = Manual_Log(time=now,user=username,action='新增主机组',remark='主机管理')
+            manual_log.save()
         else:
             objid = request.POST.get('host-id' "")
             hg = Host_Group.objects.get(id=objid)
             for k,v in kw.items():
                 setattr(hg, k , v)
             hg.save()
+            manual_log = Manual_Log(time=now,user=username,action='更新主机组',remark='主机管理')
+            manual_log.save()
     elif what == 'script':
         fields = [f for f in Script._meta.fields]
         kw = {}
@@ -906,12 +998,16 @@ def host_save(request,what,editmode='edit'):
             kw['owner']       = meta['username']
             st=Script(**kw)
             st.save()
+            manual_log = Manual_Log(time=now,user=username,action='新增脚本',remark='主机管理')
+            manual_log.save()
         else:
             objid = request.POST.get('host-id' "")
             st = Script.objects.get(id=objid)
             for k,v in kw.items():
                 setattr(st, k , v)
             st.save()
+            manual_log = Manual_Log(time=now,user=username,action='更新脚本',remark='主机管理')
+            manual_log.save()
     elif what == 'batch':
         pass
     else:
@@ -1092,6 +1188,7 @@ def __paginate(num_items=0,page=None,items_per_page=None,token=None):
             'items_per_page' : items_per_page,
             'items_per_page_list' : [5,10,20,50,100,200,500],
             })
+
 
 
 
