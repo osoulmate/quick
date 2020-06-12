@@ -65,9 +65,9 @@ menu = [
                 "menutitle":"用户管理",
                 "menuicon" :"fa-user",
                 "menustate":"inactive",
-                "children":[{'title':'用户列表','url':'/quick/user/user/list/' ,'menustate':'inactive'},
-                            {'title':'角色列表','url':'/quick/user/role/list/' ,'menustate':'inactive'},
-                            {'title':'权限列表','url':'/quick/user/right/list/','menustate':'inactive'}]
+                "children":[{'title':'用户列表','url':'/quick/user/user/list' ,'menustate':'inactive'},
+                            {'title':'角色列表','url':'/quick/user/role/list' ,'menustate':'inactive'},
+                            {'title':'权限列表','url':'/quick/user/right/list','menustate':'inactive'}]
             },
             {
                 "menutitle":"日志",
