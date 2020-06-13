@@ -12,9 +12,9 @@ import base64
 import xmlrpclib
 import hashlib
 import cobbler.utils as utils
-from quick.models import Users,User_Profile,Login_Log
+from quick.models import Users,User_Profile,Login_Log,User_Right,User_Group,Group_Right,Rights
 from login import login
-import menu
+#import menu
 
 @require_POST
 @csrf_protect
@@ -29,12 +29,57 @@ def do_login(request):
         login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='用户名或密码错误')
         login_log.save()
         return login(request,nextsite,message="用户名或密码错误")
-    for user in users:
+    else:
+        user = users[0]
         if user.is_active == 'no':
             login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='用户账号未激活')
             login_log.save()
             return login(request,nextsite,message="您的账号尚未激活，请联系管理员")
+        kw = {}
+        have_right = []
+        menu = []
+        user_group = User_Group.objects.filter(user_id=user.id)
 
+        if user_group:
+            for group in user_group:
+                group_right = Group_Right.objects.filter(group_id=group.group_id)
+                for right in group_right:
+                    right = Rights.objects.get(id=right.right_id)
+                    if right.desc == 'menu':
+                        if kw.has_key(right.menu1_title):
+                            kw[right.menu1_title]["children"].append({"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"})
+                        else:
+                            kw[right.menu1_title] = {"menutitle":right.menu1_title,"menuicon":right.menu1_icon,"menustate":"inactive","children":[{"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"}]}
+                    have_right.append(right.menu2_url)
+
+        if user.is_superuser == 'yes':
+            rights = Rights.objects.all()
+            kw = {}
+            have_right = []
+            menu = []
+            for right in rights:
+                if right.desc == 'menu':
+                    if kw.has_key(right.menu1_title):
+                        kw[right.menu1_title]["children"].append({"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"})
+                    else:
+                        kw[right.menu1_title] = {"menutitle":right.menu1_title,"menuicon":right.menu1_icon,"menustate":"inactive","children":[{"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"}]}
+                have_right.append(right.menu2_url)
+        else:
+            user_right = User_Right.objects.filter(user_id=user.id)
+            if user_right:
+                for right in user_right:
+                    right = Rights.objects.get(id=right.right_id)
+                    if right.desc == 'menu':
+                        if kw.has_key(right.menu1_title):
+                            kw[right.menu1_title]["children"].append({"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"})
+                        else:
+                            kw[right.menu1_title] = {"menutitle":right.menu1_title,"menuicon":right.menu1_icon,"menustate":"inactive","children":[{"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"}]}
+                    have_right.append(right.menu2_url)
+            else:
+                if not user_group and user.is_superuser == 'no':
+                    return login(request,nextsite,message="权限不足")
+        for k,v in kw.items():
+            menu.append(v)
     url_cobbler_api = utils.local_get_cobbler_api_url()
     remote = xmlrpclib.Server(url_cobbler_api, allow_none=True)
 
@@ -80,7 +125,7 @@ def do_login(request):
             else:
                 bg = 'bg1'
                 topbar = 'light-blue'
-            meta = {"online":online,"username":username,"usermail":user.email,"menu":menu.menu,"notice":2,"bg":bg,"topbar":topbar}
+            meta = {"online":online,"username":username,"usermail":user.email,"menu":menu,"have_right":have_right,"notice":2,"bg":bg,"topbar":topbar}
             request.session['quick_meta'] = simplejson.dumps(meta)
         except Exception as e:
             login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='系统异常')

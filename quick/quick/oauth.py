@@ -33,7 +33,7 @@ def test_user_authenticated(request):
             try:
                 t = remote.token_check(request.session['cobbler_token'])
             except Exception,e:
-                logger.error("用户(%s)访问URL(%s)失败,原因：[%s]"%(meta['username'],request.path,str(e)))
+                logger.error("用户(%s)访问URL(%s)异常,异常：[%s]"%(meta['username'],request.path,str(e)))
                 return True
             else:
                 if t:
@@ -51,7 +51,7 @@ def test_user_authenticated(request):
                             menu['menustate'] = 'inactive'
                         for menu in meta['menu']:
                             for sub in menu['children']:
-                                if sub['url'] == request.path:
+                                if "/quick/"+sub['url'] == request.path:
                                     sub['menustate'] = 'active'
                                     menu['menustate'] = 'active'
                                 if menu['menustate'] == 'active':
@@ -79,5 +79,6 @@ def test_user_authenticated(request):
     else:
         logger.error("用户(%s)访问URL(%s)失败,原因：[无效的cobbler令牌]"%(meta['username'],request.path))
         return False
+
 
 

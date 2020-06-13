@@ -10,7 +10,7 @@ var currentTime = new Date().getTime();
 var timeOut = 5 * 60 * 1000;
 /* show tasks not yet recorded, update task found time in hidden field */
 function get_latest_task_info() {
-  var username = document.getElementById("username").value
+  var username = document.getElementById("loginuser").value
 
   /* FIXME: used the logged in user here instead */
   /* FIXME: don't show events that are older than 40 seconds */

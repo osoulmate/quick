@@ -178,7 +178,7 @@
                                     <div class="user-box">
                                         <div class="avatar-lg"><img src="/quick_content/assets/img/profile.jpg" alt="image profile" class="avatar-img rounded"></div>
                                         <div class="u-text">
-                                            <input type="hidden" name="username" id="username" value="{{ meta.username }}" />
+                                            <input type="hidden" name="loginuser" id="loginuser" value="{{ meta.username }}" />
                                             <h4>{{ meta.username }}</h4>
                                             <p class="text-muted">{{ meta.usermail }}</p>
                                             <a href="/quick/user/myinfo" class="btn btn-rounded btn-danger btn-sm">个人资料</a>
@@ -242,7 +242,11 @@
                                     {% else %}
                                     <li class="{{sub.menustate}}">
                                     {% endifequal %}
-                                        <a href="{{sub.url}}">
+                                        {% ifequal sub.url  "sync" %}
+                                        <a href="javascript:menuaction('/quick/sync');">
+                                        {% else %}
+                                        <a href="/quick/{{sub.url}}">
+                                        {% endifequal %}
                                             <span class="sub-item">{{sub.title}}</span>
                                         </a>
                                     </li>
@@ -419,6 +423,7 @@
     <script src="/quick_content/assets/js/ready.min.js"></script>
 </body>
 </html>
+
 
 
 

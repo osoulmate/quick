@@ -60,6 +60,7 @@ class Users(models.Model):
 class Groups(models.Model):
     name = models.CharField(max_length=30,verbose_name='角色名称')
     desc = models.CharField(max_length=150,null=True,verbose_name='描述信息')
+    flag = models.CharField(max_length=2,default='1',verbose_name='预置角色标记')
 class Rights(models.Model):
     name = models.CharField(max_length=50,verbose_name='权限名称',unique=True)
     menu1_title = models.CharField(max_length=50,verbose_name='一级菜单名称')
@@ -67,6 +68,7 @@ class Rights(models.Model):
     menu2_title = models.CharField(max_length=50,verbose_name='二级菜单名称',unique=True)
     menu2_url = models.CharField(max_length=150,verbose_name='二级菜单url',unique=True)
     desc = models.CharField(max_length=150,verbose_name='描述信息',null=True)
+    flag = models.CharField(max_length=2,default='1',verbose_name='预置权限标记')
 class User_Group(models.Model):
     user = models.ForeignKey("Users",to_field="id",default=1,on_delete=models.CASCADE,verbose_name='用户ID')
     group = models.ForeignKey("Groups",to_field="id",default=1,on_delete=models.CASCADE,verbose_name='角色ID')
@@ -246,23 +248,24 @@ class Login_Log(models.Model):
     status = models.CharField(max_length=30,verbose_name='状态')
     user = models.CharField(max_length=100,verbose_name='用户')
     ip = models.GenericIPAddressField(verbose_name='登陆IP')
-    remark  = models.CharField(max_length=100,verbose_name='备注',null=True)
+    remark  = models.CharField(max_length=100,verbose_name='详情',null=True)
 class Manual_Log(models.Model):
     time = models.CharField(max_length=50,verbose_name='时间',default=datetime.now)
     user = models.CharField(max_length=100,verbose_name='用户')
     action = models.CharField(max_length=100,verbose_name='操作')
-    remark  = models.CharField(max_length=100,verbose_name='备注',null=True)
+    remark  = models.CharField(max_length=100,verbose_name='详情',null=True)
 class Asset_Log(models.Model):
     time = models.CharField(max_length=50,verbose_name='时间',default=datetime.now)
     name = models.CharField(max_length=50,verbose_name='视图')
     #键名统一为UUID
-    key = models.CharField(max_length=100,verbose_name='键名')
+    key = models.CharField(max_length=100,verbose_name='UUID')
     before_update = models.TextField(verbose_name='变更前')
     after_update = models.TextField(verbose_name='变更后')
-    action = models.CharField(max_length=100,verbose_name='操作')
+    action = models.CharField(max_length=100,verbose_name='动作')
     user = models.CharField(max_length=100,verbose_name='用户')
     job_id  = models.CharField(max_length=50,verbose_name='工单号',null=True)
-    remark  = models.CharField(max_length=100,verbose_name='备注',null=True)
+    remark  = models.CharField(max_length=100,verbose_name='详情',null=True)
+    reset = models.CharField(max_length=2,verbose_name='恢复标记',default='0')
 
 class System(models.Model):
     app_records        = models.IntegerField(verbose_name='quick_app表总条目数',default=0)
@@ -433,6 +436,7 @@ class User_Profile(models.Model):
     install_usetime               = models.CharField(max_length=4,default='on')
     install_status                = models.CharField(max_length=4,default='on')
     install_owner                 = models.CharField(max_length=4,default='on')
+
 
 
 
