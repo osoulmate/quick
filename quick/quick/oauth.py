@@ -7,6 +7,7 @@ import base64
 import xmlrpclib
 import simplejson
 import cobbler.utils as cobbler_utils
+import re
 import utils
 from quick.models import Users,User_Profile
 
@@ -67,9 +68,22 @@ def test_user_authenticated(request):
                             topbar = 'light-blue'
                         meta['bg'] = bg
                         meta['topbar'] = topbar
-                        request.session['quick_meta'] = simplejson.dumps(meta)
-                        #logger.info("用户(%s)访问URL(%s)成功"%(meta['username'],request.path))
-                        return True
+                        have_right = meta['have_right']
+                        have_right = set(have_right)
+                        is_allowed = 0
+                        for allow_url in have_right:
+                            s = request.path[7:]
+                            pattern = "^"+allow_url+"$"
+                            if re.match(pattern,s):
+                                is_allowed = 1
+                                break
+                        if is_allowed:
+                            request.session['quick_meta'] = simplejson.dumps(meta)
+                            #logger.info("用户(%s)访问URL(%s)成功"%(meta['username'],request.path))
+                            return True
+                        else:
+                            logger.info("用户(%s)访问URL(%s)失败,原因：[权限不足] %s"%(meta['username'],s,have_right))
+                            return False
                     else:
                         logger.error("用户(%s)访问URL(%s)失败,原因：[无效的会话令牌]"%(meta['username'],request.path))
                         return False

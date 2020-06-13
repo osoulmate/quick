@@ -10,7 +10,7 @@ def add_web_users(request):
     try:
         password = u"root"
         password_md5 = hashlib.md5(password.encode(encoding='UTF-8')).hexdigest()
-        root = Users(employee_id='350001',username='root',password=password_md5,email='root@163.com',name='administrator',telephone='12345678910',sex=u'男',photo='none',token=str(uuid.uuid4()).replace('-',''),token_expire_time='2999-10-10 10:10:01',reset_token=str(uuid.uuid4()).replace('-',''),reset_token_expire_time='2999-10-10 10:10:01',is_superuser='yes',is_active='yes',registry_time=datetime.now())
+        root = Users(employee_id='000001',username='root',password=password_md5,email='root@163.com',name='administrator',telephone='12345678910',sex=u'男',photo='none',token=str(uuid.uuid4()).replace('-',''),token_expire_time='2999-10-10 10:10:01',reset_token=str(uuid.uuid4()).replace('-',''),reset_token_expire_time='2999-10-10 10:10:01',is_superuser='yes',is_active='yes',registry_time=datetime.now())
         root.save()
         user = Users.objects.filter(username='root')
         if user:
@@ -19,6 +19,7 @@ def add_web_users(request):
             user_profile.save()
             system = System()
             system.save()
+            # 初始化权限
             querysetlist = [
             {"name":"host_single","menu1_title":"主机管理","menu1_icon":"fa-desktop","menu2_title":"单机管理","menu2_url":"host/single/list","desc":"menu"},
             {"name":"host_batch","menu1_title":"主机管理","menu1_icon":"fa-desktop","menu2_title":"批处理","menu2_url":"host/batch/list","desc":"menu"},
@@ -93,6 +94,9 @@ def add_web_users(request):
             {"name":"hardware_view_delete","menu1_title":"资产管理","menu1_icon":"fa-database","menu2_title":"删除硬件资产","menu2_url":"asset/hardware/delete/.+","desc":"删除"},
             {"name":"hardware_view_batch_action","menu1_title":"资产管理","menu1_icon":"fa-database","menu2_title":"硬件资产批处理","menu2_url":"asset/hardware/multi/.+/.+","desc":"批处理"},
 
+            {"name":"asset_import","menu1_title":"资产管理","menu1_icon":"fa-database","menu2_title":"资产导入","menu2_url":"asset/\w+/import","desc":"导入"},
+            {"name":"asset_export","menu1_title":"资产管理","menu1_icon":"fa-database","menu2_title":"资产导出","menu2_url":"asset/\w+/export","desc":"导出"},
+
             {"name":"import_run","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"执行导入ISO","menu2_url":"import/run","desc":"执行"},
 
             {"name":"distros_edit","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"修改Distros","menu2_url":"distro/edit/.+","desc":"修改"},
@@ -120,7 +124,10 @@ def add_web_users(request):
             {"name":"general_rename","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"通用重命名功能","menu2_url":"\w+/rename/.+/.+","desc":"重命名"},
             {"name":"general_copy","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"通用复制功能","menu2_url":"\w+/copy/.+/.+","desc":"复制"},
 
-            {"name":"general_order","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"通用排序功能","menu2_url":"\w+/modifylist/[!\w]+/.+","desc":"排序"},
+            {"name":"general_modifylist_1","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"通用1","menu2_url":"\w+/modifylist/[!\w]+/.+","desc":"排序|翻页"},
+            {"name":"general_modifylist_2","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"通用2","menu2_url":"\w+/\w+/modifylist/[!\w]+/.+","desc":"排序|翻页"},
+            {"name":"install_modifylist","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"通用3","menu2_url":"install/\w+/modifylist/[!\w]+/.+","desc":"排序|翻页"},
+
             {"name":"general_ajax","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"ajax","menu2_url":"ajax","desc":"ajax"},
 
             {"name":"general_eventlog","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"eventlog","menu2_url":"eventlog/.+","desc":"eventlog"},
@@ -138,12 +145,14 @@ def add_web_users(request):
 
             {"name":"user_chg_pwd","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"用户密码修改","menu2_url":"user/changepwd","desc":"修改密码"},
             {"name":"user_info","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"用户个人资料","menu2_url":"user/myinfo","desc":"个人资料"},
+            {"name":"my_save","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"保存修改","menu2_url":"user/save","desc":"保存"},
+
             {"name":"users_func","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"用户功能","menu2_url":"user/\w+/.+/.+","desc":"删除|启用|禁用"},
             {"name":"users_batch_action","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"用户批处理","menu2_url":"user/\w+/multi/.+/.+","desc":"批处理"},
 
             {"name":"users_edit","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"编辑用户","menu2_url":"user/user/edit/.+","desc":"编辑"},
             {"name":"users_new","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"新建用户","menu2_url":"user/user/edit","desc":"新建"},
-            {"name":"users_save","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"保用户","menu2_url":"user/user/save","desc":"保存"},
+            {"name":"users_save","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"保存用户","menu2_url":"user/user/save","desc":"保存"},
 
             {"name":"roles_edit","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"编辑角色","menu2_url":"user/role/edit/.+","desc":"编辑"},
             {"name":"roles_new","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"新建角色","menu2_url":"user/role/edit","desc":"新建"},
@@ -157,7 +166,7 @@ def add_web_users(request):
             for query in querysetlist:
                 queryset.append(Rights(**query))
             Rights.objects.bulk_create(queryset)
-
+             # 初始化角色
             role_query_set_list = [
             {"name":"管理员组","desc":"拥有最高权限"},
             {"name":"运维组","desc":"拥有运维相关权限"},
@@ -177,16 +186,15 @@ def add_web_users(request):
             for group in groups:
                 have_rights = []
                 if group.name == '运维组':
-                    have_rights = ["host_single","host_batch","host_group","host_script","host_group_edit","host_group_new","host_group_save","host_group_del","host_group_batch_action","host_script_edit","host_script_new","host_script_save","host_script_del","host_script_batch_action","union_view"]
+                    have_rights = ["general_modifylist_1","general_modifylist_2","index","host_single","host_batch","host_group","host_script","host_group_edit","host_group_new","host_group_save","host_group_del","host_group_batch_action","host_script_edit","host_script_new","host_script_save","host_script_del","host_script_batch_action","union_view","general_ajax","user_chg_pwd","user_info","my_save"]
                 elif group.name == '应用资产组':
-                    have_rights = ["app_view","app_view_edit","app_view_edit_batch","app_view_new","app_view_save","app_view_del","app_view_batch_action"
-                    ]
+                    have_rights = ["general_modifylist_1","general_modifylist_2","index","app_view","app_view_edit","app_view_edit_batch","app_view_new","app_view_save","app_view_del","app_view_batch_action","asset_import","asset_export","general_ajax","user_chg_pwd","user_info","my_save"]
                 elif group.name == '硬件资产组':
-                    have_rights = ["hardware_view","hardware_view_edit","hardware_view_edit_batch","hardware_view_new","hardware_view_save","hardware_view_delete","hardware_view_batch_action"]
+                    have_rights = ["general_modifylist_1","general_modifylist_2","index","hardware_view","hardware_view_edit","hardware_view_edit_batch","hardware_view_new","hardware_view_save","hardware_view_delete","hardware_view_batch_action","asset_import","asset_export","general_ajax","user_chg_pwd","user_info","my_save"]
                 elif group.name == '系统安装组':
-                    have_rights = ["create_task","task_list","task_detail","task_history","edit_task","save_task","notice_task","execute_task","del_task","batch_action_task"]
+                    have_rights = ["index","install_modifylist","create_task","task_list","task_detail","task_history","edit_task","save_task","notice_task","execute_task","del_task","batch_action_task","general_ajax","user_chg_pwd","user_info","my_save"]
                 elif group.name == '审计组':
-                    have_rights = ["login_log","manual_log","asset_log","envent_log"]
+                    have_rights = ["general_modifylist_1","general_modifylist_2","general_eventlog","index","login_log","manual_log","asset_log","envent_log","user_chg_pwd","user_info","my_save"]
                 else:
                     pass
                 group_right_query = []

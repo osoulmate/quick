@@ -240,12 +240,6 @@ function action_multi(otype) {
     if ((action == "pxe") && (param == "boot")) {
         msg = "确认PXE启动?"
     }
-    if ((action == "account") && (param == "enable")) {
-        msg = "确认启用账号?"
-    }
-    if ((action == "account") && (param == "disable")) {
-        msg = "确认禁用账号?"
-    }
     if (action == "profile") {
         param = window.prompt("请输入新的名字","")
         if ((param == null) || (param == "")) {
@@ -276,20 +270,28 @@ function action_multi(otype) {
         return;
     }
 }
-function action_multi_new(otype) {
+function action_multi_new(otype,action="delete",param="delete") {
     var values = items_checked_values()
     console.log(values)
     if (values == "") {
        return
     }
     document.getElementById("names").value = values
-    sel_batchaction = document.getElementById("batchactions").attributes['value'].value
-    console.log(sel_batchaction)
-    action = sel_batchaction.split("|")[0]
-    param  = sel_batchaction.split("|")[1]
+    //sel_batchaction = document.getElementById("batchactions").attributes['value'].value
+    //console.log(sel_batchaction)
+    //action = sel_batchaction.split("|")[0]
+    //param  = sel_batchaction.split("|")[1]
     target = "/quick/" + otype + "/multi/" + action + "/" + param
+    console.log(target)
+    msg = ""
     if ((action == "delete" ) && (param == "delete")) {
         msg = "确认删除?" 
+    }
+    if ((action == "account") && (param == "enable")) {
+        msg = "确认启用账号?"
+    }
+    if ((action == "account") && (param == "disable")) {
+        msg = "确认禁用账号?"
     }
     if(msg)
     {
@@ -461,5 +463,6 @@ window.confirm = function(option)
 }
 
 */
+
 
 

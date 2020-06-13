@@ -45,7 +45,7 @@
                                           {% ifequal what "user/right" %}添加权限{% endifequal %}
                                           </a>
                                         {% for title,action,value in batchactions %}
-                                        <a class="btn btn-primary" id="batchactions" href="javascript:;" value="{{ action }}|{{ value }}" onclick="javascript:action_multi_new('{{ what }}')">{{ title }}</a>
+                                        <a class="btn btn-primary" href="javascript:;" value="{{ action }}|{{ value }}" onclick="javascript:action_multi_new('{{ what }}','{{ action }}','{{ value }}')">{{ title }}</a>
                                         {% endfor %}
                                         </div>
                                         <div class="card-tools">
@@ -121,6 +121,7 @@
                 </div>
             </div>
 {% endblock content %}
+
 
 
 
