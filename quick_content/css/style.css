@@ -115,6 +115,16 @@ input[type="checkbox"]:checked+label>i::before {
 #listitems thead tr th {width:135px;}
 #quick-div thead tr th:first-child {width:50px;}
 
+#listitems table{
+    table-layout:fixed;
+}
+#listitems1 table td{
+    width:100%;
+    word-break:keep-all;
+    text-overflow:ellipsis;
+}
+#listitems1 thead tr th:first-child {width:50px;}
+#listitems1 thead tr th {width:auto;}
 
 .quick-dropbtn {
     border: none;
@@ -215,4 +225,5 @@ input[type="checkbox"]:checked+label>i::before {
 .btnSwitch button[data-color="bg3"] {
   background-color: #f1f1f1;
 }
+
 
