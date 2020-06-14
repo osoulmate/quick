@@ -120,7 +120,7 @@ def tasklist(request,what,page=None):
         t = "task_list.tmpl"
 
     if what == 'detail':
-        include_columns = [ "name","ip","mac","hardware_model","hardware_sn","apply_template","usetime","status","owner"]
+        include_columns = [ "name","ip","mac","hardware_model","hardware_sn","apply_template","usetime","status","owner","ipmi_ip"]
         fields = [f for f in Detail._meta.fields]
         for field in fields:
             if field.name in include_columns:
@@ -549,13 +549,21 @@ def __mail(task_name,to):
             to = [to]
     else:
         return 0
+    subtasks = Detail.objects.filter(name=task_name)
+    apply_template = ""
+    iplist = []
+    if subtasks:
+        for subtask in subtasks:
+            iplist.append(subtask.ip)
+            apply_template = subtask.apply_template
     subject, from_email = '装机任务完成通知', 'askqingya@163.com'
     text_content = ''
-    html_content = '<p>您好！您创建的装机任务<strong>%s</strong>已完成</p>'%task_name
+    html_content = '<p>您好！您创建的装机任务<strong>%s</strong>已完成</p><p>任务主机:%s</p><p>装机模板:%s</p>'%(task_name,iplist,apply_template)
     msg = EmailMultiAlternatives(subject, text_content, from_email, to)
     msg.attach_alternative(html_content, "text/html")
     msg.send()
     return 1
+
 
 
 

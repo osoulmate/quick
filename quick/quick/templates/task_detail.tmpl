@@ -105,7 +105,11 @@
                                               {% endif %}
                                             {% endfor %}
                                                 <td>
-                                                  <a class="btn btn-info btn-sm" href="javascript:;">ipmi</a>
+												{% ifequal item.3.1 "N/R" %}
+                                                  <button type="button" class="btn btn-info btn-sm" id="my-{{ item.3.0 }}" disabled="disabled" >ipmi</button>
+												{% else %}
+												  <a class="btn btn-info btn-sm" id="my-{{ item.3.0 }}" href="{{ item.3.1 }}" >ipmi</a>
+												{% endifequal %}
                                                   <a class="btn btn-info btn-sm"  target="_blank" href="http://{{ location }}:8022/ssh/{{ item.1.1 }}">ssh</a>
                                                   <a class="btn btn-info btn-sm"  target="_blank" href="http://{{ location }}:6080/vnc.html?path=?token=sys-{{ item.1.1 }}">vnc</a>
                                                 </td>
@@ -126,6 +130,7 @@
                 </div>
             </div>
 {% endblock content %}
+
 
 
 
