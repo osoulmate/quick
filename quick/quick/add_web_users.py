@@ -149,7 +149,7 @@ def add_web_users(request):
 
             {"name":"users_func","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"用户功能","menu2_url":"user/\w+/.+/.+","desc":"删除|启用|禁用"},
             {"name":"users_batch_action","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"用户批处理","menu2_url":"user/\w+/multi/.+/.+","desc":"批处理"},
-
+            {"name":"log_batch_action","menu1_title":"日志管理","menu1_icon":"fa-user","menu2_title":"日志批处理","menu2_url":"log/\w+/multi/.+/.+","desc":"批处理"},
             {"name":"users_edit","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"编辑用户","menu2_url":"user/user/edit/.+","desc":"编辑"},
             {"name":"users_new","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"新建用户","menu2_url":"user/user/edit","desc":"新建"},
             {"name":"users_save","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"保存用户","menu2_url":"user/user/save","desc":"保存"},
@@ -209,6 +209,7 @@ def add_web_users(request):
         return HttpResponse(str(e))
     else:
         return HttpResponse('已成功添加web用户账号(root:root)')
+
 
 
 

@@ -219,6 +219,7 @@ def asset_save(request,what):
             fields = [f for f in App._meta.fields]
             kw = {}
             old_kw = {}
+            new_kw = {}
             for field in fields:
                 if field.name == "uuid":
                     continue
@@ -250,12 +251,14 @@ def asset_save(request,what):
                         app = App.objects.get(ip=ip)
                         for k,v in kw.items():
                             old_v = getattr(app, k)
-                            old_kw[k] = old_v
+                            if old_v != v:
+                                old_kw[k] = old_v
+                                new_kw[k] = v
                             setattr(app, k , v)
                         app.save()
-                        before_update = simplejson.dumps(old_kw)
-                        after_update = simplejson.dumps(kw)
-                        asset_Log = Asset_Log(time=now,name="业务视图",key=request.POST.get("uuid", ""),before_update=before_update,after_update=after_update,action='更新',user=username,job_id=request.POST.get("remark", ""),remark='业务视图')
+                        before_update = simplejson.dumps(old_kw,ensure_ascii=False)
+                        after_update = simplejson.dumps(new_kw,ensure_ascii=False)
+                        asset_Log = Asset_Log(time=now,name="业务视图",key=app.uuid,before_update=before_update,after_update=after_update,action='更新',user=username,job_id=request.POST.get("remark", ""),remark='业务视图')
                         asset_Log.save()
                     manual_log = Manual_Log(time=now,user=username,action='批量资产更新',remark='业务视图')
                     manual_log.save()
@@ -274,12 +277,14 @@ def asset_save(request,what):
                             return error_page(request,'无效的IP地址！')
                     for k,v in kw.items():
                         old_v = getattr(app, k)
-                        old_kw[k] = old_v
+                        if old_v != v:
+                            old_kw[k] = old_v
+                            new_kw[k] = v
                         setattr(app, k , v)
                     app.save()
-                    before_update = simplejson.dumps(old_kw)
-                    after_update = simplejson.dumps(kw)
-                    asset_Log = Asset_Log(time=now,name="业务视图",key=request.POST.get("uuid", ""),before_update=before_update,after_update=after_update,action='更新',user=username,job_id=request.POST.get("remark", ""),remark='业务视图')
+                    before_update = simplejson.dumps(old_kw,ensure_ascii=False)
+                    after_update = simplejson.dumps(new_kw,ensure_ascii=False)
+                    asset_Log = Asset_Log(time=now,name="业务视图",key=app.uuid,before_update=before_update,after_update=after_update,action='更新',user=username,job_id=request.POST.get("remark", ""),remark='业务视图')
                     asset_Log.save()
                     manual_log = Manual_Log(time=now,user=username,action='单个资产更新',remark='业务视图')
                     manual_log.save()
@@ -287,6 +292,7 @@ def asset_save(request,what):
             fields = [f for f in Hardware._meta.fields]
             kw = {}
             old_kw = {}
+            new_kw = {}
             for field in fields:
                 if field.name == "uuid":
                     continue
@@ -323,12 +329,14 @@ def asset_save(request,what):
                             hd = Hardware.objects.get(sn=sn.strip())
                             for k,v in kw.items():
                                 old_v = getattr(hd, k)
-                                old_kw[k] = old_v
+                                if old_v != v:
+                                    old_kw[k] = old_v
+                                    new_kw[k] = v
                                 setattr(hd, k , v)
                             hd.save()
-                            before_update = simplejson.dumps(old_kw)
-                            after_update = simplejson.dumps(kw)
-                            asset_Log = Asset_Log(time=now,name="硬件视图",key=request.POST.get("uuid", ""),before_update=before_update,after_update= after_update,action='更新',user=username,job_id=request.POST.get("remark", ""),remark='硬件视图')
+                            before_update = simplejson.dumps(old_kw,ensure_ascii=False)
+                            after_update = simplejson.dumps(new_kw,ensure_ascii=False)
+                            asset_Log = Asset_Log(time=now,name="硬件视图",key=hd.uuid,before_update=before_update,after_update= after_update,action='更新',user=username,job_id=request.POST.get("remark", ""),remark='硬件视图')
                             asset_Log.save()
                         except Exception,e:
                             return error_page(request,str(e))
@@ -356,12 +364,14 @@ def asset_save(request,what):
                             return error_page(request,'无效的IP地址！')
                     for k,v in kw.items():
                         old_v = getattr(hd, k)
-                        old_kw[k] = old_v
+                        if old_v != v:
+                            old_kw[k] = old_v
+                            new_kw[k] = v
                         setattr(hd, k , v)
                     hd.save()
-                    before_update = simplejson.dumps(old_kw)
-                    after_update = simplejson.dumps(kw)
-                    asset_Log = Asset_Log(time=now,name="硬件视图",key=request.POST.get("uuid", ""),before_update=before_update,after_update=after_update,action='更新',user=username,job_id=request.POST.get("remark", ""),remark='硬件视图')
+                    before_update = simplejson.dumps(old_kw,ensure_ascii=False)
+                    after_update = simplejson.dumps(new_kw,ensure_ascii=False)
+                    asset_Log = Asset_Log(time=now,name="硬件视图",key=hd.uuid,before_update=before_update,after_update=after_update,action='更新',user=username,job_id=request.POST.get("remark", ""),remark='硬件视图')
                     asset_Log.save()
                     manual_log = Manual_Log(time=now,user=username,action='单个资产更新',remark='硬件视图')
                     manual_log.save()
@@ -679,6 +689,17 @@ def asset_domulti(request,what,multi_mode=None,multi_arg=None):
                     Script.objects.filter(name=name).delete()
                 manual_log = Manual_Log(time=now,user=username,action='批量删除脚本',remark='业务视图')
                 manual_log.save()
+            else:
+                return error_page(request,"未知操作")
+        elif what == "asset":
+            target = "log"
+            if multi_mode == "delete" and multi_arg == 'delete':
+                for name in names:
+                    Asset_Log.objects.filter(id=name).delete()
+                manual_log = Manual_Log(time=now,user=username,action='批量删除资产日志',remark='日志')
+                manual_log.save()
+                request.session["%s_num_items"%what] = len(Asset_Log.objects.all())
+                return HttpResponseRedirect("/quick/%s/%s"%(target,what))
             else:
                 return error_page(request,"未知操作")
     except Exception,e:
@@ -1188,6 +1209,7 @@ def __paginate(num_items=0,page=None,items_per_page=None,token=None):
             'items_per_page' : items_per_page,
             'items_per_page_list' : [5,10,20,50,100,200,500],
             })
+
 
 
 

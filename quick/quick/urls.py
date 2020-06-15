@@ -46,7 +46,8 @@ urlpatterns = patterns('',
     (r'^asset/(?P<what>\w+)/export$', assets.asset_export),
     (r'^asset/(?P<what>\w+)/delete/(?P<obj_name>.+)$', assets.asset_delete),
     (r'^asset/(?P<what>\w+)/multi/(?P<multi_mode>.+)/(?P<multi_arg>.+)$', assets.asset_domulti),
-
+    (r'^log/(?P<what>\w+)/multi/(?P<multi_mode>.+)/(?P<multi_arg>.+)$', assets.asset_domulti),
+    
     (r'^host/(?P<what>\w+)/list(/(?P<page>\d+))?', assets.host_list),
     (r'^host/(?P<what>\w+)/edit/(?P<obj_name>.+)$', assets.host_edit, {'editmode': 'edit'}),
     (r'^host/(?P<what>\w+)/edit$', assets.host_edit, {'editmode': 'new'}),
@@ -115,6 +116,7 @@ urlpatterns = patterns('',
     (r'^(?P<what>\w+)/save$', views.generic_save),
 
 )
+
 
 
 
