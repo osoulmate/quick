@@ -35,36 +35,38 @@ def do_login(request):
             login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='用户账号未激活')
             login_log.save()
             return login(request,nextsite,message="您的账号尚未激活，请联系管理员")
-        kw = {}
-        have_right = []
-        menu = []
-        user_group = User_Group.objects.filter(user_id=user.id)
-
-        if user_group:
-            for group in user_group:
-                group_right = Group_Right.objects.filter(group_id=group.group_id)
-                for right in group_right:
-                    right = Rights.objects.get(id=right.right_id)
-                    if right.desc == 'menu':
-                        if kw.has_key(right.menu1_title):
-                            kw[right.menu1_title]["children"].append({"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"})
-                        else:
-                            kw[right.menu1_title] = {"menutitle":right.menu1_title,"menuicon":right.menu1_icon,"menustate":"inactive","children":[{"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"}]}
-                    have_right.append(right.menu2_url)
-
         if user.is_superuser == 'yes':
-            rights = Rights.objects.all()
+            rights = Rights.objects.all().order_by('id')
             kw = {}
             have_right = []
             menu = []
+            order = []
             for right in rights:
                 if right.desc == 'menu':
                     if kw.has_key(right.menu1_title):
                         kw[right.menu1_title]["children"].append({"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"})
                     else:
                         kw[right.menu1_title] = {"menutitle":right.menu1_title,"menuicon":right.menu1_icon,"menustate":"inactive","children":[{"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"}]}
+                        order.append(right.menu1_title)
                 have_right.append(right.menu2_url)
         else:
+            kw = {}
+            have_right = []
+            menu = []
+            order = []
+            user_group = User_Group.objects.filter(user_id=user.id)
+            if user_group:
+                for group in user_group:
+                    group_right = Group_Right.objects.filter(group_id=group.group_id)
+                    for right in group_right:
+                        right = Rights.objects.get(id=right.right_id)
+                        if right.desc == 'menu':
+                            if kw.has_key(right.menu1_title):
+                                kw[right.menu1_title]["children"].append({"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"})
+                            else:
+                                kw[right.menu1_title] = {"menutitle":right.menu1_title,"menuicon":right.menu1_icon,"menustate":"inactive","children":[{"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"}]}
+                                order.append(right.menu1_title)
+                        have_right.append(right.menu2_url)
             user_right = User_Right.objects.filter(user_id=user.id)
             if user_right:
                 for right in user_right:
@@ -74,12 +76,13 @@ def do_login(request):
                             kw[right.menu1_title]["children"].append({"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"})
                         else:
                             kw[right.menu1_title] = {"menutitle":right.menu1_title,"menuicon":right.menu1_icon,"menustate":"inactive","children":[{"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"}]}
+                            order.append(right.menu1_title)
                     have_right.append(right.menu2_url)
             else:
                 if not user_group and user.is_superuser == 'no':
                     return login(request,nextsite,message="权限不足")
-        for k,v in kw.items():
-            menu.append(v)
+        for k in order:
+            menu.append(kw[k])
     url_cobbler_api = utils.local_get_cobbler_api_url()
     remote = xmlrpclib.Server(url_cobbler_api, allow_none=True)
 
@@ -141,6 +144,7 @@ def do_login(request):
         login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='令牌无效')
         login_log.save()
         return login(request,nextsite,message="登录失败，请重试")
+
 
 
 
