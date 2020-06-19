@@ -8,7 +8,14 @@ import gevent
 from threading import Thread
 import re
 import time
-from quick.models import List,Detail,Batch,Script,Host_Group,Batch_Temp
+from pyVmomi import vim
+from pyVim.connect import SmartConnect, Disconnect, SmartConnectNoSSL
+import argparse
+import atexit
+import getpass
+import ssl
+
+from quick.models import *
 ERROR       = "ERROR"
 WARNING     = "WARNING"
 DEBUG       = "DEBUG"
@@ -62,6 +69,64 @@ class Logger(object):
         return self.logfile
     def close(self):
         self.logfile.close()
+class Esxi(object):
+    def __init__(self,obj,delimit='  '):
+        self.esxi_obj = obj
+        self.delimit = delimit
+    def gather(self):
+        result = {}
+        for esxi in self.esxi_obj:
+            sn = []
+            for i in esxi.summary.hardware.otherIdentifyingInfo:
+                if isinstance(i, vim.host.SystemIdentificationInfo):
+                    sn.append(i.identifierValue)
+            result['spec']     = str(esxi.summary.hardware.numCpuPkgs) + "C" + str(esxi.summary.hardware.numCpuCores) + "核  " + str(esxi.summary.hardware.memorySize/1024/1024) +"MB"
+            result['cpuutil']      = '%.3f%%' % (float(esxi.summary.quickStats.overallCpuUsage) /(float(esxi.summary.hardware.numCpuPkgs * esxi.summary.hardware.numCpuCores * esxi.summary.hardware.cpuMhz)) *100)
+            result['memoryutil']   = '%.3f%%' % ((float(esxi.summary.quickStats.overallMemoryUsage)/ (float(esxi.summary.hardware.memorySize/1024/1024))) *100)
+            result['cputhreads']   = esxi.summary.hardware.numCpuThreads
+            result['cpumhz']       = esxi.summary.hardware.cpuMhz
+            result['cpumodel']     = esxi.summary.hardware.cpuModel
+            result['os']     = esxi.summary.config.product.fullName
+            result['vendor']       = esxi.summary.hardware.vendor
+            result['model']        = esxi.summary.hardware.model
+            result['sn']        = sn
+            s = ''
+            for ds in esxi.datastore:
+                total_size = str(int((ds.summary.capacity)/1024/1024/1024)) + "GB"
+                free_size = str(int((ds.summary.freeSpace)/1024/1024/1024)) + "GB"
+                filesystem_type = ds.summary.type
+                s += "%s[total:%s,free:%s,fs:%s]  "%(ds.name,total_size,free_size,filesystem_type)
+            result['storage'] = s
+            s = []
+            for nt in esxi.network:
+                s.append(nt.name)
+            result['network'] = s
+            vms = []
+            for vm in esxi.vm:
+                v = {}
+                v['name']   =vm.name
+                v['powerstatus']  = vm.runtime.powerState
+                v['spec']  = str(vm.config.hardware.numCPU) +"C " + str(vm.config.hardware.memoryMB) +'MB'
+                v['os']  = vm.config.guestFullName
+                if vm.guest.ipAddress:
+                    v['ip'] = vm.guest.ipAddress
+                else:
+                    v['ip'] = 'no vmtools'
+                disks = ''
+                for d in vm.config.hardware.device:
+                    if isinstance(d, vim.vm.device.VirtualDisk):
+                        disk_name = d.deviceInfo.label.replace(r" ","")
+                        disk_size = str((d.capacityInKB)/1024/1024) + 'GB'
+                        disks += "%s  %s"%(disk_name,disk_size)
+                v['disk'] = disks
+                vms.append(v)
+            result['vms'] = vms
+        return result
+
+def get_obj(content, vimtype, name=None):
+    container = content.viewManager.CreateContainerView(content.rootFolder, vimtype, True)
+    obj = [ view for view in container.view]
+    return obj
 
 def generate_ip_list(ip,**kw):
     ip_list = []
@@ -124,7 +189,62 @@ def generate_data(osip,task_name,profilename,usetime,progress,owner):
             task.status = '初始化(%s/%s)'%(i,j)
         task.save()
     return True
+def __add_host(ip,user,pwd):
+    logger = Logger()
+    logger.info("Begin to add host(%s)"%ip)
+    try:
+        if hasattr(ssl, '_create_unverified_context'):
+            context = ssl._create_unverified_context()
+        si = SmartConnect(
+                host=ip,
+                user=user,
+                pwd=pwd,
+                port=443,
+                sslContext=context)
+        # disconnect this thing
+        atexit.register(Disconnect, si)
+        content = si.RetrieveContent()
+        esxi_obj = get_obj(content, [vim.HostSystem])
+        my_esxi = Esxi(esxi_obj)
+        esxi_info = my_esxi.gather()
+        esxi_fields = [f for f in Esxi_host._meta.fields]
+        kw = {}
+        for field in esxi_fields:
+            if field.name == 'ip':
+                continue
+            kw[field.name] = esxi_info[field.name]
+        esxi = Esxi_host.objects.get(ip=ip)
+        for k,v in kw.items():
+            setattr(esxi, k , v)
+        esxi.save()
+        virt_fields = [f for f in Vm_host._meta.fields]
 
+        for vm in esxi_info['vms']:
+            kw = {}
+            for field in virt_fields:
+                if field.name == 'ip':
+                    kw[field.name] = vm['ip']
+                elif field.name == 'esxi_ip':
+                    kw['esxi_ip'] = ip
+                else:
+                    kw[field.name] = vm[field.name]
+            vm_host= Vm_host(**kw)
+            vm_host.save()
+        logger.info("End to add host(%s)"%ip)
+        return True
+    except Exception,e:
+        esxi_fields = [f for f in Esxi_host._meta.fields]
+        kw = {}
+        for field in esxi_fields:
+            if field.name == 'ip':
+                continue
+            kw[field.name] = "获取失败"
+        esxi = Esxi_host.objects.get(ip=ip)
+        for k,v in kw.items():
+            setattr(esxi, k , v)
+        esxi.save()
+        logger.error("Host(%s) occur error(%s)"%(ip,str(e)))
+        return False
 def __quick_install_os(name,ip,obj,ip_list):
     logger = Logger()
     logger.info("Begin to configure host(%s) before to reinstall..."%ip)
@@ -384,6 +504,20 @@ def background_exec(name):
         self.logger.info("i am in background_exec(%s)"%name)
         return __background_exec(name)
     return __start_task(runner,name)
+def background_add_host(name):
+    def runner(self):
+        self.logger.info("i am in background_add_host(%s)"%name)
+        return __background_add_host(name)
+    return __start_task(runner,name)
+
+def __background_add_host(name):
+    tasks = Esxi_conn.objects.filter(ip=name)
+    gevent_list = []
+    if tasks:
+        task = tasks[0]
+        gevent_list.append(gevent.spawn(__add_host,task.ip,task.username,task.password))
+        gevent.joinall(gevent_list)
+        return True
 
 def __background_collect(name):
     tasks = List.objects.filter(name=name)
@@ -456,8 +590,9 @@ class QuickThread(Thread):
             self.logger.info("End thread(%s)"%self._run)
             self.logger.info("End task(%s)"%self.name)
             return rc
-        except:
-            self.logger.error("End task(%s) exit(0)!"%self.name)
+        except Exception,e:
+            self.logger.info("End thread(%s)"%self._run)
+            self.logger.error("End task(%s) exit(%s)!"%(self.name,str(e)))
             return False
 def add_vnc_token(ip_list,path='/usr/share/quick/extend/novnc/vnc_tokens',token='token',port='5901'):
     for ip in ip_list:
@@ -562,6 +697,8 @@ def is_valid_ip(strdata=None):
             return True
         else:
             return False
+
+
 
 
 

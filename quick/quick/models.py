@@ -220,26 +220,26 @@ class Batch_Temp(models.Model):
     class Meta:
         unique_together=("name","ip")
 class Esxi_conn(models.Model):
-    ip       = models.GenericIPAddressField(verbose_name='IP')
+    ip       = models.GenericIPAddressField(verbose_name='IP',primary_key=True)
     username = models.CharField(max_length=100,verbose_name='用户名')
     password = models.CharField(max_length=100,verbose_name='密码')
 class Esxi_host(models.Model):
-    ip          = models.GenericIPAddressField(verbose_name='IP',primary_key=True,)
+    ip          = models.CharField(max_length=30,verbose_name='IP',primary_key=True)
     # 2C8核 64G
-    spec        = models.CharField(max_length=100,verbose_name='规格')
-    cpuutil     = models.CharField(max_length=100,verbose_name='CPU利用率')
-    memoryutil  = models.CharField(max_length=100,verbose_name='内存利用率')
-    storage     = models.CharField(max_length=100,verbose_name='存储')
-    cputhreads  = models.CharField(max_length=100,verbose_name='CPU线程数')
-    cpumhz      = models.CharField(max_length=100,verbose_name='CPU主频')
-    cpumodel    = models.CharField(max_length=100,verbose_name='CPU型号')
-    os          = models.CharField(max_length=100,verbose_name='系统')
-    vendor      = models.CharField(max_length=100,verbose_name='厂商')
-    model       = models.CharField(max_length=100,verbose_name='硬件型号')
-    sn          = models.CharField(max_length=100,verbose_name='序列号')
+    spec        = models.CharField(max_length=100,default="获取中",verbose_name='规格')
+    cpuutil     = models.CharField(max_length=100,default="获取中",verbose_name='CPU利用率')
+    memoryutil  = models.CharField(max_length=100,default="获取中",verbose_name='内存利用率')
+    storage     = models.TextField(default="获取中",verbose_name='存储')
+    cputhreads  = models.CharField(max_length=100,default="获取中",verbose_name='CPU线程数')
+    cpumhz      = models.CharField(max_length=100,default="获取中",verbose_name='CPU主频')
+    cpumodel    = models.CharField(max_length=100,default="获取中",verbose_name='CPU型号')
+    os          = models.CharField(max_length=100,default="获取中",verbose_name='系统')
+    vendor      = models.CharField(max_length=100,default="获取中",verbose_name='厂商')
+    model       = models.CharField(max_length=100,default="获取中",verbose_name='硬件型号')
+    sn          = models.TextField(default="获取中",verbose_name='序列号')
 class Vm_host(models.Model):
-    name        = models.CharField(max_length=100,verbose_name='名称')
-    ip          = models.GenericIPAddressField(verbose_name='IP')
+    name        = models.CharField(max_length=100,verbose_name='名称',primary_key=True)
+    ip          = models.CharField(max_length=30,verbose_name='IP')
     spec        = models.CharField(max_length=100,verbose_name='规格')
     disk        = models.CharField(max_length=100,verbose_name='硬盘')
     os          = models.CharField(max_length=100,verbose_name='系统')
@@ -481,6 +481,8 @@ class User_Profile(models.Model):
     vm_host_ip                 = models.CharField(max_length=4,default='on')
     vm_host_powerstatus           = models.CharField(max_length=4,default='on')
     vm_host_esxi_ip               = models.CharField(max_length=4,default='on')
+
+
 
 
 

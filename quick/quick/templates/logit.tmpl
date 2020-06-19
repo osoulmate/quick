@@ -55,7 +55,7 @@
                                                   <label for="itemsall"> <i></i></label> 
                                                 </th>
                                                 {% for value in columns %}
-												{% ifequal value.0  'id' %}
+												{% if value.0 == 'id' or value.0 == 'reset' %}
 												<th style="display:none;">{{ value.2 }}</th>
 												{% else %}
                                                 <th>
@@ -63,7 +63,7 @@
                                                   {% ifequal value.1 "asc" %}&darr;{% endifequal %}
                                                   {% ifequal value.1 "desc" %}&uarr;{% endifequal %}
                                                 </th>
-												{% endifequal %}
+												{% endif %}
                                                 {% endfor %}
                                                 {% ifequal what 'log/asset' %}<th><a href="javascript:;">操作</a></th>{% endifequal %}
                                               </tr>
@@ -76,18 +76,18 @@
                                                   <label for="{{ item.0.1 }}"> <i></i></label> 
                                                 </td>
                                             {% for value in item %}
-											  {% ifequal value.0  'id' %}
+											  {% if value.0 == 'id' or value.0 == 'reset' %}
 											  <td style="display:none;">{{ value.1 }}</td>
 											  {% else %}
                                               <td title="{{ value.1 }}">{{ value.1 }}</td>
-											  {% endifequal %}
+											  {% endif %}
                                             {% endfor %}
 												{% ifequal what 'log/asset' %}
                                                 <td>
-												{% ifequal item.1.1 '业务视图' %}
-                                                <a class="btn btn-info btn-sm" href="/quick/asset/app/recover/{{ item.2.1}}">恢复</a>
+												{% ifequal item.10.1 '1' %}
+                                                <button class="btn btn-info btn-sm" type="button" disabled="disabled">恢复</button>
 												{% else %}
-												<a class="btn btn-info btn-sm" href="/quick/asset/hardware/recover/{{ item.2.1}}">恢复</a>
+												<a class="btn btn-info btn-sm" href="/quick/asset/recover/{{ item.0.1}}">恢复</a>
 												{% endifequal %}
                                                 </td>
 												{% endifequal %}
@@ -108,6 +108,7 @@
                 </div>
             </div>
 {% endblock content %}
+
 
 
 

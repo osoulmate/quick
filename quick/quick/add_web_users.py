@@ -190,7 +190,7 @@ def add_web_users(request):
             {"name":"rights_save","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"保存权限","menu2_url":"user/right/save","desc":"保存"},
 
             {"name":"log_batch_action","menu1_title":"日志管理","menu1_icon":"fa-user","menu2_title":"日志批处理","menu2_url":"log/\w+/multi/.+/.+","desc":"批处理"},
-            {"name":"log_asset_reset","menu1_title":"日志管理","menu1_icon":"fa-user","menu2_title":"资产日志重置","menu2_url":"log/asset/reset","desc":"重置"}
+            {"name":"log_asset_reset","menu1_title":"日志管理","menu1_icon":"fa-user","menu2_title":"资产日志重置","menu2_url":"asset/recover/.+","desc":"重置"}
             ]
             queryset = []
             for query in querysetlist:
@@ -227,7 +227,7 @@ def add_web_users(request):
                 elif group.name == '资源组':
                     have_rights = ["ip_pool","storage_pool","general_modifylist_1","general_modifylist_2","index","user_chg_pwd","user_info","my_save","ip_pool_edit","ip_pool_new","ip_pool_save","ip_pool_delete","ip_pool_batch_action","storage_pool_edit","storage_pool_new","storage_pool_save","storage_pool_delete","storage_pool_batch_action"]
                 elif group.name == '审计组':
-                    have_rights = ["general_modifylist_1","general_modifylist_2","general_eventlog","index","login_log","manual_log","asset_log","envent_log","user_chg_pwd","user_info","my_save"]
+                    have_rights = ["log_asset_reset","log_batch_action","general_modifylist_1","general_modifylist_2","general_eventlog","index","login_log","manual_log","asset_log","envent_log","user_chg_pwd","user_info","my_save"]
                 else:
                     pass
                 group_right_query = []
@@ -242,6 +242,7 @@ def add_web_users(request):
         return HttpResponse("异常:%s"%str(e))
     else:
         return HttpResponse('已成功添加web用户账号(root:rootpwd!)')
+
 
 
 

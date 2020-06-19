@@ -22,6 +22,7 @@ yum install -y python-pip
 pip install --index http://pypi.douban.com/simple/ paramiko --trusted-host pypi.douban.com
 pip install --index http://pypi.douban.com/simple/ gevent --trusted-host pypi.douban.com
 pip install --index http://pypi.douban.com/simple/ pymysql --trusted-host pypi.douban.com
+pip install --index http://pypi.douban.com/simple/ pyvmomi --trusted-host pypi.douban.com
 pip install --index http://pypi.douban.com/simple/ pyexcel --trusted-host pypi.douban.com
 pip install --index http://pypi.douban.com/simple/ pyexcel-xls --trusted-host pypi.douban.com
 pip install --index http://pypi.douban.com/simple/ pyexcel-io --trusted-host pypi.douban.com

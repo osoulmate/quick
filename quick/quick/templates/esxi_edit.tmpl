@@ -1,0 +1,80 @@
+{% extends "master.tmpl" %}
+{% block content %}
+<form id="action" method="POST" action="">{% csrf_token %}</form>
+            <div class="content">
+                <div class="page-inner">
+                    <div class="page-header">
+                        <h4 class="page-title">虚拟化</h4>
+                        <ul class="breadcrumbs">
+                            <li class="nav-home">
+                                <a href="/quick">
+                                    <i class="flaticon-home"></i>
+                                </a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">虚拟化</a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                            <a href="/quick/presence/list">宿主机</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                        <form name="editform" method="post" action="/quick/{{ what }}/save">{% csrf_token %}
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">添加主机</div>
+                                </div>
+                                <div class="card-body">
+                        {% for item in items %}
+                           {% if editable %}
+									{% if item.0 != "id" %}
+                                    <div class="form-group">
+                                        <label for="{{ item.0 }}">{{ item.3 }}</label>
+                                        <input class="form-control" id="{{ item.0 }}" name="{{ item.0 }}" type="text"  value="{{ item.1 }}"/>
+                                    </div>
+									{% endif %}
+                            {% else %}
+                                    {% if item.0 == 'ip' %}
+                                    <div class="form-group">
+                                        <label for="{{ item.0 }}">{{ item.3 }}</label>
+                                        <input class="form-control" id="{{ item.0 }}" name="{{ item.0 }}" type="text" readonly="readonly" style="background-color:#eee" value="{{ item.1 }}"/>
+                                    </div>
+                                    {% elif item.0 != 'ip' and item.0 != 'id' %}
+                                    <div class="form-group">
+                                        <label for="{{ item.0 }}">{{ item.3 }}</label>
+                                        <input class="form-control" id="{{ item.0 }}" name="{{ item.0 }}" type="text" value="{{ item.1 }}"/>
+                                    </div>
+                                    {% endif %}
+                            {% endif %}
+                         {% endfor %}
+                                    <div class="form-group">
+                                        {% if editmode == 'edit' %}
+                                        <input class="btn btn-success" type="submit" name="submit" onClick="on_form_submit();" value="更新" />{% else %}
+                                        <input class="btn btn-success" type="submit" name="submit" onClick="on_form_submit();" value="添加" />
+                                        {% endif %}
+                                        <input class="btn btn-danger" type="button" onClick="window.location='/quick/{{ what }}/list';" value="取消" />
+                                        <input type="hidden" name="name" id="name" value="{{ name }}" />
+                                        <input type="hidden" name="editmode" value="{{ editmode }}" />
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+{% endblock content %}
+
+
+
+
+
+

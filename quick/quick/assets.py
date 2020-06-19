@@ -26,6 +26,44 @@ from quick.models import *
 
 now = datetime.now()
 now = now.strftime("%Y-%m-%d %H:%M:%S")
+
+# ======================================================================
+def asset_reset(request,obj_id):
+    if not oauth.test_user_authenticated(request): 
+        return login(request, next="/quick/log/asset", expired=True)
+    editmode = request.POST.get('editmode', 'edit')
+    meta = simplejson.loads(request.session['quick_meta'])
+    username = meta['username']
+    if obj_id:
+        asset_log = Asset_Log.objects.filter(id=obj_id)
+        if asset_log:
+            asset_log = asset_log[0]
+            if asset_log.name == '业务视图':
+                app = App.objects.get(uuid=asset_log.key)
+                kw = simplejson.loads(asset_log.before_update)
+                for k,v in kw.items():
+                    setattr(app, k , v)
+                app.save()
+                asset_log.reset = 1
+                asset_log.save()
+                manual_log = Manual_Log(time=now,user=username,action='重置',remark='业务视图[%s]'%asset_log.key)
+                manual_log.save()
+            else:
+                hd = Hardware.objects.filter(uuid=asset_log.key)
+                if hd:
+                    hd = hd[0]
+                else:
+                    return error_page(request,"空记录！")
+                kw = simplejson.loads(asset_log.before_update)
+                for k,v in kw.items():
+                    setattr(hd, k , v)
+                hd.save()
+                asset_log.reset = 1
+                asset_log.save()
+                manual_log = Manual_Log(time=now,user=username,action='重置',remark='硬件视图[%s]'%asset_log.key)
+                manual_log.save()
+    return HttpResponseRedirect('/quick/log/asset')
+
 #========================================================================
 def asset_list(request,what,page=None):
     """
@@ -1037,7 +1075,7 @@ def host_save(request,what,editmode='edit'):
 #==================================================================================
 def presence_list(request,page=None):
     if not oauth.test_user_authenticated(request): 
-        return login(request, next="/quick/presence/list"%what, expired=True)
+        return login(request, next="/quick/presence/list", expired=True)
     meta = simplejson.loads(request.session['quick_meta'])
     if page == None:
         page = int(request.session.get("presence_page", 1))
@@ -1059,11 +1097,9 @@ def presence_list(request,page=None):
         sort =sort_field.replace("!","-")
     else:
         sort =sort_field
-    if not filters:
-        num_items = records.esxi_host_records
-    else:
-        items = Esxi_host.objects.filter(**filters).order_by(sort)
-        num_items = len(items)
+
+    items = Esxi_host.objects.filter(**filters).order_by(sort)
+    num_items = len(items)
     offset = (page -1 )*limit
     end = page*limit
     items = Esxi_host.objects.filter(**filters).order_by(sort)[offset:end]
@@ -1088,17 +1124,137 @@ def presence_list(request,page=None):
     }))
     return HttpResponse(html)
 #==================================================================================
-def presence_edit(request,sn=None, editmode='edit'):
-    return error_page(request,"尚未开放此功能")
-    pass
+def presence_edit(request,obj_name=None, editmode='edit'):
+    if not oauth.test_user_authenticated(request): 
+        return login(request, next="/quick/presence/list", expired=True)
+    action = request.GET.get('action', '')
+    fields = [f for f in Esxi_conn._meta.fields]
+    if obj_name:
+        item = Esxi_conn.objects.filter(ip=obj_name)
+    else:
+        item = ''
+
+    if editmode == 'edit':
+        editable = False
+    else:
+        editable = True
+
+    columns=[]
+    for field in fields:
+        columns.append([field.name,field.verbose_name])
+
+    newitem = []
+    if item == '':
+        for name,verbose_name in columns:
+            newitem.append([name,'','',verbose_name])
+    else:
+        for name,verbose_name in columns:
+            newitem.append([name,getattr(item[0], name),'',verbose_name])
+    t = get_template("esxi_edit.tmpl")
+    html = t.render(RequestContext(request,{
+        'what'            : "presence",
+        'action'          : action,
+        'name'            : obj_name,
+        'editmode'        : editmode,
+        'editable'        : editable,
+        'items'           : newitem,
+        'meta'            : simplejson.loads(request.session['quick_meta'])
+    }))
+    return HttpResponse(html)
 #==================================================================================
 def presence_save(request,editmode='edit'):
-    return error_page(request,"尚未开放此功能")
-    pass
+    if not oauth.test_user_authenticated(request): 
+        return login(request, next="/quick/presence/list", expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
+    editmode = request.POST.get('editmode', 'edit')
+    fields = [f for f in Esxi_conn._meta.fields]
+    kw = {}
+    records = System.objects.filter(id=1)
+    if not records:
+        return error_page(request,"系统设置记录为空！")
+    else:
+        records = records[0]
+    for field in fields:
+        if field.name == "id":
+            continue
+        kw[field.name] = request.POST.get(field.name, "")
+    if editmode != 'edit':
+        #单个新增
+        conn=Esxi_conn(**kw)
+        conn.save()
+        esxi_host = Esxi_host(ip=kw['ip'])
+        esxi_host.save()
+        records.esxi_host_records = records.esxi_host_records + 1
+        records.save()
+        manual_log = Manual_Log(time=now,user=meta['username'],action='新增主机',remark='虚拟化')
+        manual_log.save()
+    else:
+        conn = Esxi_conn.objects.get(ip=kw['ip'])
+        for k,v in kw.items():
+            setattr(conn, k , v)
+        conn.save()
+        manual_log = Manual_Log(time=now,user=meta['username'],action='更新主机信息',remark='虚拟化')
+        manual_log.save()
+    utils.background_add_host(kw['ip'])
+    return HttpResponseRedirect('/quick/presence/list')
 #==================================================================================
+@require_POST
+@csrf_protect
+def presence_domulti(request,multi_mode=None,multi_arg=None):
+    if not oauth.test_user_authenticated(request): 
+        return login(request, next="/quick/presence/list", expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
+    username = meta['username']
+    names = request.POST.get('names', '').strip().split()
+    if names == "":
+        return error_page(request, "未选中任何对象")
+    try:
+        if multi_mode == "delete" and multi_arg == 'delete':
+            for name in names:
+                Esxi_conn.objects.get(ip=name).delete()
+                Esxi_host.objects.get(ip=name).delete()
+                vms = Vm_host.objects.filter(esxi_ip=name)
+                if vms:
+                    Vm_host.objects.get(esxi_ip=name).delete()
+            esxi = System.objects.get(id=1)
+            esxi.esxi_host_records = esxi.esxi_host_records - len(names)
+            esxi.save()
+            manual_log = Manual_Log(time=now,user=username,action='批量删除',remark='宿主机')
+            manual_log.save()
+        else:
+            return error_page(request,"未知操作")
+    except Exception,e:
+        return error_page(request,str(e))
+    return HttpResponseRedirect("/quick/presence/list")
+# ======================================================================
+@require_POST
+@csrf_protect
+def presence_delete(request,obj_name=None):
+    if not oauth.test_user_authenticated(request): 
+        return login(request, next="/quick/presence/list", expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
+    username = meta['username']
+    if not obj_name:
+        return HttpResponse("参数不能为空")
+    try:
+        Esxi_conn.objects.get(ip=obj_name).delete()
+        Esxi_host.objects.get(ip=obj_name).delete()
+        vms = Vm_host.objects.filter(esxi_ip=obj_name)
+        if vms:
+            Vm_host.objects.get(esxi_ip=obj_name).delete()
+        esxi = System.objects.get(id=1)
+        esxi.esxi_host_records = esxi.esxi_host_records - 1
+        esxi.save()
+        manual_log = Manual_Log(time=now,user=username,action='删除资产',remark='业务视图')
+        manual_log.save()
+    except Exception,e:
+        return error_page(request,str(e))
+    else:
+        return HttpResponseRedirect("/quick/presence/list")
+# ======================================================================
 def virtual_list(request,page=None):
     if not oauth.test_user_authenticated(request): 
-        return login(request, next="/quick/virtual/list"%what, expired=True)
+        return login(request, next="/quick/virtual/list", expired=True)
     meta = simplejson.loads(request.session['quick_meta'])
     if page == None:
         page = int(request.session.get("virtual_page", 1))
@@ -1115,16 +1271,13 @@ def virtual_list(request,page=None):
         return error_page(request,"系统设置记录为空！")
     else:
         records = records[0]
-    batchactions = [["删除","delete","delete"],]
+    batchactions = [["删除","delete","delete"],["开机","power","on"],["关机","power","off"],["挂起","power","suspend"]]
     if sort_field.startswith("!"):
         sort =sort_field.replace("!","-")
     else:
         sort =sort_field
-    if not filters:
-        num_items = records.esxi_host_records
-    else:
-        items = Vm_host.objects.filter(**filters).order_by(sort)
-        num_items = len(items)
+    items = Vm_host.objects.filter(**filters).order_by(sort)
+    num_items = len(items)
     offset = (page -1 )*limit
     end = page*limit
     items = Vm_host.objects.filter(**filters).order_by(sort)[offset:end]
@@ -1167,7 +1320,7 @@ def ippool_list(request,page=None):
     if sort_field.startswith("!"):
         sort_field=sort_field.replace("!","-")
     filters = simplejson.loads(request.session.get("%s_filters" % what, "{}"))
-    batchactions = [["删除","delete","delete"],]
+    batchactions = [["删除","delete","delete"]]
     items = Ip_Pool.objects.filter(**filters).order_by(sort_field)
     num_items = len(items)
     offset = (page -1 )*limit
@@ -1310,6 +1463,9 @@ def __paginate(num_items=0,page=None,items_per_page=None,token=None):
             'items_per_page' : items_per_page,
             'items_per_page_list' : [5,10,20,50,100,200,500],
             })
+
+
+
 
 
 

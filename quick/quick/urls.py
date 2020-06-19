@@ -31,13 +31,14 @@ urlpatterns = patterns('',
     (r'^logout1$', do_logout.do_logout_timeout),
     (r'^logout$', do_logout.do_logout),
     (r'^test$', test.test),
-    (r'^add_web_users$', add_web_users.add_web_users),
+    (r'^init$', add_web_users.add_web_users),
     (r'^utils/random_mac$', views.random_mac),
     (r'^utils/random_mac/virttype/(?P<virttype>.+)$', views.random_mac),
 
     (r'^(?P<what>\w+)/modifylist/(?P<pref>[!\w]+)/(?P<value>.+)$', views.modify_list),
 
     (r'^(?P<obj>\w+)/(?P<what>\w+)/modifylist/(?P<pref>[!\w]+)/(?P<value>.+)$', common.modify_list),
+    (r'^asset/recover/(?P<obj_id>\d+)?', assets.asset_reset),
     (r'^asset/(?P<what>\w+)/list(/(?P<page>\d+))?', assets.asset_list),
     (r'^asset/(?P<what>\w+)/edit/(?P<obj_name>.+)$', assets.asset_edit, {'editmode': 'edit'}),
     (r'^asset/(?P<what>\w+)/edit$', assets.asset_edit, {'editmode': 'new'}),
@@ -56,8 +57,10 @@ urlpatterns = patterns('',
     (r'^host/(?P<what>\w+)/multi/(?P<multi_mode>.+)/(?P<multi_arg>.+)$', assets.asset_domulti),
 
     (r'^presence/list(/(?P<page>\d+))?$', assets.presence_list),
+    (r'^presence/delete/(?P<obj_name>.+)$', assets.presence_delete),
+    (r'^presence/multi/(?P<multi_mode>.+)/(?P<multi_arg>.+)$', assets.presence_domulti),
     (r'^presence/edit$', assets.presence_edit, {'editmode':'new'}),
-    (r'^presence/edit/(?P<ip>.+)$', assets.presence_edit, {'editmode':'edit'}),
+    (r'^presence/edit/(?P<obj_name>.+)$', assets.presence_edit, {'editmode':'edit'}),
     (r'^presence/save$', assets.presence_save),
     (r'^virtual/list(/(?P<page>\d+))?$', assets.virtual_list),
 
@@ -116,6 +119,8 @@ urlpatterns = patterns('',
     (r'^(?P<what>\w+)/save$', views.generic_save),
 
 )
+
+
 
 
 
