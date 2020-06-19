@@ -200,7 +200,7 @@ function del_filter(filter) {
       <option value="status">状态/进度</option>
       <option value="owner">创建者</option>
       {% endifequal %}
-      {% if 'host' in what or 'asset' in what or 'user' in what or 'manual' in what or 'login' in what %}
+      {% if 'host' in what or 'asset' in what or 'user' in what or 'manual' in what or 'login' in what or 'virtual' in what or 'presence' in what%}
       {% for value in columns %}
       {% if value.0 != 'id' %}
       <option value='{{ value.0 }}'>{{ value.2 }}</option>
@@ -232,6 +232,7 @@ function del_filter(filter) {
   </div>
   {% endif %}
 {% endif %}
+
 
 
 

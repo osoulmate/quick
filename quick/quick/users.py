@@ -322,11 +322,9 @@ def user_domulti(request,what,multi_mode=None, multi_arg=None):
                 user.save()
         elif multi_mode == "account" and multi_arg == 'offline':
             for username in names:
-                '''
                 user = Users.objects.get(username=username)
-                user.is_online='offline'
+                user.online='no'
                 user.save()
-                '''
         else:
             return error_page(request,"未知操作")
     elif what == "role":
@@ -571,6 +569,7 @@ def logit(request,what,page=None):
         'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
+
 
 
 

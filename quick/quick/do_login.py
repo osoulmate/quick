@@ -83,6 +83,7 @@ def do_login(request):
                     return login(request,nextsite,message="权限不足")
         for k in order:
             menu.append(kw[k])
+
     url_cobbler_api = utils.local_get_cobbler_api_url()
     remote = xmlrpclib.Server(url_cobbler_api, allow_none=True)
 
@@ -136,6 +137,8 @@ def do_login(request):
             return HttpResponse(str(e))
         login_log = Login_Log(time=now,action='登入',user=username,status='成功',ip=request.META['REMOTE_ADDR'],remark='正常登陆')
         login_log.save()
+        user.online='yes'
+        user.save()
         if nextsite:
            return HttpResponseRedirect(nextsite)
         else:
@@ -144,6 +147,8 @@ def do_login(request):
         login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='令牌无效')
         login_log.save()
         return login(request,nextsite,message="登录失败，请重试")
+
+
 
 
 

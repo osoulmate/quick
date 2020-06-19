@@ -415,7 +415,10 @@ def generic_copy(request, what, obj_name=None, obj_newname=None):
         return error_page(request,"您当前没有权限复制 %s" % what)
     else:
         obj_id = oauth.remote.get_item_handle(what, obj_name, request.session['cobbler_token'])
-        oauth.remote.copy_item(what, obj_id, obj_newname, request.session['cobbler_token'])
+        try:
+            oauth.remote.copy_item(what, obj_id, obj_newname, request.session['cobbler_token'])
+        except Exception,e:
+            return error_page(request,"%s" % str(e))
         return HttpResponseRedirect("/quick/%s/list" % what)
 
 # ======================================================================
@@ -430,11 +433,11 @@ def generic_delete(request, what, obj_name=None):
         return login(request, next="/quick/%s/delete/%s" % (what, obj_name), expired=True)
     # FIXME: consolidate code with above functions.
     if obj_name is None:
-        return error_page(request, "You must specify a %s to delete" % what)
+        return error_page(request, "您必须为 %s 指定一个名称" % what)
     if not oauth.remote.has_item(what, obj_name):
-        return error_page(request, "Unknown %s specified" % what)
+        return error_page(request, "未知定义的 %s" % what)
     elif not oauth.remote.check_access_no_fail(request.session['cobbler_token'], "remove_%s" % what, obj_name):
-        return error_page(request, "You do not have permission to delete this %s" % what)
+        return error_page(request, "您当前没有权限删除 %s" % what)
     else:
         # check whether object is to be deleted recursively
         recursive = simplejson.loads(request.POST.get("recursive", "false"))
@@ -1211,6 +1214,7 @@ def generic_save(request,what):
         return error_page(request, str(e))
 
     return HttpResponseRedirect('/quick/%s/list' % what)
+
 
 
 

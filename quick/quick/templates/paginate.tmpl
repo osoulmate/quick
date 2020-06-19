@@ -11,7 +11,7 @@ function change_page(value) {
 }
 </script>
 <ul style="list-style:none" class="nav">
-{% if what == 'install/detail' or what == 'asset/app' or what == 'asset/hardware' or what == 'user/user' %}
+{% if what == 'install/detail' or what == 'asset/app' or what == 'asset/hardware' or what == 'user/user' or 'virtual' in what or 'presence' in what %}
 <li class="quick-dropdown">
     <span class="quick-dropbtn">显示列</span>
     <div class="quick-dropdown-content">
@@ -74,5 +74,6 @@ function change_page(value) {
 </li>
 </ul>
 {% endif %}
+
 
 

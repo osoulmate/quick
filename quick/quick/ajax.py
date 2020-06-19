@@ -77,6 +77,24 @@ def ajax(request):
                     task = User_Profile.objects.get(username=meta['username'])
                     setattr(task,k,v)
                     task.save()
+        elif what == 'presence':
+            if action == 'update_view_col':
+                k = request.POST.get('name', '')
+                v = request.POST.get('view', '')
+                if k !='' and v != '':
+                    k = 'esxi_host_%s'%k
+                    task = User_Profile.objects.get(username=meta['username'])
+                    setattr(task,k,v)
+                    task.save()
+        elif what == 'virtual':
+            if action == 'update_view_col':
+                k = request.POST.get('name', '')
+                v = request.POST.get('view', '')
+                if k !='' and v != '':
+                    k = 'vm_host_%s'%k
+                    task = User_Profile.objects.get(username=meta['username'])
+                    setattr(task,k,v)
+                    task.save()
         elif what == 'myinfo':
             if action == 'setup':
                 header_style = request.POST.get('header',None)
@@ -92,6 +110,7 @@ def ajax(request):
         return HttpResponse(str(e))
     else:
         return HttpResponse('ok')
+
 
 
 

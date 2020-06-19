@@ -1036,8 +1036,57 @@ def host_save(request,what,editmode='edit'):
     return HttpResponseRedirect('/quick/host/%s/list'%what)
 #==================================================================================
 def presence_list(request,page=None):
-    return error_page(request,"尚未开放此功能")
-    pass
+    if not oauth.test_user_authenticated(request): 
+        return login(request, next="/quick/presence/list"%what, expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
+    if page == None:
+        page = int(request.session.get("presence_page", 1))
+    limit = int(request.session.get("presence_limit", 5))
+    sort_field = request.session.get("presence_sort_field", "ip")
+    filters = simplejson.loads(request.session.get("presence_filters", "{}"))
+    records = System.objects.filter(id=1)
+    user_profile = User_Profile.objects.filter(username=meta['username'])
+    if user_profile:
+        user_profile = user_profile[0]
+    else:
+        return error_page(request,"未知的用户视图！")
+    if not records:
+        return error_page(request,"系统设置记录为空！")
+    else:
+        records = records[0]
+    batchactions = [["删除","delete","delete"],]
+    if sort_field.startswith("!"):
+        sort =sort_field.replace("!","-")
+    else:
+        sort =sort_field
+    if not filters:
+        num_items = records.esxi_host_records
+    else:
+        items = Esxi_host.objects.filter(**filters).order_by(sort)
+        num_items = len(items)
+    offset = (page -1 )*limit
+    end = page*limit
+    items = Esxi_host.objects.filter(**filters).order_by(sort)[offset:end]
+    fields = [f for f in Esxi_host._meta.fields]
+    columns=[]
+    for field in fields:
+        k = "esxi_host_%s"%field.name
+        columns.append([field.name,field.verbose_name,getattr(user_profile,k,'on')])
+    items = __format_items(items,columns)
+    columns = __format_columns(columns,sort_field)
+    t = get_template("esxi_list.tmpl")
+    html = t.render(RequestContext(request,{
+        'what'           : "presence",
+        'columns'        : columns,
+        'items'          : items,
+        'pageinfo'       : __paginate(num_items,page=page,items_per_page=limit),
+        'filters'        : filters,
+        'limit'          : limit,
+        'location'       : request.META['HTTP_HOST'],
+        'batchactions'   : batchactions,
+        'meta'           : meta
+    }))
+    return HttpResponse(html)
 #==================================================================================
 def presence_edit(request,sn=None, editmode='edit'):
     return error_page(request,"尚未开放此功能")
@@ -1048,8 +1097,60 @@ def presence_save(request,editmode='edit'):
     pass
 #==================================================================================
 def virtual_list(request,page=None):
-    return error_page(request,"尚未开放此功能")
-    pass
+    if not oauth.test_user_authenticated(request): 
+        return login(request, next="/quick/virtual/list"%what, expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
+    if page == None:
+        page = int(request.session.get("virtual_page", 1))
+    limit = int(request.session.get("virtual_limit", 5))
+    sort_field = request.session.get("virtual_sort_field", "ip")
+    filters = simplejson.loads(request.session.get("virtual_filters", "{}"))
+    records = System.objects.filter(id=1)
+    user_profile = User_Profile.objects.filter(username=meta['username'])
+    if user_profile:
+        user_profile = user_profile[0]
+    else:
+        return error_page(request,"未知的用户视图！")
+    if not records:
+        return error_page(request,"系统设置记录为空！")
+    else:
+        records = records[0]
+    batchactions = [["删除","delete","delete"],]
+    if sort_field.startswith("!"):
+        sort =sort_field.replace("!","-")
+    else:
+        sort =sort_field
+    if not filters:
+        num_items = records.esxi_host_records
+    else:
+        items = Vm_host.objects.filter(**filters).order_by(sort)
+        num_items = len(items)
+    offset = (page -1 )*limit
+    end = page*limit
+    items = Vm_host.objects.filter(**filters).order_by(sort)[offset:end]
+    fields = [f for f in Vm_host._meta.fields]
+    columns=[]
+    exculde = ['id']
+    for field in fields:
+        k = "vm_host_%s"%field.name
+        if field.name in exculde:
+            continue
+        columns.append([field.name,field.verbose_name,getattr(user_profile,k,'on')])
+    items = __format_items(items,columns)
+    columns = __format_columns(columns,sort_field)
+    t = get_template("esxi_list.tmpl")
+    html = t.render(RequestContext(request,{
+        'what'           : "virtual",
+        'columns'        : columns,
+        'items'          : items,
+        'pageinfo'       : __paginate(num_items,page=page,items_per_page=limit),
+        'filters'        : filters,
+        'limit'          : limit,
+        'location'       : request.META['HTTP_HOST'],
+        'batchactions'   : batchactions,
+        'meta'           : meta
+    }))
+    return HttpResponse(html)
 #==================================================================================
 def ippool_list(request,page=None):
     """
@@ -1209,6 +1310,7 @@ def __paginate(num_items=0,page=None,items_per_page=None,token=None):
             'items_per_page' : items_per_page,
             'items_per_page_list' : [5,10,20,50,100,200,500],
             })
+
 
 
 

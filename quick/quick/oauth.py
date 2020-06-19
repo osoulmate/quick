@@ -82,7 +82,7 @@ def test_user_authenticated(request):
                             #logger.info("用户(%s)访问URL(%s)成功"%(meta['username'],request.path))
                             return True
                         else:
-                            logger.info("用户(%s)访问URL(%s)失败,原因：[权限不足] %s"%(meta['username'],s,have_right))
+                            logger.info("用户(%s)访问URL(%s)失败,原因：[权限不足] %s"%(meta['username'],request.path,have_right))
                             return False
                     else:
                         logger.error("用户(%s)访问URL(%s)失败,原因：[无效的会话令牌]"%(meta['username'],request.path))
@@ -93,6 +93,7 @@ def test_user_authenticated(request):
     else:
         logger.error("用户(%s)访问URL(%s)失败,原因：[无效的cobbler令牌]"%(meta['username'],request.path))
         return False
+
 
 
 

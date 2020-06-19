@@ -8,15 +8,24 @@ from quick.models import Users,User_Profile,System,Rights,Group_Right,Groups
 
 def add_web_users(request):
     try:
-        password = u"root"
-        password_md5 = hashlib.md5(password.encode(encoding='UTF-8')).hexdigest()
-        root = Users(employee_id='000001',username='root',password=password_md5,email='root@163.com',name='administrator',telephone='12345678910',sex=u'男',photo='none',token=str(uuid.uuid4()).replace('-',''),token_expire_time='2999-10-10 10:10:01',reset_token=str(uuid.uuid4()).replace('-',''),reset_token_expire_time='2999-10-10 10:10:01',is_superuser='yes',is_active='yes',registry_time=datetime.now())
-        root.save()
-        user = Users.objects.filter(username='root')
-        if user:
-            user = user[0]
-            user_profile = User_Profile(user_id=user.id,username=user.username)
-            user_profile.save()
+        pwd1 = hashlib.md5("rootpwd!".encode(encoding='UTF-8')).hexdigest()
+        pwd2 = hashlib.md5("test123".encode(encoding='UTF-8')).hexdigest()
+        userquery = [{"employee_id":'000001',"username":'root',"password":pwd1,"email":"root@163.com","name":"管理员","telephone":"13323317561","sex":u"男","photo":"none","token":str(uuid.uuid4()).replace('-',''),"token_expire_time":"2999-10-10 10:10:01","reset_token":str(uuid.uuid4()).replace('-',''),"reset_token_expire_time":"2999-10-10 10:10:01","is_superuser":"yes","is_active":"yes","registry_time":datetime.now()},
+                     {"employee_id":'000002',"username":'devops',"password":pwd2,"email":"devops@163.com","name":"运维组","telephone":"13323317562","sex":u"男","photo":"none","token":str(uuid.uuid4()).replace('-',''),"token_expire_time":"2999-10-10 10:10:01","reset_token":str(uuid.uuid4()).replace('-',''),"reset_token_expire_time":"2999-10-10 10:10:01","is_superuser":"no","is_active":"yes","registry_time":datetime.now()},
+                     {"employee_id":'000003',"username":'asset',"password":pwd2,"email":"asset@163.com","name":"资产组","telephone":"13323317563","sex":u"男","photo":"none","token":str(uuid.uuid4()).replace('-',''),"token_expire_time":"2999-10-10 10:10:01","reset_token":str(uuid.uuid4()).replace('-',''),"reset_token_expire_time":"2999-10-10 10:10:01","is_superuser":"no","is_active":"yes","registry_time":datetime.now()},
+                     {"employee_id":'000004',"username":'osinstall',"password":pwd2,"email":"osinsatll@163.com","name":"系统安装组","telephone":"13323317564","sex":u"男","photo":"none","token":str(uuid.uuid4()).replace('-',''),"token_expire_time":"2999-10-10 10:10:01","reset_token":str(uuid.uuid4()).replace('-',''),"reset_token_expire_time":"2999-10-10 10:10:01","is_superuser":"no","is_active":"yes","registry_time":datetime.now()},
+                     {"employee_id":'000005',"username":'resource',"password":pwd2,"email":"resource@163.com","name":"资源组","telephone":"13323317565","sex":u"男","photo":"none","token":str(uuid.uuid4()).replace('-',''),"token_expire_time":"2999-10-10 10:10:01","reset_token":str(uuid.uuid4()).replace('-',''),"reset_token_expire_time":"2999-10-10 10:10:01","is_superuser":"no","is_active":"yes","registry_time":datetime.now()},
+                     {"employee_id":'000006',"username":'audit',"password":pwd2,"email":"audit@163.com","name":"审计组","telephone":"13323317566","sex":u"女","photo":"none","token":str(uuid.uuid4()).replace('-',''),"token_expire_time":"2999-10-10 10:10:01","reset_token":str(uuid.uuid4()).replace('-',''),"reset_token_expire_time":"2999-10-10 10:10:01","is_superuser":"no","is_active":"yes","registry_time":datetime.now()}
+                      ]
+        user_list = []
+        for user in userquery:
+            user_list.append(Users(**user))
+        Users.objects.bulk_create(user_list)
+        users = Users.objects.all()
+        if users:
+            for user in users:
+                  user_profile = User_Profile(user_id=user.id,username=user.username)
+                  user_profile.save()
             system = System()
             system.save()
             # 初始化权限
@@ -94,6 +103,25 @@ def add_web_users(request):
             {"name":"hardware_view_delete","menu1_title":"资产管理","menu1_icon":"fa-database","menu2_title":"删除硬件资产","menu2_url":"asset/hardware/delete/.+","desc":"删除"},
             {"name":"hardware_view_batch_action","menu1_title":"资产管理","menu1_icon":"fa-database","menu2_title":"硬件资产批处理","menu2_url":"asset/hardware/multi/.+/.+","desc":"批处理"},
 
+            {"name":"presence_host_edit","menu1_title":"虚拟化","menu1_icon":"fa-sitemap","menu2_title":"编辑宿主机","menu2_url":"presence/edit/.+","desc":"修改"},
+            {"name":"presence_host_new","menu1_title":"虚拟化","menu1_icon":"fa-sitemap","menu2_title":"新增宿主机","menu2_url":"presence/edit","desc":"新建"},
+            {"name":"presence_host_save","menu1_title":"虚拟化","menu1_icon":"fa-sitemap","menu2_title":"保存宿主机","menu2_url":"presence/save","desc":"保存"},
+            {"name":"presence_host_delete","menu1_title":"虚拟化","menu1_icon":"fa-sitemap","menu2_title":"删除宿主机","menu2_url":"presence/delete/.+","desc":"删除"},
+            {"name":"presence_host_batch_action","menu1_title":"虚拟化","menu1_icon":"fa-sitemap","menu2_title":"宿主机批处理","menu2_url":"presence/multi/.+/.+","desc":"批处理"},
+            {"name":"virt_host_batch_action","menu1_title":"虚拟化","menu1_icon":"fa-sitemap","menu2_title":"客户机批处理","menu2_url":"virtual/multi/.+/.+","desc":"批处理"},
+
+            {"name":"ip_pool_edit","menu1_title":"资源池","menu1_icon":"fa-globe","menu2_title":"编辑地址池","menu2_url":"ippool/edit/.+","desc":"修改"},
+            {"name":"ip_pool_new","menu1_title":"资源池","menu1_icon":"fa-globe","menu2_title":"新增地址池","menu2_url":"ippool/edit","desc":"新建"},
+            {"name":"ip_pool_save","menu1_title":"资源池","menu1_icon":"fa-globe","menu2_title":"保存地址池","menu2_url":"ippool/save","desc":"保存"},
+            {"name":"ip_pool_delete","menu1_title":"资源池","menu1_icon":"fa-globe","menu2_title":"删除地址池","menu2_url":"ippool/delete/.+","desc":"删除"},
+            {"name":"ip_pool_batch_action","menu1_title":"资源池","menu1_icon":"fa-globe","menu2_title":"地址池批处理","menu2_url":"ippool/multi/.+/.+","desc":"批处理"},
+
+            {"name":"storage_pool_edit","menu1_title":"资源池","menu1_icon":"fa-globe","menu2_title":"编辑存储池","menu2_url":"storage/edit/.+","desc":"修改"},
+            {"name":"storage_pool_new","menu1_title":"资源池","menu1_icon":"fa-globe","menu2_title":"新增存储池","menu2_url":"storage/edit","desc":"建"},
+            {"name":"storage_pool_save","menu1_title":"资源池","menu1_icon":"fa-globe","menu2_title":"保存存储池","menu2_url":"storage/save","desc":"保存"},
+            {"name":"storage_pool_delete","menu1_title":"资源池","menu1_icon":"fa-globe","menu2_title":"删除存储池","menu2_url":"storage/delete/.+","desc":"删除"},
+            {"name":"storage_pool_batch_action","menu1_title":"资源池","menu1_icon":"fa-globe","menu2_title":"存储池批处理","menu2_url":"storage/multi/.+/.+","desc":"批处理"},
+
             {"name":"asset_import","menu1_title":"资产管理","menu1_icon":"fa-database","menu2_title":"资产导入","menu2_url":"asset/\w+/import","desc":"导入"},
             {"name":"asset_export","menu1_title":"资产管理","menu1_icon":"fa-database","menu2_title":"资产导出","menu2_url":"asset/\w+/export","desc":"导出"},
 
@@ -149,7 +177,6 @@ def add_web_users(request):
 
             {"name":"users_func","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"用户功能","menu2_url":"user/\w+/.+/.+","desc":"删除|启用|禁用"},
             {"name":"users_batch_action","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"用户批处理","menu2_url":"user/\w+/multi/.+/.+","desc":"批处理"},
-            {"name":"log_batch_action","menu1_title":"日志管理","menu1_icon":"fa-user","menu2_title":"日志批处理","menu2_url":"log/\w+/multi/.+/.+","desc":"批处理"},
             {"name":"users_edit","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"编辑用户","menu2_url":"user/user/edit/.+","desc":"编辑"},
             {"name":"users_new","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"新建用户","menu2_url":"user/user/edit","desc":"新建"},
             {"name":"users_save","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"保存用户","menu2_url":"user/user/save","desc":"保存"},
@@ -160,7 +187,10 @@ def add_web_users(request):
 
             {"name":"rights_edit","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"编辑权限","menu2_url":"user/right/edit/.+","desc":"编辑"},
             {"name":"rights_new","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"新建权限","menu2_url":"user/right/edit","desc":"新建"},
-            {"name":"rights_save","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"保存权限","menu2_url":"user/right/save","desc":"保存"}
+            {"name":"rights_save","menu1_title":"用户管理","menu1_icon":"fa-user","menu2_title":"保存权限","menu2_url":"user/right/save","desc":"保存"},
+
+            {"name":"log_batch_action","menu1_title":"日志管理","menu1_icon":"fa-user","menu2_title":"日志批处理","menu2_url":"log/\w+/multi/.+/.+","desc":"批处理"},
+            {"name":"log_asset_reset","menu1_title":"日志管理","menu1_icon":"fa-user","menu2_title":"资产日志重置","menu2_url":"log/asset/reset","desc":"重置"}
             ]
             queryset = []
             for query in querysetlist:
@@ -173,6 +203,7 @@ def add_web_users(request):
             {"name":"应用资产组","desc":"拥有应用资产管理权限"},
             {"name":"硬件资产组","desc":"拥有硬件资产管理权限"},
             {"name":"系统安装组","desc":"拥有系统安装相关权限"},
+            {"name":"资源组","desc":"拥有资源管理相关权限"},
             {"name":"审计组","desc":"拥有日志管理权限"}
             ]
 
@@ -186,13 +217,15 @@ def add_web_users(request):
             for group in groups:
                 have_rights = []
                 if group.name == '运维组':
-                    have_rights = ["general_modifylist_1","general_modifylist_2","index","host_single","host_batch","host_group","host_script","host_group_edit","host_group_new","host_group_save","host_group_del","host_group_batch_action","host_script_edit","host_script_new","host_script_save","host_script_del","host_script_batch_action","union_view","general_ajax","user_chg_pwd","user_info","my_save"]
+                    have_rights = ["presence_host","virtual_host","general_modifylist_1","general_modifylist_2","index","host_single","host_batch","host_group","host_script","host_group_edit","host_group_new","host_group_save","host_group_del","host_group_batch_action","host_script_edit","host_script_new","host_script_save","host_script_del","host_script_batch_action","union_view","general_ajax","user_chg_pwd","user_info","my_save","presence_host_edit","presence_host_new","presence_host_save","presence_host_delete","presence_host_batch_action","virt_host_batch_action"]
                 elif group.name == '应用资产组':
                     have_rights = ["general_modifylist_1","general_modifylist_2","index","app_view","app_view_edit","app_view_edit_batch","app_view_new","app_view_save","app_view_del","app_view_batch_action","asset_import","asset_export","general_ajax","user_chg_pwd","user_info","my_save"]
                 elif group.name == '硬件资产组':
                     have_rights = ["general_modifylist_1","general_modifylist_2","index","hardware_view","hardware_view_edit","hardware_view_edit_batch","hardware_view_new","hardware_view_save","hardware_view_delete","hardware_view_batch_action","asset_import","asset_export","general_ajax","user_chg_pwd","user_info","my_save"]
                 elif group.name == '系统安装组':
-                    have_rights = ["index","install_modifylist","create_task","task_list","task_detail","task_history","edit_task","save_task","notice_task","execute_task","del_task","batch_action_task","general_ajax","user_chg_pwd","user_info","my_save"]
+                    have_rights = ["distros_list","profiles_list","distros_edit","distros_new","distros_save","profiles_edit","profiles_new","profiles_save","general_batch_action","general_del","index","install_modifylist","envent_log","systems_list","create_task","task_list","task_detail","task_history","edit_task","save_task","notice_task","execute_task","del_task","batch_action_task","general_ajax","user_chg_pwd","user_info","my_save","systems_edit","systems_new","systems_save","check_config","update_config","general_rename","general_copy","general_eventlog","general_iplist","general_task_created","general_reposync","general_replicate","general_hardlink","general_random_mac","general_random_mac_type"]
+                elif group.name == '资源组':
+                    have_rights = ["ip_pool","storage_pool","general_modifylist_1","general_modifylist_2","index","user_chg_pwd","user_info","my_save","ip_pool_edit","ip_pool_new","ip_pool_save","ip_pool_delete","ip_pool_batch_action","storage_pool_edit","storage_pool_new","storage_pool_save","storage_pool_delete","storage_pool_batch_action"]
                 elif group.name == '审计组':
                     have_rights = ["general_modifylist_1","general_modifylist_2","general_eventlog","index","login_log","manual_log","asset_log","envent_log","user_chg_pwd","user_info","my_save"]
                 else:
@@ -206,9 +239,11 @@ def add_web_users(request):
                 Group_Right.objects.bulk_create(group_right_query)
 
     except Exception, e:
-        return HttpResponse(str(e))
+        return HttpResponse("异常:%s"%str(e))
     else:
-        return HttpResponse('已成功添加web用户账号(root:root)')
+        return HttpResponse('已成功添加web用户账号(root:rootpwd!)')
+
+
 
 
 
