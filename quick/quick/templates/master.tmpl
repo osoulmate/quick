@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge;charset=utf-8" />
-    <title>{% block title %}迅捷管理平台{% endblock %}</title>
+    <title>{% block title %}易捷管理平台{% endblock %}</title>
     <meta content='width=device-width, initial-scale=1.0, shrink-to-fit=no' name='viewport' />
     <link rel="icon" href="/quick_content/img/favicon.png" type="image/x-icon"/>
     <!-- CSS Files -->
@@ -95,10 +95,12 @@
                             <a class="nav-link dropdown-toggle" href="#" id="handbook" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">手册下载
                             </a>
                         </li>
+						<!--
                         <li class="nav-item dropdown hidden-caret">
                             <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-envelope"></i>
                             </a>
+							
                             <ul class="dropdown-menu messages-notif-box animated fadeIn" aria-labelledby="messageDropdown">
                                 <li>
                                     <div class="dropdown-title d-flex justify-content-between align-items-center">
@@ -121,6 +123,7 @@
                                                     <span class="time">5 分钟前</span> 
                                                 </div>
                                             </a>
+
                                         </div>
                                     </div>
                                 </li>
@@ -128,18 +131,19 @@
                                     <a class="see-all" href="javascript:void(0);">所有消息<i class="fa fa-angle-right"></i> </a>
                                 </li>
                             </ul>
-                        </li>
+                        </li>-->
                         <li class="nav-item dropdown hidden-caret">
                             <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-bell"></i>
-                                <span class="notification">{{ meta.notice }}</span>
+                                <!--<span class="notification"></span>-->
                             </a>
                             <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
                                 <li>
-                                    <div class="dropdown-title">你有2条未读消息</div>
+                                    <div class="dropdown-title">你有0条未读消息</div>
                                 </li>
                                 <li>
                                     <div class="notif-center">
+									<!--
                                         <a href="#">
                                             <div class="notif-icon notif-success"> <i class="fa fa-comment"></i> </div>
                                             <div class="notif-content">
@@ -160,6 +164,7 @@
                                                 <span class="time">12 分钟前</span> 
                                             </div>
                                         </a>
+										-->
                                     </div>
                                 </li>
                                 <li>
@@ -216,7 +221,7 @@
                             <a href="/quick">
                                 <i class="fas fa-home"></i>
                                 <p>首页</p>
-                                <span class="badge badge-count">0</span>
+                                <span class="badge badge-count"></span>
                             </a>
                         </li>
                         {% for url in meta.menu %}
@@ -423,6 +428,7 @@
     <script src="/quick_content/assets/js/ready.min.js"></script>
 </body>
 </html>
+
 
 
 

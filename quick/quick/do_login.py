@@ -129,7 +129,7 @@ def do_login(request):
             else:
                 bg = 'bg1'
                 topbar = 'light-blue'
-            meta = {"online":online,"username":username,"usermail":user.email,"menu":menu,"have_right":have_right,"notice":2,"bg":bg,"topbar":topbar}
+            meta = {"online":online,"username":username,"usermail":user.email,"menu":menu,"have_right":have_right,"notice":2,"bg":bg,"topbar":topbar,"is_admin":user.is_superuser}
             request.session['quick_meta'] = simplejson.dumps(meta)
         except Exception as e:
             login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='系统异常')
@@ -147,6 +147,7 @@ def do_login(request):
         login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='令牌无效')
         login_log.save()
         return login(request,nextsite,message="登录失败，请重试")
+
 
 
 

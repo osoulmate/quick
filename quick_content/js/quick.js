@@ -117,13 +117,11 @@ function page_onload() {
     });
 }
 function testTime() {
-
-currentTime = new Date().getTime(); //更新当前时间
-
-if (currentTime - lastTime > timeOut) { //判断是否超时
-    console.log("超时");
-    window.location.href = "/quick/logout1";
-}
+    currentTime = new Date().getTime(); //更新当前时间
+    if (currentTime - lastTime > timeOut) { //判断是否超时
+        console.log("超时");
+        window.location.href = "/quick/logout1";
+    }
 }
 
 function items_check_all(){
@@ -463,6 +461,3 @@ window.confirm = function(option)
 }
 
 */
-
-
-
