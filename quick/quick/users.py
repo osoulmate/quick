@@ -215,13 +215,11 @@ def user_list(request,what,page=None):
         return login(request, next="/quick/user/%s/list"%what, expired=True)
     if page == None:
         page = int(request.session.get("%s_page"%what, 1))
-    limit = int(request.session.get("%s_limit"%what , 20))
+    limit = int(request.session.get("%s_limit"%what , 10))
     sort_field = sort_field_old = request.session.get("%s_sort_field"%what, "id")
     if sort_field.startswith("!"):
         sort_field=sort_field.replace("!","-")
     filters = simplejson.loads(request.session.get("%s_filters"%what, "{}"))
-
-    num_items  = request.session.get("%s_num_items"%what,None)
     if what == 'user':
         """
         测试用
@@ -235,42 +233,24 @@ def user_list(request,what,page=None):
                         ["启用","account","enable"]
                        ]
         fields = [f for f in Users._meta.fields]
-        if not num_items:
-            items = Users.objects.filter(**filters).order_by(sort_field)
-            json_data = serializers.serialize("json", items)
-            request.session["user_json_data"] = json_data
-            num_items = request.session["app_num_items"] = len(items)
-            items = items[:limit]
-        else:
-            offset = (page -1 )*limit
-            end = page*limit
-            items = Users.objects.filter(**filters).order_by(sort_field)[offset:end]
+        num_items = len(Users.objects.all())
+        offset = (page -1 )*limit
+        end = page*limit
+        items = Users.objects.filter(**filters).order_by(sort_field)[offset:end]
     elif what == 'role':
         batchactions = [["删除","delete","delete"],]
         fields = [f for f in Groups._meta.fields]
-        if not num_items:
-            items = Groups.objects.filter(**filters).order_by(sort_field)
-            json_data = serializers.serialize("json",items)
-            request.session["role_json_data"] = json_data
-            num_items = request.session["hardware_num_items"] = len(items)
-            items = items[:limit]
-        else:
-            offset = (page -1 )*limit
-            end = page*limit
-            items = Groups.objects.filter(**filters).order_by(sort_field)[offset:end]
+        num_items = len(Groups.objects.all())
+        offset = (page -1 )*limit
+        end = page*limit
+        items = Groups.objects.filter(**filters).order_by(sort_field)[offset:end]
     elif what == 'right':
         batchactions = [["删除","delete","delete"],]
         fields = [f for f in Rights._meta.fields]
-        if not num_items:
-            items = Rights.objects.filter(**filters).order_by(sort_field)
-            json_data = serializers.serialize("json", items)
-            request.session["right_json_data"] = json_data
-            num_items = request.session["right_num_items"] = len(items)
-            items = items[:limit]
-        else:
-            offset = (page -1 )*limit
-            end = page*limit
-            items = Rights.objects.filter(**filters).order_by(sort_field)[offset:end]
+        num_items = len(Rights.objects.all())
+        offset = (page -1 )*limit
+        end = page*limit
+        items = Rights.objects.filter(**filters).order_by(sort_field)[offset:end]
     else:
         return HttpResponse("not found!")
     columns=[]
@@ -512,43 +492,24 @@ def logit(request,what,page=None):
     if sort_field.startswith("!"):
         sort_field=sort_field.replace("!","-")
     filters = simplejson.loads(request.session.get("%s_filters"%what, "{}"))
-    num_items  = request.session.get("%s_num_items"%what,None)
     if what == 'manual':
         fields = [f for f in Manual_Log._meta.fields]
-        if not num_items:
-            items = Manual_Log.objects.filter(**filters).order_by(sort_field)
-            json_data = serializers.serialize("json", items)
-            request.session["%s_json_data"%what] = json_data
-            num_items = request.session["%s_num_items"%what] = len(items)
-            items = items[:limit]
-        else:
-            offset = (page -1 )*limit
-            end = page*limit
-            items = Manual_Log.objects.filter(**filters).order_by(sort_field)[offset:end]
+        num_items = len(Manual_Log.objects.all())
+        offset = (page -1 )*limit
+        end = page*limit
+        items = Manual_Log.objects.filter(**filters).order_by(sort_field)[offset:end]
     elif what == 'login':
         fields = [f for f in Login_Log._meta.fields]
-        if not num_items:
-            items = Login_Log.objects.filter(**filters).order_by(sort_field)
-            json_data = serializers.serialize("json", items)
-            request.session["%s_json_data"%what] = json_data
-            num_items = request.session["%s_num_items"%what] = len(items)
-            items = items[:limit]
-        else:
-            offset = (page -1 )*limit
-            end = page*limit
-            items = Login_Log.objects.filter(**filters).order_by(sort_field)[offset:end]
+        num_items = len(Login_Log.objects.all())
+        offset = (page -1 )*limit
+        end = page*limit
+        items = Login_Log.objects.filter(**filters).order_by(sort_field)[offset:end]
     elif what == 'asset':
         fields = [f for f in Asset_Log._meta.fields]
-        if not num_items:
-            items = Asset_Log.objects.filter(**filters).order_by(sort_field)
-            json_data = serializers.serialize("json", items)
-            request.session["%s_json_data"%what] = json_data
-            num_items = request.session["%s_num_items"%what] = len(items)
-            items = items[:limit]
-        else:
-            offset = (page -1 )*limit
-            end = page*limit
-            items = Asset_Log.objects.filter(**filters).order_by(sort_field)[offset:end]
+        num_items = len(Asset_Log.objects.all())
+        offset = (page -1 )*limit
+        end = page*limit
+        items = Asset_Log.objects.filter(**filters).order_by(sort_field)[offset:end]
     else:
         pass
     columns=[]
@@ -569,6 +530,7 @@ def logit(request,what,page=None):
         'meta' : simplejson.loads(request.session['quick_meta'])
     }))
     return HttpResponse(html)
+
 
 
 
