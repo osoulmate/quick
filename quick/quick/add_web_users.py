@@ -141,7 +141,7 @@ def add_web_users(request):
 
             {"name":"kickstarts_edit","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"修改Kickstarts","menu2_url":"ksfile/edit/file:.*","desc":"修改"},
             {"name":"kickstarts_new","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"新建Kickstarts","menu2_url":"ksfile/edit","desc":"新建"},
-            {"name":"kickstarts_save","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"保存Kickstarts","menu2_url":"ksfile/save:","desc":"保存"},
+            {"name":"kickstarts_save","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"保存Kickstarts","menu2_url":"ksfile/save","desc":"保存"},
 
             {"name":"snippets_edit","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"修改Snippets","menu2_url":"snippet/edit/file:.*","desc":"修改"},
             {"name":"snippets_new","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"新建Snippets","menu2_url":"snippet/edit","desc":"新建"},
