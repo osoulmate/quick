@@ -33,6 +33,7 @@ urlpatterns = patterns('',
     (r'^test$', test.test),
     (r'^init$', add_web_users.add_web_users),
     (r'^utils/random_mac$', views.random_mac),
+    (r'^api/gethostinfo$', install.discover_hosts),
     (r'^utils/random_mac/virttype/(?P<virttype>.+)$', views.random_mac),
 
     (r'^(?P<what>\w+)/modifylist/(?P<pref>[!\w]+)/(?P<value>.+)$', views.modify_list),
@@ -119,6 +120,7 @@ urlpatterns = patterns('',
     (r'^(?P<what>\w+)/save$', views.generic_save),
 
 )
+
 
 
 
