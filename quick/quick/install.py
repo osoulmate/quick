@@ -12,6 +12,7 @@ from django.db.models import Q
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
 from datetime import datetime
+import collections
 import re
 import os
 import time
@@ -485,6 +486,7 @@ def task_domulti(request, what, multi_mode=None, multi_arg=None):
                 report_fields = [f for f in Report._meta.fields]
                 save_data = []
                 kw = {}
+                kw = collections.OrderedDict()
                 report_items  = Report.objects.all()
                 for report_item in report_items:
                     for report_field in report_fields:
@@ -767,8 +769,37 @@ def discover_detail(request,obj_id=None):
     except Exception,e:
         return error_page(request,str(e))
     else:
+        nics = []
+        cpus = []
+        memorys = []
+        disks =[]
         for field in fields:
-            items.append([field.verbose_name,getattr(host,field.name,'')])
+            if field.name in ['nic','cpu','memory','disk']:
+                value = getattr(host,field.name,'')
+                value = str(value).replace("'",'"')
+                value = simplejson.loads(value)
+            if field.name == 'nic':
+                for k,v in value.items():
+                    nics.append([k,value[k]['mac'],value[k]['ip'],value[k]['netmask'],value[k]['gateway'],value[k]['duplex'],value[k]['port'],value[k]['link'],value[k]['speed']])
+                items.append([field.verbose_name,nics,field.name])
+            elif field.name == 'cpu':
+                cpus.append([value['cpu'],value['cpu_count'],value['cpu_cores']])
+                items.append([field.verbose_name,cpus,field.name])
+            elif field.name == 'memory':
+                for k,v in value.items():
+                    k = k.replace('MEM',u'内存')
+                    memorys.append([k,v])
+                items.append([field.verbose_name,memorys,field.name])
+            elif field.name == 'disk':
+                for k,v in value.items():
+                    device_type = getattr(host,'device_type','虚拟机')
+                    if device_type == '虚拟机':
+                        disks.append([k.replace('DISK',u'硬盘'),value[k]['capacity']])
+                    else:
+                        disks.append([k.replace('DISK',u'硬盘'),value[k]['solt'],value[k]['capacity'],value[k]['type'],value[k]['vendor'],value[k]['wwn'],value[k]['state']])
+                items.append([field.verbose_name,disks,field.name,device_type])
+            else:
+                items.append([field.verbose_name,getattr(host,field.name,''),field.name])
     t = "discover_detail.tmpl"
     t = get_template(t)
     html = t.render(RequestContext(request,{
@@ -777,5 +808,6 @@ def discover_detail(request,obj_id=None):
         'meta'           : meta
     }))
     return HttpResponse(html)
+
 
 

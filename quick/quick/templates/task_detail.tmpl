@@ -105,7 +105,7 @@
                                               {% endif %}
                                             {% endfor %}
                                                 <td>
-                                                {% if item.3.1 == "N/R" or item.3.1 == '' or item.3.1 == 'None' %}
+                                                {% if item.3.1 == "N/R" or item.3.1 == '' %}
                                                   <button type="button" class="btn btn-info btn-xs" id="my-{{ item.3.0 }}" disabled="disabled" >ipmi</button>
                                                 {% else %}
                                                   <a class="btn btn-info btn-xs" id="my-{{ item.3.0 }}" href="{{ item.3.1 }}" >ipmi</a>

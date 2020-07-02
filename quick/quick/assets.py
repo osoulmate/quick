@@ -11,6 +11,7 @@ from django.db.models import Q
 from django.core import serializers
 from django.conf import settings
 from datetime import datetime
+import collections
 import os
 import re
 import time
@@ -552,6 +553,7 @@ def asset_export(request,what):
     try:
         for app_item in app_items:
             kw = {}
+            kw = collections.OrderedDict()
             q = Q()
             q.connector = 'OR'
             q.children.append(("ipmi_ip",app_item.ipmi_ip))
@@ -1463,6 +1465,7 @@ def __paginate(num_items=0,page=None,items_per_page=None,token=None):
             'items_per_page' : items_per_page,
             'items_per_page_list' : [5,10,20,50,100,200,500],
             })
+
 
 
 
