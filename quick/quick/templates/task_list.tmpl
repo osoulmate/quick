@@ -85,10 +85,10 @@
                                               {% endif %}
                                             {% endfor %}
                                                 <td>
-                                                <a class="btn btn-info btn-sm" href="/quick/install/edit/{{ item.0.1}}">编辑</a>
-                                                 <span class="btn btn-info btn-sm" onClick="javascript:obj_execute('/quick/install/execute/{{item.0.1 }}','确认执行任务{{item.0.1}}?','action')">执行</span>
-                                                 <span class="btn btn-info btn-sm" onClick="javascript:obj_execute('/quick/{{what }}/delete/{{ item.0.1}}','确认删除任务{{ item.0.1}}?','action')">删除</span>
-                                                 <a class="btn btn-info btn-sm" href="/quick/install/detail/list?name={{item.0.1 }}">详情</a> 
+                                                <a class="btn btn-info btn-xs" href="/quick/install/edit/{{ item.0.1}}">编辑</a>
+                                                 <span class="btn btn-info btn-xs" onClick="javascript:obj_execute('/quick/install/execute/{{item.0.1 }}','确认执行任务{{item.0.1}}?','action')">执行</span>
+                                                 <span class="btn btn-info btn-xs" onClick="javascript:obj_execute('/quick/{{what }}/delete/{{ item.0.1}}','确认删除任务{{ item.0.1}}?','action')">删除</span>
+                                                 <a class="btn btn-info btn-xs" href="/quick/install/detail/list?name={{item.0.1 }}">详情</a> 
                                                 </td>
                                               </tr>
                                             {% endfor %}
@@ -107,6 +107,7 @@
                 </div>
             </div>
 {% endblock content %}
+
 
 
 

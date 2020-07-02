@@ -77,7 +77,7 @@
                                             {% for item in items %}
                                             <tr>
                                                 <td>
-                                                  <input type="checkbox" name="items" id="{{ item.0.1 }}-{{ item.1.1 }}" value="{{ item.1.1 }}" onclick="javascript:items_check(this);" />
+                                                  <input type="checkbox" name="items" id="{{ item.0.1 }}-{{ item.1.1 }}" value="{{ item.0.1 }}-{{ item.1.1 }}" onclick="javascript:items_check(this);" />
                                                   <label for="{{ item.0.1 }}-{{ item.1.1 }}"> <i></i></label> 
                                                 </td>
                                             {% for value in item %}
@@ -89,7 +89,7 @@
                                               <td><a target="_blank"  href="http://{{ location }}:8022/ssh/{{ value.1 }}">{{ value.1 }}</a></td>
                                               {% endif %}
                                               {% if value.2 == "editlink" and value.0 == "apply_template" %}
-                                              <td><a target="_blank" href="http://{{ location }}/cblr/svc/op/ks/profile/{{ value.1 }}">{{ value.1 }}</a></td>
+                                              <td><a target="_blank" href="http://{{ location }}/cblr/svc/op/ks/system/sys-{{ item.1.1 }}">{{ value.1 }}</a></td>
                                               {% endif %}
                                               {% if value.2 == "text" and value.0 == "usetime" %}
                                               <td id="{{ item.0.1 }}-{{ item.1.1 }}|usetime" class="quick-usetime">{{ value.1 }}</td>
@@ -105,13 +105,13 @@
                                               {% endif %}
                                             {% endfor %}
                                                 <td>
-												{% ifequal item.3.1 "N/R" %}
-                                                  <button type="button" class="btn btn-info btn-sm" id="my-{{ item.3.0 }}" disabled="disabled" >ipmi</button>
-												{% else %}
-												  <a class="btn btn-info btn-sm" id="my-{{ item.3.0 }}" href="{{ item.3.1 }}" >ipmi</a>
-												{% endifequal %}
-                                                  <a class="btn btn-info btn-sm"  target="_blank" href="http://{{ location }}:8022/ssh/{{ item.1.1 }}">ssh</a>
-                                                  <a class="btn btn-info btn-sm"  target="_blank" href="http://{{ location }}:6080/vnc.html?path=?token=sys-{{ item.1.1 }}">vnc</a>
+                                                {% if item.3.1 == "N/R" or item.3.1 == '' or item.3.1 == 'None' %}
+                                                  <button type="button" class="btn btn-info btn-xs" id="my-{{ item.3.0 }}" disabled="disabled" >ipmi</button>
+                                                {% else %}
+                                                  <a class="btn btn-info btn-xs" id="my-{{ item.3.0 }}" href="{{ item.3.1 }}" >ipmi</a>
+                                                {% endif %}
+                                                  <a class="btn btn-info btn-xs"  target="_blank" href="http://{{ location }}:8022/ssh/{{ item.1.1 }}">ssh</a>
+                                                  <a class="btn btn-info btn-xs"  target="_blank" href="http://{{ location }}:6080/vnc.html?path=?token=sys-{{ item.1.1 }}">vnc</a>
                                                 </td>
                                               </tr>
                                             {% endfor %}
@@ -130,6 +130,8 @@
                 </div>
             </div>
 {% endblock content %}
+
+
 
 
 

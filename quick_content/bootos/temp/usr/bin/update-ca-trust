@@ -1,0 +1,367 @@
+#!/bin/bash
+#
+# Copyright (C) 2013 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+#set -vx
+
+do_extract()
+{
+	if [[ $1 = "warn_if_disabled" ]]; then
+		prepare_setup
+		if [[ $CURRENT_SETUP -ne 2 ]]; then
+			warning "Warning: The dynamic CA configuration feature is in the disabled state"
+		fi
+	fi
+
+	DEST=/etc/pki/ca-trust/extracted
+
+	# OpenSSL PEM bundle that includes trust flags
+	# (BEGIN TRUSTED CERTIFICATE)
+	/usr/bin/p11-kit extract --format=openssl-bundle --filter=certificates --overwrite $DEST/openssl/ca-bundle.trust.crt
+	/usr/bin/p11-kit extract --format=pem-bundle --filter=ca-anchors --overwrite --purpose server-auth $DEST/pem/tls-ca-bundle.pem
+	/usr/bin/p11-kit extract --format=pem-bundle --filter=ca-anchors --overwrite --purpose email $DEST/pem/email-ca-bundle.pem
+	/usr/bin/p11-kit extract --format=pem-bundle --filter=ca-anchors --overwrite --purpose code-signing $DEST/pem/objsign-ca-bundle.pem
+	/usr/bin/p11-kit extract --format=java-cacerts --filter=ca-anchors --overwrite --purpose server-auth $DEST/java/cacerts
+}
+
+HAVE_NSS_32=0
+HAVE_NSS_64=0
+HAVE_P11_32=0
+HAVE_P11_64=0
+P11_32_CONSISTENT=1
+P11_64_CONSISTENT=1
+
+CURRENT_SETUP=0
+FORCE=0
+
+RPM_VFY_INFO=""
+RPM_VFY_STATUS=0
+
+SETUPFILE_P11_32=/usr/lib/p11-kit/p11-kit-redhat-setup-trust
+SETUPFILE_P11_64=/usr/lib64/p11-kit/p11-kit-redhat-setup-trust
+LIBFILE_NSS_32=/usr/lib/nss/libnssckbi.so
+LIBFILE_NSS_64=/usr/lib64/nss/libnssckbi.so
+
+INITIAL_BACKUP=/etc/pki/backup-traditional-original-config
+RECENT_BACKUP=/etc/pki/backup-traditional-recent-config
+
+CAB_FILE=/etc/pki/tls/certs/ca-bundle.crt
+CABT_FILE=/etc/pki/tls/certs/ca-bundle.trust.crt
+JAB_FILE=/etc/pki/java/cacerts
+
+warning()
+{
+	echo "update-ca-trust: $@" >&2
+}
+
+prepare_setup()
+{
+	# result of test -L filename # 0: yes, a link # 1: no, not a link
+	test -L $CAB_FILE
+	CAB_LINK=$?
+	test -L $CABT_FILE
+	CABT_LINK=$?
+	test -L $JAB_FILE
+	CAJ_LINK=$?
+
+	if [[ $CAB_LINK -eq 1 && $CABT_LINK -eq 1 && $CAJ_LINK -eq 1 ]]; then
+		#echo "current_setup=1 (no links)"
+		CURRENT_SETUP=1
+	fi
+
+	if [[ $CAB_LINK -eq 0 && $CABT_LINK -eq 0 && $CAJ_LINK -eq 0 ]]; then
+		#echo "current_setup=2 (all links)"
+		CURRENT_SETUP=2
+	fi
+}
+
+prepare()
+{
+	prepare_setup
+	
+	test -e $LIBFILE_NSS_32
+	if [[ $? -eq 0 ]]; then
+		#echo "have nss 32"
+		HAVE_NSS_32=1
+	fi
+	
+	test -e $LIBFILE_NSS_64
+	if [[ $? -eq 0 ]]; then
+		#echo "have nss 64"
+		HAVE_NSS_64=1
+	fi
+	
+	test -e $SETUPFILE_P11_32
+	if [[ $? -eq 0 ]]; then
+		#echo "have p11 32"
+		HAVE_P11_32=1
+	fi
+
+	test -e $SETUPFILE_P11_64
+	if [[ $? -eq 0 ]]; then
+		#echo "have p11 64"
+		HAVE_P11_64=1
+	fi
+	
+	if [[ $HAVE_NSS_32 -eq 1 && $HAVE_P11_32 -eq 0 ]]; then
+		#echo "p11 32 not consistent"
+		P11_32_CONSISTENT=0
+	fi
+	
+	if [[ $HAVE_NSS_64 -eq 1 && $HAVE_P11_64 -eq 0 ]]; then
+		#echo "p11 64 not consistent"
+		P11_64_CONSISTENT=0
+	fi
+
+	if [[ $CURRENT_SETUP -ne 2 ]]; then
+		# result of rpm --verify: # 0: unchanged
+		RPM_VFY_INFO=`rpm -q --verify --nomtime ca-certificates`
+		RPM_VFY_STATUS=$?
+		#echo "rpm status: $RPM_VFY_INFO"
+	fi
+}
+
+report_if_p11_inconsistent()
+{
+	if [[ $P11_32_CONSISTENT -eq 0 ]]; then
+		warning "nss 32 bit is installed. You should install p11-kit-trust 32 bit."
+	fi
+
+	if [[ $P11_64_CONSISTENT -eq 0 ]]; then
+		warning "nss 64 bit is installed. You should install p11-kit-trust 64 bit."
+	fi
+}
+
+report_if_not_enabled_and_bundles_modified()
+{
+	if [[ $CURRENT_SETUP -ne 2 ]]; then
+		if [[ $RPM_VFY_STATUS -ne 0 ]]; then
+			warning "Legacy CA bundle files aren't in the default state, they have been modified."
+			warning "You should research the configuration changes that have been performed and add equivalent configuration after enabling the new dynamic configuration"
+			warning "Below is a list of files that have been modified:"
+			warning "$RPM_VFY_INFO"
+		fi
+	fi
+}
+
+do_check()
+{
+	prepare
+	
+	if [[ $CURRENT_SETUP -eq 1 ]]; then
+		echo "PEM/JAVA Status: DISABLED."
+		echo "   (Legacy setup with static files.)"
+	fi
+
+	if [[ $CURRENT_SETUP -eq 2 ]]; then
+		echo "PEM/JAVA Status: ENABLED."
+		echo "    (Legacy filenames are links to files produced by update-ca-trust.)"
+	fi
+
+	if [[ $CURRENT_SETUP -eq 0 ]]; then
+		echo "PEM/JAVA Status: INCONSISTENT."
+		echo "   (Some legacy files, some symbolic links.)"
+	fi
+	
+	report_if_p11_inconsistent
+	
+	echo "PKCS#11 module Status, see symbolic links reported below:"
+	ls -l /etc/alternatives/libnssckbi.so*
+	echo "    (link resolving to NSS: using legacy static list)"
+	echo "    (link resolving to p11-kit: using the new source configuration)"
+	
+	return 0
+}
+
+create_backup()
+{
+	# - We'll potentially create two backups. An "initial" and a "most recent".
+	# - The initial backup will be created, only, if it doesn't exist yet.
+	# - The initial backup will never be overwritten.
+	# - The most recent backup will be overwritten each time this script
+	#       is run to "enable" the new-style extracted system.
+	# - The most recent backup will be restored each time this script
+	#       is run to "disable" the new-style extracted system,
+	#       thereby switching back to the traditional system.
+	
+	test -e $INITIAL_BACKUP
+	BACKUPDIR_TEST=$?
+	if [[ $BACKUPDIR_TEST -eq 1 ]]; then
+		# Initial backup directory doesn't exist yet
+		mkdir -p $INITIAL_BACKUP
+		cp --dereference --preserve --force \
+			$CAB_FILE $CABT_FILE $JAB_FILE $INITIAL_BACKUP
+	fi
+
+	mkdir -p $RECENT_BACKUP
+	cp --dereference --preserve --force \
+		$CAB_FILE $CABT_FILE $JAB_FILE $RECENT_BACKUP
+}
+
+restore_backup()
+{
+	test -d $RECENT_BACKUP
+	BACKUPDIR_TEST=$?
+	if [[ $BACKUPDIR_TEST -eq 1 ]]; then
+		warning "recent backup dir doesn't exist, aborting"
+		exit 1
+	fi
+	
+	pushd $RECENT_BACKUP >/dev/null
+	
+	test -e ca-bundle.crt
+	T1=$?
+	test -e ca-bundle.trust.crt
+	T2=$?
+	test -e cacerts
+	T3=$?
+	
+	if [[ $T1 -eq 1 || $T2 -eq 1 || $T3 -eq 1 ]]; then
+		warning "at least one backup file doesn't exist, aborting"
+		exit 1
+	fi
+	
+	rm -f $CAB_FILE
+	cp --dereference --preserve --force ca-bundle.crt $CAB_FILE
+
+	rm -f $CABT_FILE
+	cp --dereference --preserve --force ca-bundle.trust.crt $CABT_FILE
+
+	rm -f $JAB_FILE
+	cp --dereference --preserve --force cacerts $JAB_FILE
+
+	popd >/dev/null
+}
+
+create_links()
+{
+	rm -f $CAB_FILE
+	rm -f $CABT_FILE
+	rm -f $JAB_FILE
+
+	ln -s /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem $CAB_FILE
+	ln -s /etc/pki/ca-trust/extracted/openssl/ca-bundle.trust.crt $CABT_FILE
+	ln -s /etc/pki/ca-trust/extracted/java/cacerts $JAB_FILE
+}
+
+setup_p11()
+{
+	ACTION=$1
+	
+	if [[ $HAVE_P11_32 -eq 1 ]]; then
+		$SETUPFILE_P11_32 $ACTION
+	fi
+
+	if [[ $HAVE_P11_64 -eq 1 ]]; then
+		$SETUPFILE_P11_64 $ACTION
+	fi
+}
+
+do_enable()
+{
+	prepare
+	
+	if [[ $FORCE -eq 0 ]]; then
+		report_if_p11_inconsistent
+		report_if_not_enabled_and_bundles_modified
+
+		if [[ $P11_32_CONSISTENT -eq 0 || $P11_64_CONSISTENT -eq 0 ]]; then
+			warning "aborting, because the nss / p11-kit setup is inconsistent."
+			exit 1
+		fi
+	fi
+
+	ABORT=0
+
+	if [[ $FORCE -eq 0 && $CURRENT_SETUP -eq 0 ]]; then
+		warning "Aborting because of inconsistent PEM/JAVA setup."
+		ABORT=1
+	fi
+
+	if [[ $FORCE -eq 0 && $RPM_VFY_STATUS -ne 0 ]]; then
+		warning "Aborting because system uses modified legacy bundle files."
+		ABORT=1
+	fi
+
+	if [[ $ABORT -eq 1 ]]; then
+		warning "If you're certain, use force-enable"
+		exit 1
+	fi
+
+	if [[ $CURRENT_SETUP -ne 2 ]]; then
+		# only change files if PEM/JAVA files currently aren't (cleanly) enabled
+		create_backup
+		create_links
+	fi
+	
+	setup_p11 enable
+	return 0
+}
+
+do_disable()
+{
+	prepare
+	
+	if [[ $FORCE -eq 0 && $CURRENT_SETUP -eq 0 ]]; then
+		warning "Aborting because of inconsistent setup. If you're certain, use force-disable"
+		exit 1
+	fi
+	
+	if [[ $CURRENT_SETUP -ne 1 ]]; then
+		# only change files if PEM/JAVA files currently aren't (cleanly) disabled
+		restore_backup
+	fi
+
+	setup_p11 disable
+	return 0
+}
+
+if [[ $# -eq 0 ]]; then
+  # no parameters
+  do_extract silent
+  exit $?
+fi
+
+if [[ "$1" = "extract" ]]; then
+  do_extract warn_if_disabled
+  exit $?
+fi
+
+if [[ "$1" = "enable" ]]; then
+  do_enable
+  exit $?
+fi
+
+if [[ "$1" = "disable" ]]; then
+  do_disable
+  exit $?
+fi
+
+if [[ "$1" = "force-enable" ]]; then
+  FORCE=1
+  do_enable
+  exit $?
+fi
+
+if [[ "$1" = "force-disable" ]]; then
+  FORCE=1
+  do_disable
+  exit $?
+fi
+
+if [[ "$1" = "check" ]]; then
+  do_check
+  exit $?
+fi
+
+echo "usage: $0 [extract | check | enable | disable | force-enable | force-disable ]"

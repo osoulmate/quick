@@ -291,6 +291,14 @@ function action_multi_new(otype,action="delete",param="delete") {
     if ((action == "account") && (param == "disable")) {
         msg = "确认禁用账号?"
     }
+    if ((action == "export") && (param == "out")) {
+        msg = "导出数据?"
+    }
+    if ((action == "import") && (param == "in")) {
+        target = "/quick/install/edit"
+        document.forms["myform"].action = target
+        document.forms["myform"].submit();
+    }
     if(msg)
     {
         confirm({
@@ -461,3 +469,5 @@ window.confirm = function(option)
 }
 
 */
+
+

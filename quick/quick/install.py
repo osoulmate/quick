@@ -10,9 +10,13 @@ from django.views.decorators.csrf import csrf_protect
 from django .views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 from django.core.mail import EmailMultiAlternatives
+from django.conf import settings
+from datetime import datetime
 import re
+import os
 import time
 import simplejson
+import pyexcel as pe
 import oauth
 import utils
 from login import login
@@ -36,6 +40,25 @@ def task_edit(request,task_name=None, editmode='edit'):
             return HttpResponseRedirect('/quick/install/resume/list')
     else:
         editable = True
+        names = request.POST.get('names', '').strip().split()
+        if names:
+            tasks = {'osenv':'newinstall-dhcp','ips':''}
+            ips = ''
+            for name in names:
+                report = Report.objects.get(id=name)
+                nic = (report.nic).replace("'",'"')
+                nic = simplejson.loads(nic)
+                netmask = ''
+                gateway = ''
+                for k,v in nic.items():
+                    if nic[k]['ip'] == report.ip:
+                        netmask = nic[k]['netmask']
+                        gateway = nic[k]['gateway']
+                        break
+                if report.ip and report.bootmac and netmask and gateway:
+                    ips += "%s %s %s %s \n"%(report.ip,netmask,gateway,report.bootmac)
+            tasks['ips'] = ips
+
     envs = [['reinstall-no-dhcp','无DHCP系统重装'],
             ['reinstall-dhcp','有DHCP系统重装'],
             ['newinstall-dhcp','有DHCP系统新装']
@@ -178,55 +201,53 @@ def task_save(request,editmode='edit'):
         return login(request, next="/quick/install/save/%s" % task_name, expired=True)
     meta = simplejson.loads(request.session['quick_meta'])
     editmode = request.POST.get('editmode', 'edit')
-    osip = request.POST.get('osip', "").replace('\n','').replace('\r','')
-    if osip == '':
+    osip = request.POST.get('osip', "")
+    if not osip:
         return error_page(request, "IP地址不能为空")
-    else:
-        osuser = request.POST.get('osuser', "").replace('\n','').replace('\r','').replace(' ','')
-        ospwd = request.POST.get('ospass', "")
-        osarch = request.POST.get('osarch', "").replace('\n','').replace('\r','').replace(' ','')
-        osbreed = request.POST.get('osbreed', "").replace('\n','').replace('\r','').replace(' ','')
-        osrelease = request.POST.get('osrelease', "").replace('\n','').replace('\r','').replace(' ','')
-        ospart = request.POST.get('ospart', "").replace('\n','').replace('\r','').replace(' ','')
-        ospackages = request.POST.get('ospackages', "").replace('\n','').replace('\r','').replace(' ','')
-        osenv = request.POST.get('osenv', "").replace('\n','').replace('\r','').replace(' ','')
-        raid = request.POST.get('raid', "").replace('\n','').replace('\r','').replace(' ','')
-        mail = request.POST.get('notice_mail', "").replace('\n','').replace('\r','').replace(' ','')
-        path = request.POST.get('drive_path', "").replace('\n','').replace('\r','').replace(' ','')
-        profile = osrelease+'-'+osarch
-        if 'redhat' in osbreed.lower():
-            osbreed = 'redhat'
+    fields = [f for f in List._meta.fields]
+    now = int(time.time())
+    task_name = 'task_'+ str(now)
+    kw = {'ips':osip}
+    exclude_filed = ['name','ips','start_time','status','owner','flag']
+    for field in fields:
+        if field.name not in exclude_filed:
+            kw[field.name] = request.POST.get(field.name, "")
+    if 'redhat' in kw['osbreed'].lower():
+        kw['osbreed'] = 'redhat'
     if editmode != 'edit':
-        now = int(time.time())
-        task_name = 'task_'+ str(now)
-        task = List(name=task_name,ips=osip,osuser=osuser,ospwd=ospwd,osarch=osarch,osbreed=osbreed,
-            osrelease=osrelease,ospart=ospart,ospackages=ospackages,osenv=osenv,raid=raid,start_time='0',
-            usetime='0',status='任务初始化',notice_mail=mail,drive_path=path,owner=meta['username'],flag='resume')
+        kw['start_time'] = '0'
+        kw['usetime'] = '0'
+        kw['status'] = '任务初始化'
+        kw['flag'] = 'resume'
+        kw['owner'] = meta['username']
+        kw['name'] = task_name
+        task = List(**kw)
         task.save()
-        if osenv == 'reinstall-no-dhcp':
+        if kw['osenv'].strip() == 'reinstall-no-dhcp':
             utils.background_collect(task_name)
         else:
-            utils.generate_data(osip,task_name,profile,'0','等待上线',meta['username'])
+            profile_name = kw['osrelease']+'-'+kw['osarch']
+            utils.generate_data(kw['ips'],task_name,profile_name,'readying',meta['username'])
     else:
         name  = request.POST.get('name', "")
         task = List.objects.get(name=name)
-        task.ips = osip
-        task.osuser = osuser
-        task.ospwd = ospwd
-        task.osarch = osarch
-        task.osbreed = osbreed
-        task.osrelease = osrelease
-        task.ospart = ospart
-        task.ospackages = ospackages
-        task.osenv = osenv
-        task.raid = raid
-        task.notice_mail = mail
-        task.drive_path = path
-        #task.start_time = '0'
-        task.owner = meta['username']
-        task.save()
-        if osenv == 'reinstall-no-dhcp':
-            utils.background_collect(name)
+        if not task.usetime or task.usetime == '0':
+            Detail.objects.filter(name=name).delete()
+            profile_name = kw['osrelease']+'-'+kw['osarch']
+            kw['start_time'] = '0'
+            kw['usetime'] = '0'
+            kw['status'] = '任务初始化'
+            for k,v in kw.items():
+                setattr(task, k , v)
+            task.save()
+            if kw['osenv'].strip() == 'reinstall-no-dhcp':
+                utils.background_collect(name)
+            else:
+                profile_name = kw['osrelease']+'-'+kw['osarch']
+                utils.generate_data(kw['ips'],name,profile_name,'readying',meta['username'])
+        else:
+            return error_page(request,"任务已执行%s，不可更改!"%task.usetime)
+
     return HttpResponseRedirect('/quick/install/resume/list')
 #========================================================================
 def task_execute(request,task_name=None):
@@ -242,20 +263,22 @@ def task_execute(request,task_name=None):
             if not subtasks:
                 return error_page(request,"任务正在初始化，请稍等...")
             else:
-                if len(subtasks) < len(utils.generate_ip_list(task.ips)):
-                    return error_page(request,"任务尚未完成初始化，请稍后重试...")
+                total = (task.ips).strip().split('\n')
+                if len(subtasks) < len(total):
+                    return error_page(request,"任务尚未完成初始化(%s/%s)，请稍后重试..."%(len(subtasks),len(total)))
                 else:
                     for subtask in subtasks:
                         if subtask.usetime == '0':
                             ip_list.append(subtask.ip)
                             subtask.start_time = now
+                            subtask.status = 'ready'
                             subtask.save()
             if task.osenv == 'reinstall-no-dhcp':
                 utils.background_qios(task.name)
             else:
                 utils.add_cobbler_system(oauth.remote,request.session['cobbler_token'],task_name,
-                    task.ospart,task.ospackages,task.raid)
-                oauth.remote.background_sync({"verbose":"True"},request.session['cobbler_token'])
+                    task.ospart,task.ospackages,task.raid,task.bios)
+                #oauth.remote.background_sync({"verbose":"True"},request.session['cobbler_token'])
             if task.usetime =='0':
                 task.start_time = now
                 task.status = '执行中...'
@@ -287,6 +310,11 @@ def task_delete(request,what,task_name=None):
     if what == 'detail':
         try:
             Detail.objects.filter(name=task_name).delete()
+        except Exception,err:
+            return error_page(request,err)
+    if what == 'discover':
+        try:
+            Report.obj_name.filter(id=task_name).delete()
         except Exception,err:
             return error_page(request,err)
     return HttpResponseRedirect("/quick/install/%s/list"%what)
@@ -410,7 +438,7 @@ def task_domulti(request, what, multi_mode=None, multi_arg=None):
     ''' what in ['list','history'],no other'''
     if not oauth.test_user_authenticated(request): 
         return login(request, next="/quick/install/%s/list" %what, expired=True)
-
+    meta = simplejson.loads(request.session['quick_meta'])
     names = request.POST.get('names', '').strip().split()
     if names == "":
         return error_page(request, "未选中任何'%s' 对象" % what)
@@ -432,11 +460,55 @@ def task_domulti(request, what, multi_mode=None, multi_arg=None):
     elif what == "detail" and multi_mode == "delete":
         for name in names:
             try:
-                Detail.objects.filter(ip=name).delete()
+                name = name.split("-")
+                if len(name) == 2:
+                    ip = name[1]
+                    name = name[0]
+                Detail.objects.filter(name=name,ip=ip).delete()
             except:
                 pass
             else:
                 pass
+    elif what == 'discover':
+        if multi_mode == 'delete':
+            for name in names:
+                try:
+                    Report.objects.get(id=name).delete()
+                except:
+                    pass
+                else:
+                    pass
+        elif multi_mode == 'export':
+            now = datetime.now()
+            now = now.strftime("%Y-%m-%d %H:%M:%S")
+            try:
+                report_fields = [f for f in Report._meta.fields]
+                save_data = []
+                kw = {}
+                report_items  = Report.objects.all()
+                for report_item in report_items:
+                    for report_field in report_fields:
+                        k = (report_field.verbose_name).decode(encoding='UTF-8',errors='strict')
+                        v = getattr(report_item,report_field.name,'')
+                        kw[k] = v
+                    save_data.append(kw)
+                save_name = 'report-%s.xls'%(str(now).replace(" ","").replace(":","").replace("-",""))
+                filename = os.path.join(settings.MEDIA_ROOT, save_name)
+                pe.save_as(records=save_data, dest_file_name=filename)
+                file=open(filename,'rb')
+            except Exception,e:
+                manual_log = Manual_Log(time=now,user=meta['username'],action='导出发现设备',remark='失败')
+                manual_log.save()
+                return HttpResponse(str(e))
+            else:
+                response =HttpResponse(file)  
+                response['Content-Type']='application/octet-stream'  
+                response['Content-Disposition']='attachment;filename="%s"'%save_name
+                manual_log = Manual_Log(time=now,user=meta['username'],action='导出发现设备',remark='成功')
+                manual_log.save()
+                return response
+        else:
+            pass
     else:
         return error_page(request,"未知操作")
     return HttpResponseRedirect("/quick/install/%s/list"%what)
@@ -570,9 +642,140 @@ def __mail(task_name,to):
 @csrf_exempt
 def discover_hosts(request):
     data = request.body
+    now = datetime.now()
+    now = now.strftime("%Y-%m-%d %H:%M:%S")
     if data:
+        remote_ip = request.META['REMOTE_ADDR']
         data = simplejson.loads(data)
+        data['ip'] = remote_ip
+        try:
+            report = Report.objects.filter(**data)
+            if report:
+                report[0].updtae_time = now
+                report[0].save()
+                return HttpResponse(simplejson.dumps({'result':'update'},ensure_ascii=False),content_type="application/json,charset=utf-8")
+            data['create_time'] = now
+            data['updtae_time'] = now
+            report = Report(**data)
+            report.save()
+        except Exception,e:
+            return HttpResponse(simplejson.dumps({'result':str(e)},ensure_ascii=False),content_type="application/json,charset=utf-8")
+        else:
+            pass
         return HttpResponse(simplejson.dumps(data))
     else:
-        return HttpResponse('no data')
+        return HttpResponse(simplejson.dumps({'result':'no data'},ensure_ascii=False),content_type="application/json,charset=utf-8")
+# ======================================================================
+def install_queue(request,obj_name):
+    remote_ip = request.META['REMOTE_ADDR']
+    kw={'ip':remote_ip,'mac':obj_name,'status':'ready'}
+    if remote_ip and obj_name:
+        subtask = Detail.objects.filter(**kw)
+        if subtask:
+            Report.objects.filter(ip=remote_ip,bootmac=obj_name).delete()
+            return HttpResponse(simplejson.dumps({'result':'ready'},ensure_ascii=False),content_type="application/json,charset=utf-8")
+        else:
+            return HttpResponse(simplejson.dumps({'result':'unready'},ensure_ascii=False),content_type="application/json,charset=utf-8")
+    return HttpResponse(simplejson.dumps({'result':'unready'},ensure_ascii=False),content_type="application/json,charset=utf-8")
+# ======================================================================
+def host_conf(request,obj_name):
+    remote_ip = request.META['REMOTE_ADDR']
+    kw={'ip':remote_ip,'mac':obj_name,'status':'ready'}
+    if remote_ip and obj_name:
+        subtask = Detail.objects.filter(**kw)
+        if len(subtask) == 1:
+            subtask = subtask[0]
+            system_name = "sys-%s"%subtask.ip
+            task = List.objects.get(name=subtask.name)
+            drive_path  = task.drive_path
+            ipmi={'ipmi_ip':subtask.ipmi_ip,'ipmi_netmask':subtask.ipmi_netmask,'ipmi_gateway':subtask.ipmi_gateway,'ipmi_user':subtask.ipmi_user,'ipmi_pwd':subtask.ipmi_pwd}
+            task = List.objects.get(name=subtask.name)
+            if task:
+                raid = task.raid
+                bios = task.bios
+            else:
+                return HttpResponse(simplejson.dumps({'result':'unready'},ensure_ascii=False),content_type="application/json,charset=utf-8")
+            res = {'ipmi':ipmi,'raid':raid,'bios':bios,'system_name':system_name,'drive_path':drive_path}
+            return HttpResponse(simplejson.dumps(res))
+        else:
+            return HttpResponse(simplejson.dumps({'result':'unready'},ensure_ascii=False),content_type="application/json,charset=utf-8")
+    return HttpResponse(simplejson.dumps({'result':'unready'},ensure_ascii=False),content_type="application/json,charset=utf-8")
+# ======================================================================
+def discover_list(request,page=None):
+    if not oauth.test_user_authenticated(request): 
+        return login(request, next="/quick/install/discover/list", expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
+    if page == None:
+        page = int(request.session.get("discover_page", 1))
+    limit = int(request.session.get("discover_limit", 10))
+    sort_field = sort_field_old = request.session.get("discover_sort_field", "id")
+    if sort_field.startswith("!"):
+        sort_field=sort_field.replace("!","-")
+    filters = simplejson.loads(request.session.get("discover_filters", "{}"))
+    columns=[]
+    user_profile = User_Profile.objects.filter(username=meta['username'])
+    if user_profile:
+        user_profile = user_profile[0]
+    else:
+        return HttpResponse("unknown user view!")
+    now = int(time.time())
+    batchactions = [["删除","delete","delete"],
+                        ["导出","export","out"],
+                        ["录入设备","import","in"]
+                       ]
+    include_columns = [ "id","ip","bootmac","vendor","hardware_model","hardware_sn","owner"]
+    fields = [f for f in Report._meta.fields]
+    for field in fields:
+        if field.name in include_columns:
+            columns.append([field.name,field.verbose_name,'on'])
+        else:
+            continue
+    host_id = request.GET.get("id","")
+    if host_id != '':
+        filters['id'] = host_id
+    else:
+        if filters.has_key('id'):
+            del filters['id']
+    hosts = Report.objects.filter(**filters).order_by(sort_field)
+    t = "discover_list.tmpl"
+    (items,pageinfo) = __paginate(hosts,page=page,items_per_page=limit)
+    if filters.get('owner',''):
+        del filters['owner']
+    t = get_template(t)
+    html = t.render(RequestContext(request,{
+        'what'           : 'install/discover',
+        'columns'        : __format_columns(columns,sort_field_old),
+        'items'          : __format_items(items,columns),
+        'pageinfo'       : pageinfo,
+        'filters'        : filters,
+        'limit'          : limit,
+        'batchactions'   : batchactions,
+        'location'       : request.META['HTTP_HOST'],
+        'meta'           : meta
+    }))
+    return HttpResponse(html)
+
+# ======================================================================
+def discover_detail(request,obj_id=None):
+    if not oauth.test_user_authenticated(request): 
+        return login(request, next="/quick/install/discover/list", expired=True)
+    meta = simplejson.loads(request.session['quick_meta'])
+    items=[]
+    fields = [f for f in Report._meta.fields]
+    try:
+        host = Report.objects.get(id=obj_id)
+    except Exception,e:
+        return error_page(request,str(e))
+    else:
+        for field in fields:
+            items.append([field.verbose_name,getattr(host,field.name,'')])
+    t = "discover_detail.tmpl"
+    t = get_template(t)
+    html = t.render(RequestContext(request,{
+        'items'          : items,
+        'location'       : request.META['HTTP_HOST'],
+        'meta'           : meta
+    }))
+    return HttpResponse(html)
+
 

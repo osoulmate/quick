@@ -1,0 +1,109 @@
+{% extends "master.tmpl" %}
+{% block content %}
+<form id="action" method="POST" action="">{% csrf_token %}</form>
+            <div class="content">
+                <div class="page-inner">
+                    <div class="page-header">
+                        <h4 class="page-title">系统安装</h4>
+                        <ul class="breadcrumbs">
+                            <li class="nav-home">
+                                <a href="/quick">
+                                    <i class="flaticon-home"></i>
+                                </a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">系统安装</a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">发现设备</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-head-row">
+                                        <div class="card-title">
+                                        {% for title,action,value in batchactions %}
+                                        <a class="btn btn-primary" id="batchactions" href="javascript:;" value="{{ action }}|{{ value }}" onclick="javascript:action_multi_new('{{ what }}','{{ action }}','{{ value }}')">{{ title }}</a>
+                                        {% endfor %}
+                                        </div>
+                                        <div class="card-tools">
+                                          {% include "paginate.tmpl" %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p class="demo">
+                                        <form name="myform" method="post" action="/quick/{{ what }}/action">
+                                          {% csrf_token %}
+                                          <div class="table-responsive" id="listitems">
+                                          <table class="table table-bordered">
+                                            <thead>
+                                              <tr>
+                                                <th>
+                                                  <input type="checkbox" id="itemsall" onclick="javascript:items_check_all();" />
+                                                  <label for="itemsall"> <i></i></label> 
+                                                </th>
+                                                {% for value in columns %}
+                                                
+                                                {% ifequal value.0 "id" %}
+                                                <th name="id" style="display:none">{{ value.2 }}</th>
+                                                {% else %}
+                                                <th>
+                                                  <a href="javascript:action_sort('{{ what }}','{{ value.0 }}');">{{ value.2 }}</a>
+                                                  {% ifequal value.1 "asc" %}&darr;{% endifequal %}
+                                                  {% ifequal value.1 "desc" %}&uarr;{% endifequal %}
+                                                 </th>
+                                                {% endifequal %}
+                                                
+                                                {% endfor %}
+                                                <th>操作</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for item in items %}
+                                            <tr>
+                                                <td>
+                                                  <input type="checkbox" name="items" id="{{ item.0.1 }}" value="{{ item.0.1 }}" onclick="javascript:items_check(this);" />
+                                                  <label for="{{ item.0.1 }}"> <i></i></label> 
+                                                </td>
+                                            {% for value in item %}
+                                              {% ifequal value.0 "id" %}
+                                              <td title="{{ value.1 }}" style="display:none">{{ value.1}}</td>
+                                              {% else %}
+                                              <td title="{{ value.1 }}">{{ value.1}}</td>
+                                              {% endifequal %}
+                                            {% endfor %}
+                                                <td>
+                                                 <a class="btn btn-info btn-sm" href="/quick/install/discover/detail/{{item.0.1 }}">详情</a> 
+                                                </td>
+                                              </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                          </table>
+                                          </div>
+                                          <input type="hidden" name="names" id="names" value=""/>
+                                        </form>
+                                        {% include "filter.tmpl" %}
+                                    </p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+{% endblock content %}
+
+
+
+
+

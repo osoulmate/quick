@@ -35,6 +35,7 @@ def add_web_users(request):
             {"name":"host_group","menu1_title":"主机管理","menu1_icon":"fa-desktop","menu2_title":"主机组","menu2_url":"host/group/list","desc":"menu"},
             {"name":"host_script","menu1_title":"主机管理","menu1_icon":"fa-desktop","menu2_title":"脚本","menu2_url":"host/script/list","desc":"menu"},
 
+            {"name":"discover_device","menu1_title":"系统安装","menu1_icon":"fa-layer-group","menu2_title":"发现设备","menu2_url":"install/discover/list","desc":"menu"},
             {"name":"create_task","menu1_title":"系统安装","menu1_icon":"fa-layer-group","menu2_title":"创建任务","menu2_url":"install/edit","desc":"menu"},
             {"name":"task_list","menu1_title":"系统安装","menu1_icon":"fa-layer-group","menu2_title":"任务列表","menu2_url":"install/resume/list","desc":"menu"},
             {"name":"task_detail","menu1_title":"系统安装","menu1_icon":"fa-layer-group","menu2_title":"任务详情","menu2_url":"install/detail/list","desc":"menu"},
@@ -88,6 +89,7 @@ def add_web_users(request):
             {"name":"execute_task","menu1_title":"系统安装","menu1_icon":"fa-layer-group","menu2_title":"执行任务","menu2_url":"install/execute/.+","desc":"执行"},
             {"name":"del_task","menu1_title":"系统安装","menu1_icon":"fa-layer-group","menu2_title":"删除任务","menu2_url":"install/\w+/delete/.+","desc":"删除"},
             {"name":"batch_action_task","menu1_title":"系统安装","menu1_icon":"fa-layer-group","menu2_title":"任务批处理","menu2_url":"install/\w+/multi/.+/.+","desc":"批处理"},
+            {"name":"discover_detail","menu1_title":"系统安装","menu1_icon":"fa-layer-group","menu2_title":"设备详情","menu2_url":"install/discover/detail/.+","desc":"详情"},
 
             {"name":"app_view_edit","menu1_title":"资产管理","menu1_icon":"fa-database","menu2_title":"编辑业务资产","menu2_url":"asset/app/edit/.+","desc":"修改"},
             {"name":"app_view_edit_batch","menu1_title":"资产管理","menu1_icon":"fa-database","menu2_title":"批量编辑业务资产","menu2_url":"asset/app/edit\?action=batch","desc":"批量修改"},
@@ -221,7 +223,7 @@ def add_web_users(request):
                 elif group.name == '应用资产组':
                     have_rights = ["general_modifylist_1","general_modifylist_2","index","app_view","app_view_edit","app_view_edit_batch","app_view_new","app_view_save","app_view_del","app_view_batch_action","asset_import","asset_export","general_ajax","user_chg_pwd","user_info","my_save"]
                 elif group.name == '硬件资产组':
-                    have_rights = ["general_modifylist_1","general_modifylist_2","index","hardware_view","hardware_view_edit","hardware_view_edit_batch","hardware_view_new","hardware_view_save","hardware_view_delete","hardware_view_batch_action","asset_import","asset_export","general_ajax","user_chg_pwd","user_info","my_save"]
+                    have_rights = ["discover_detail","discover_device","general_modifylist_1","general_modifylist_2","index","hardware_view","hardware_view_edit","hardware_view_edit_batch","hardware_view_new","hardware_view_save","hardware_view_delete","hardware_view_batch_action","asset_import","asset_export","general_ajax","user_chg_pwd","user_info","my_save"]
                 elif group.name == '系统安装组':
                     have_rights = ["distros_list","profiles_list","distros_edit","distros_new","distros_save","profiles_edit","profiles_new","profiles_save","general_batch_action","general_del","index","install_modifylist","envent_log","systems_list","create_task","task_list","task_detail","task_history","edit_task","save_task","notice_task","execute_task","del_task","batch_action_task","general_ajax","user_chg_pwd","user_info","my_save","systems_edit","systems_new","systems_save","check_config","update_config","general_rename","general_copy","general_eventlog","general_iplist","general_task_created","general_reposync","general_replicate","general_hardlink","general_random_mac","general_random_mac_type"]
                 elif group.name == '资源组':
@@ -242,6 +244,8 @@ def add_web_users(request):
         return HttpResponse("异常:%s"%str(e))
     else:
         return HttpResponse('已成功添加web用户账号(root:rootpwd!)')
+
+
 
 
 

@@ -65,8 +65,8 @@
                                                 <div class="form-group col-md-4">
                                                     <br/><br/>
                                                     <div class="form-text text-muted">
-                                                        <p>重装场景格式: IP1 或 IP1,IP2 或 IP1-IP4,IP6</p>
-                                                        <p>新装场景格式: IP NETMASK GATEWAY MAC1 MAC2</p>
+                                                        <p>重装场景格式: IP</p>
+                                                        <p>新装场景格式: IP NETMASK GATEWAY MAC</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -82,9 +82,9 @@
                                             </div>
                                             <div class="row login" style="background:none;">
                                                 <div class="form-group col-md-8">
-                                                    <label for="ospass" class="placeholder"><b>密码</b></label>
+                                                    <label for="ospwd" class="placeholder"><b>密码</b></label>
                                                     <div class="position-relative">
-                                                        <input type="password" class="form-control" id="ospass" name="ospass" value="{{ tasks.ospwd }}"/>
+                                                        <input type="password" class="form-control" id="ospwd" name="ospwd" value="{{ tasks.ospwd }}"/>
                                                         <div class="show-password">
                                                             <i class="flaticon-interface"></i>
                                                         </div>
@@ -187,8 +187,20 @@
                                                 <div class="form-group col-md-4">
                                                     <br/><br/>
                                                     <div class="form-text text-muted">
-                                                        <p>格式一:{"raid1":[("hd1","hd2")],"raid0":[("hd3",),("hd4","hd5")]}</p>
-                                                        <p>格式二:{"raid1":[("hd1","hd2"),("hd3","hd4")],"raid5":[("hd3","hd4","hd5")]}</p>
+                                                        <p>格式一:{"raid1":"0-1","raid0":"2-"}</p>
+                                                        <p>格式二:{"raid1":"0-1","raid10":"2-5,6-10"}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="form-group col-md-8">
+                                                    <label for="bios">BIOS配置</label>
+                                                    <textarea autofocus class="form-control" id="raid" name="bios" rows="5">{{ tasks.bios }}</textarea>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <br/><br/>
+                                                    <div class="form-text text-muted">
+                                                        <p>格式:{"uefi":"enable"}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -228,6 +240,7 @@
                 </div>
             </div>
 {% endblock content %}
+
 
 
 

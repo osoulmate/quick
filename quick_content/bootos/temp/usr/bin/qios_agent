@@ -1,0 +1,1181 @@
+#!/usr/bin/python
+#-*- coding=utf-8 -*-
+"""
+qios_agent
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+ 
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+ 
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+02110-1301  USA
+"""
+from __future__ import print_function
+import os
+import shutil
+import errno
+import xmlrpclib
+import json
+import time
+import re
+import urllib
+import urllib2
+import exceptions
+import traceback
+import sys
+import string
+ANCIENT_PYTHON = 0
+try:
+    try:
+        from optparse import OptionParser
+    except:
+        from opt_parse import OptionParser # importing this for backwards compat with 2.2
+    try:
+        import subprocess as sub_process
+    except:
+        import sub_process
+    import urllib2
+except:
+    # the main "replace-self" codepath of qios must support
+    # Python 1.5.  Other sections may use 2.3 features (nothing newer)
+    # provided they are conditionally imported.  This is to support
+    # EL 2.1. -- mpd
+    ANCIENT_PYTHON = 1
+
+
+def main():
+    """
+    Command line stuff...
+    """
+    cmdline = os.popen("cat /proc/cmdline").read().strip()
+    cmdline = cmdline.split(" ")
+    cmdkw={}
+    for cmd in cmdline:
+        cmdlist = cmd.split("=")
+        if len(cmdlist) == 2:
+            cmdkw[cmdlist[0]] = cmdlist[1]
+    QUICK_SERVER = cmdkw.get("QUICK_SERVER","127.0.0.1")
+    BOOTIF = cmdkw.get("BOOTIF","")
+    BOOTIF = BOOTIF.split('-')[1:]
+    BOOTIF = ":".join(BOOTIF)
+    LOGGING   = cmdkw.get("LOGGING","1")
+    LOOPINTERVAL = cmdkw.get("LOOPINTERVAL","30")
+    if LOGGING == '1':
+        try:
+            logger = setupLogging("qios")
+        except:
+            # most likely running RHEL3, where we don't need virt logging anyway
+            print("no logger")
+        try:
+            shutil.rmtree("/var/spool/qios")
+        except OSError, (err, msg):
+            if err != errno.ENOENT:
+                raise
+        try:
+            os.makedirs("/var/spool/qios")
+        except OSError, (err, msg):
+            if err != errno.EEXIST:
+                raise
+    cmd = 'sed -i "s/@@server@@/%s/g" /etc/yum.repos.d/quick.repo 2&>/dev/null'%QUICK_SERVER
+    update_yum_repo = os.system(cmd)
+    install_tools_cmd = 'yum clean all 2&>/dev/null;yum makecache 2&>/dev/null;yum install -y kexec-tools srvadmin* *-hw-* hp* dell* 2&>/dev/null;ln /opt/MegaRAID/MegaCli/MegaCli64 /usr/bin/Megacli'
+    subprocess_get_response(install_tools_cmd)
+
+    BOOTIF = BOOTIF.replace('-',":")
+    while 1:
+        print("查询是否在安装队列")
+        rc = is_in_install_queue(QUICK_SERVER,BOOTIF)
+        print("查询结果%s"%rc)
+        if not rc:
+            print("不在安装队列，上报信息")
+            report_device_info(QUICK_SERVER,BOOTIF)
+            time.sleep(int(LOOPINTERVAL))
+            print("重复循环")
+            continue
+        else:
+            rc = post_action(QUICK_SERVER,BOOTIF,logger)
+            if rc:
+                break
+            else:
+                time.sleep(int(LOOPINTERVAL))
+                continue
+def setupLogging(appname):
+    """
+    set up logging ... code borrowed/adapted from virt-manager
+    """
+    import logging
+    import logging.handlers
+
+    dateFormat = "%a, %d %b %Y %H:%M:%S"
+    fileFormat = "[%(asctime)s " + appname + " %(process)d] %(levelname)s (%(module)s:%(lineno)d) %(message)s"
+    streamFormat = "%(asctime)s %(levelname)-8s %(message)s"
+    filename = "/var/log/qios.log"
+
+    rootLogger = logging.getLogger()
+    rootLogger.setLevel(logging.DEBUG)
+    fileHandler = logging.handlers.RotatingFileHandler(filename,"a",1024*1024, 5,encoding="utf-8")
+
+    fileHandler.setFormatter(logging.Formatter(fileFormat,dateFormat))
+    rootLogger.addHandler(fileHandler)
+    return rootLogger
+
+def connect_to_server(server=None,port=None):
+    if server is None:
+        server = os.environ.get("QUICK_SERVER","")
+    if server == "":
+        raise InfoException("--server must be specified")
+    if port is None: 
+        port = 80
+    connect_ok = 0
+    try_urls = [
+        "http://%s:%s/cobbler_api" % (server,port),
+        "https://%s:%s/cobbler_api" % (server,port),
+    ]
+    for url in try_urls:
+        #print("- looking for Cobbler at %s" % url)
+        server = __try_connect(url)
+        if server is not None:
+           return server
+    raise InfoException ("Could not find Cobbler.")
+
+def __try_connect(url):
+    try:
+        xmlrpc_server = xmlrpclib.Server(url)
+        xmlrpc_server.ping()
+        return xmlrpc_server
+    except:
+        traceback.print_exc()
+        return None
+
+def set_bios(**kw):
+    pass
+def set_ipmi(ipmi_ip,ipmi_netmask,ipmi_gateway,ipmi_user='admin',ipmi_pwd='admin'):
+    if ipmi_ip and ipmi_netmask and ipmi_gateway:
+        cmd = "ipmitool lan set 1 ipsrc static;ipmitool lan set 1 ipaddr %s;ipmitool lan set 1 netmask %s;ipmitool lan set 1 defgw ipaddr %s"%(ipmi_ip,ipmi_netmask,ipmi_gateway)
+        rc,result = subprocess_get_response(cmd)
+    if ipmi_user and ipmi_pwd:
+        cmd = "ipmitool  user  set name 3 %s;ipmitool  user  set password 3 %s;ipmitool channel setaccess 1 3 callin=on ipmi=on link=on privilege=4"%(ipmi_user,ipmi_pwd)
+        rc.result = subprocess_get_response(cmd)
+    return True
+def set_raid(**kw):
+    if kw.get('raid1',''):
+        slot = kw['raid1']
+    pass
+def get_vendor():
+    cmd = "dmidecode -t 1 | grep 'Manufacture' | awk '{print $2}'"
+    res,result = subprocess_get_response(cmd)
+    return result.strip()
+def get_product_model():
+    cmd = "dmidecode -t 1 | grep 'Product Name' | awk -F ':' '{print $2}'"
+    res,result = subprocess_get_response(cmd)
+    return result.strip()
+def get_product_sn():
+    cmd = "dmidecode -t 1|grep 'Serial Number'|awk -F':' '{print $2}'"
+    res,result = subprocess_get_response(cmd)
+    return result.strip()
+def get_nic_model():
+    cmd = 'lspci | grep net'
+    res,result = subprocess_get_response(cmd)
+    return result.strip()
+def get_nic():
+    cmd = 'ls /sys/class/net/'
+    eth_names = subprocess_get_response(cmd)
+    eth_names = eth_names[1].split("\n")
+    eths={}
+    for eth_name in eth_names:
+        if eth_name == 'lo' or not eth_name:
+            continue
+        eths[eth_name]={'mac':'','ip':'','netmask':'','gateway':'','link':'','port':'','duplex':'','speed':''}
+        ethtool_cmd = 'ethtool %s'%eth_name
+        res,ethtool_output = subprocess_get_response(ethtool_cmd)
+        port = re.findall('Port:(.*)',ethtool_output)
+        duplex = re.findall('Duplex:(.*)',ethtool_output)
+        speed = re.findall('Speed:(.*)',ethtool_output)
+        link =re.findall('Link detected:(.*)',ethtool_output)
+        eths[eth_name]={'port':port[0].strip(),'duplex':duplex[0].strip(),'speed':speed[0].strip(),'link':link[0].strip()}
+        if_cmd = 'ifconfig %s'%eth_name
+        res,if_output = subprocess_get_response(if_cmd)
+        if if_output:
+            mac=re.findall(r'hwaddr(.*)',if_output,re.M|re.I)
+            ip=re.findall(r'inet\s+addr:(.*)bcast:',if_output,re.M|re.I)
+            netmask=re.findall(r'inet\s+addr:.*mask:(.*)',if_output,re.M|re.I)
+            eths[eth_name]['ip']=ip[0].strip()
+            eths[eth_name]['mac']=mac[0].strip()
+            eths[eth_name]['netmask']=netmask[0].strip()
+    gateway_cmd = 'ip route|grep default'
+    rs,gateway_output = subprocess_get_response(gateway_cmd)
+    if gateway_output:
+        next_hop_eth_name = gateway_output.strip().split(' ')[4]
+        gateway = gateway_output.strip().split(' ')[2]
+        eths[next_hop_eth_name]['gateway']=gateway
+    return eths
+
+def get_memory():
+    cmd = "dmidecode | grep -A5 'Memory Device' | grep 'Size' | grep -v 'Range' | grep 'B'"
+    mem_output = subprocess_get_response(cmd)
+    memory={}
+    i = 1
+    for mem in mem_output[1].split("\n"):
+        if mem:
+            memory['MEM%s'%i] = mem.split(':')[1]
+            i = i+1
+    return memory
+
+def get_cpu():
+    cmd = "cat /proc/cpuinfo | grep 'model name'"
+    cpu_count_cmd = "cat /proc/cpuinfo | grep 'physical id' | sort | uniq | wc -l"
+    cpu_cores_cmd = "cat /proc/cpuinfo | grep 'cpu cores' | uniq | awk -F ':' '{print $2}'"
+    cpu_json={}
+    cpu = subprocess_get_response(cmd)
+    cpu_count = subprocess_get_response(cpu_count_cmd)
+    cpu_cores = subprocess_get_response(cpu_cores_cmd)
+    cpu_json['cpu'] = cpu[1].strip().split(":")[1]
+    cpu_json['cpu_count'] = cpu_count[1]
+    cpu_json['cpu_cores'] = cpu_cores[1]
+    return cpu_json
+def get_disk(device_type=None):
+    disks = {}
+    if device_type:
+        cmd = 'MegaCli -PDList -aAll'
+        res,result = subprocess_get_response(cmd)
+        
+        solts = re.finditer(r'slot\s+number:\s+\d+',data,re.M|re.I)
+        raws = re.finditer(r'raw\s+size:.*',data,re.M|re.I)
+        pdtype = re.finditer(r'pd\s+type:.*',data,re.M|re.I)
+        inquiry = re.finditer(r'inquiry\s+data:.*',data,re.M|re.I)
+        wwns = re.finditer(r'wwn:.*',data,re.M|re.I)
+        firmware_states = re.finditer(r'firmware\s+state:.*',data,re.M|re.I)
+        i = 1
+        disks_list = []
+        while True:
+            try:
+                disks_list.append([next[solts].group(),next[raws].group(),next[pdtype].group(),next[inquiry].group(),next[wwns].group(),next[firmware_states].group()])
+            except StopIteration:
+                sys.exit()
+
+        for disk in disks_list:
+            disks["DISK%s"%i] = {'solt':'','capacity':'','type':'','vendor':'','wwn':'','state':''}
+            for solt,raw,pd,vendor,wwn,state in disks:
+                disks["DISK%s"%i]['solt'] = solt
+                disks["DISK%s"%i]['capacity'] = raw
+                disks["DISK%s"%i]['type'] = pd
+                disks["DISK%s"%i]['vendor'] = vendor
+                disks["DISK%s"%i]['wwn'] = wwn
+                disks["DISK%s"%i]['state'] = state
+            i = i+1
+    else:
+        cmd = "lsblk -dn -o RM,SIZE|grep -w '0'|awk '{print $2}'|sort|uniq -c|awk '{print $2}'"
+        res,output = subprocess_get_response(cmd)
+        i = 1
+        for disk in output.split('\n'):
+            if disk:
+                disks["DISK%s"%i] = {'capacity':''}
+                disks["DISK%s"%i]["capacity"] = disk
+                i = i+1
+    return disks
+def get_ipmi_info():
+    cmd = "ipmitool lan print 1"
+    res,output = subprocess_get_response(cmd)
+    return output.strip()
+def get_raid_info():
+    cmd = 'lspci | grep -i raid'
+    res,result = subprocess_get_response(cmd)
+    return result.strip()
+def report_device_info(server,bootif):
+    if not server:
+        return False
+    is_virtual_cmd  = "dmidecode -t 1| grep -Ei 'VMware|VirtualBox|KVM|Xen|Parallels'"
+    is_virtual_output = subprocess_get_response(is_virtual_cmd)
+    kw={'device_type':'','ipmi':'','raid':'','disk':''}
+    if is_virtual_output[1]:
+        kw['device_type']="虚拟机"
+        kw['ipmi'] = "N/R"
+        kw['raid'] = "N/R"
+        kw['disk'] = get_disk()
+    else:
+        kw['device_type']="物理机"
+        kw['ipmi'] = get_ipmi_info()
+        kw['raid'] = get_raid_info()
+        kw['disk'] = get_disk('physical')
+    kw['hardware_sn'] = get_product_sn()
+    kw['vendor'] = get_vendor()
+    kw['hardware_model'] = get_product_model()
+    kw['nic'] = get_nic()
+    kw['nic_model'] = get_nic_model()
+    kw['cpu'] = get_cpu()
+    kw['memory'] = get_memory()
+    kw['bootmac'] = bootif
+    url = "http://%s/quick/api/report_device_info"%server
+    res = call_rest_api(url,kw)
+    if not res:
+        return False
+    return True
+def is_in_install_queue(server,bootif):
+    if not server:
+        return False
+    url = "http://%s/quick/api/install_queue/%s"%(server,bootif)
+    print("查询api:%s"%url)
+    res = call_rest_api(url)
+    print("res:%s"%res)
+    if not res:
+        return False
+    else:
+        return True
+def notice_server(strdata,server,report=True):
+    if server and report:
+        strdata=re.sub('\s+','~',strdata)
+        url = "http://%s/quick/install/notice/install_%s'%(server,strdata)"
+        res = call_rest_api(url)
+        if not res:
+            return False
+        return True
+def post_action(server,bootif,logger):
+    #判断是否需要RAID、IPMI、BIOS配置
+    is_virtual_cmd  = "dmidecode -t 1| grep -Ei 'VMware|VirtualBox|KVM|Xen|Parallels'"
+    is_virtual_output = subprocess_get_response(is_virtual_cmd)
+    url = "http://%s/quick/api/request_host_conf/%s"%(server,bootif)
+    res = call_rest_api(url)
+    if not res:
+        return False
+    if not is_virtual_output[1]:
+        if res.get('ipmi',None):
+            set_ipmi(**res['ipmi'])
+        if res.get('raid',None):
+            set_raid(**res['raid'])
+        if res.get('bios',None):
+            set_bios(**res['bios'])
+        notice_server("硬件配置完成",server,report)
+    system_name = res.get('system_name','')
+    drive_path = res.get('drive_path','')
+    if not system_name:
+        print("无效的配置文件")
+        logger.info("无效的配置文件")
+        return False
+    xmlrpc_server = connect_to_server(server)
+    print("post_action url:%s"%url)
+    k = Qios()
+    #成功执行kexec后，立即重启
+    k.server = server
+    k.xmlrpc_server = xmlrpc_server
+    k.reboot = 'reboot'
+    k.use_kexec = True
+    k.system = system_name
+    k.drive = drive_path
+    k.logger = logger
+    k.run()
+    return True
+def subprocess_get_response(cmd, ignore_rc=False):
+    """
+    Wrapper around subprocess.check_output(...)
+    """
+    print("- %s" % cmd)
+    rc = 0
+    result = ""
+    p = sub_process.Popen(cmd, stdout=sub_process.PIPE,stderr=sub_process.PIPE,shell=True)
+    result, stderr_result = p.communicate()
+    rc = p.wait()
+    if not ignore_rc and rc != 0:
+        print("command failed (%s)" % rc)
+        return rc,stderr_result
+    return rc, result
+
+def subprocess_call(cmd,ignore_rc=0):
+    """
+    Wrapper around subprocess.call(...)
+    """
+    print("- %s" % cmd)
+    if not ANCIENT_PYTHON:
+        rc = sub_process.call(cmd)
+    else:
+        cmd = string.join(cmd, " ")
+        print("cmdstr=(%s)" % cmd)
+        rc = os.system(cmd)
+    if rc != 0 and not ignore_rc:
+        raise InfoException, "command failed (%s)" % rc
+    return rc
+
+def call_rest_api(url,data=None):
+    #print(json.dumps(data,ensure_ascii=False))
+    if not url:
+        return False
+    headers = {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1","Content-Type":"application/json"}
+    try:
+        if isinstance(data,dict):
+            resquest = urllib2.Request(url,data=json.dumps(data,ensure_ascii=False),headers=headers) 
+        else:
+            resquest = urllib2.Request(url,headers=headers) 
+        response = urllib2.urlopen(resquest)
+    except Exception,e:
+        print("错误:%s"%str(e))
+        return False
+    else:
+        html = response.read()
+        try:
+            html_json = json.loads(html)
+        except Exception,e:
+            print("%s 不是字典类型"%html)
+            return False
+        else:
+            print("data:%s,响应码:%s,请求url:%s,头信息:%s"%(html_json,response.getcode(),response.geturl(),response.info()))
+            if html_json.get('result','')=='unready':
+                return False
+            return html_json
+
+def urlread(url):
+    """
+    to support more distributions, implement (roughly) some 
+    parts of urlread and urlgrab from urlgrabber, in ways that
+    are less cool and less efficient.
+    """
+    print("- reading URL: %s" % url)
+    if url is None or url == "":
+        raise InfoException, "invalid URL: %s" % url
+
+    elif url[0:3] == "nfs":
+        try:
+            ndir  = os.path.dirname(url[6:])
+            nfile = os.path.basename(url[6:])
+            nfsdir = tempfile.mkdtemp(prefix="quick_nfs",dir="/tmp")
+            nfsfile = os.path.join(nfsdir,nfile)
+            cmd = ["mount","-t","nfs","-o","ro", ndir, nfsdir]
+            subprocess_call(cmd)
+            fd = open(nfsfile)
+            data = fd.read()
+            fd.close()
+            cmd = ["umount",nfsdir]
+            subprocess_call(cmd)
+            return data
+        except:
+            traceback.print_exc()
+            raise InfoException, "Couldn't mount and read URL: %s" % url
+          
+    elif url[0:4] == "http":
+        try:
+            fd = urllib2.urlopen(url)
+            data = fd.read()
+            fd.close()
+            return data
+        except:
+            if ANCIENT_PYTHON:
+                # this logic is to support python 1.5 and EL 2
+                import urllib
+                fd = urllib.urlopen(url)
+                data = fd.read()
+                fd.close()
+                return data
+            traceback.print_exc()
+            raise InfoException, "Couldn't download: %s" % url
+    elif url[0:4] == "file":
+        try:
+            fd = open(url[5:])
+            data = fd.read()
+            fd.close()
+            return data
+        except:
+            raise InfoException, "Couldn't read file from URL: %s" % url
+    else:
+        raise InfoException, "Unhandled URL protocol: %s" % url
+
+def urlgrab(url,saveto):
+    """
+    like urlread, but saves contents to disk.
+    see comments for urlread as to why it's this way.
+    """
+    data = urlread(url)
+    fd = open(saveto, "w+")
+    fd.write(data)
+    fd.close()
+
+class InfoException(exceptions.Exception):
+    """
+    Custom exception for tracking of fatal errors.
+    """
+    def __init__(self,value,**args):
+        self.value = value % args
+        self.from_quick = 1
+    def __str__(self):
+        return repr(self.value)
+
+#=======================================================
+
+class Qios:
+
+    def __init__(self):
+        """
+        Constructor.  Arguments will be filled in by optparse...
+        """
+        self.server            = None
+        self.port              = None
+        self.is_replace        = None
+        self.use_kexec         = None
+        self.breed             = None
+        self.release           = None
+        self.partition         = None
+        self.package           = None
+        self.mail              = None
+        self.system            = None
+        self.drive             = None
+        self.add_reinstall_entry=None
+        # This option adds the --copy-default argument to /sbin/grubby
+        # which uses the default boot entry in the grub.conf
+        # as template for the new entry being added to that file.
+        # look at /sbin/grubby --help for more info
+        self.no_copy_default   = None
+        self.kopts_override    = None
+        self.live_cd           = None
+        self.xmlrpc_server     = None
+        self.logger            = None
+        self.report            = None
+        self.reboot            = None
+        self.vncpassword       = 'hellovnc'
+        self.sshpassword       = 'hellossh'
+        self.logger            = None
+    #---------------------------------------------------
+
+    def run(self):
+        """
+        qios's main function...
+        """
+        print("初始化...")
+        if self.use_kexec:
+            self.kexec_replace()
+    #---------------------------------------------------
+
+    def safe_load(self,hashv,primary_key,alternate_key=None,default=None):
+        if hashv.has_key(primary_key): 
+            return hashv[primary_key]
+        elif alternate_key is not None and hashv.has_key(alternate_key):
+            return hashv[alternate_key]
+        else:
+            return default
+
+    #---------------------------------------------------
+
+    def net_install(self,after_download):
+        """
+        Actually kicks off downloads and auto-ks or virt installs
+        """
+
+        # initialise the profile, from the server if any
+        if self.system:
+            profile_data = self.get_data("system",self.system)
+        else:
+            profile_data = {}
+
+        if profile_data.get("kickstart","") != "":
+
+            # fix URLs
+            if profile_data["kickstart"][0] == "/" or profile_data["template_remote_kickstarts"]:
+               if not self.system:
+                   profile_data["kickstart"] = "http://%s/cblr/svc/op/ks/profile/%s" % (profile_data['http_server'], profile_data['name'])
+               else:
+                   profile_data["kickstart"] = "http://%s/cblr/svc/op/ks/system/%s" % (profile_data['http_server'], profile_data['name'])
+                
+            # If breed is ubuntu/debian we need to source the install tree differently
+            # as preseeds are used instead of kickstarts.
+            if profile_data["breed"] in [ "ubuntu", "debian", "suse" ]:
+                self.get_install_tree_from_profile_data(profile_data)
+            else:
+                # find install source tree from kernel options
+                if not self.get_install_tree_from_kernel_options(profile_data):
+                    # Otherwise find kickstart source tree in the kickstart file
+                    self.get_install_tree_from_kickstart(profile_data)
+
+            # if we found an install_tree, and we don't have a kernel or initrd
+            # use the ones in the install_tree
+            if self.safe_load(profile_data,"install_tree"):
+                if not self.safe_load(profile_data,"kernel"):
+                    profile_data["kernel"] = profile_data["install_tree"] + "/images/pxeboot/vmlinuz"
+
+                if not self.safe_load(profile_data,"initrd"):
+                    profile_data["initrd"] = profile_data["install_tree"] + "/images/pxeboot/initrd.img"
+
+
+        # find the correct file download location 
+        if os.path.exists("/boot/efi/EFI/redhat/elilo.conf"):
+            # elilo itanium support, may actually still work
+            download = "/boot/efi/EFI/redhat"
+        else:
+            # whew, we have a sane bootloader
+            download = "/boot"
+        # perform specified action
+        if download is not None:
+           self.get_distro_files(profile_data, download)
+        after_download(self, profile_data)
+
+    #---------------------------------------------------
+
+    def get_install_tree_from_kickstart(self,profile_data):
+        """
+        Scan the kickstart configuration for either a "url" or "nfs" command
+           take the install_tree url from that
+
+        """
+        try:
+            if profile_data["kickstart"][:4] == "http":
+                if not self.system:
+                    url_fmt = "http://%s/cblr/svc/op/ks/profile/%s"
+                else:
+                    url_fmt = "http://%s/cblr/svc/op/ks/system/%s"
+                url = url_fmt % (self.server, profile_data['name'])
+            else:
+                url = profile_data["kickstart"]
+
+            raw = urlread(url)
+            lines = raw.splitlines()
+
+            method_re = re.compile('(?P<urlcmd>\s*url\s.*)|(?P<nfscmd>\s*nfs\s.*)')
+
+            url_parser = OptionParser()
+            url_parser.add_option("--url", dest="url")
+            url_parser.add_option("--proxy", dest="proxy")
+
+            nfs_parser = OptionParser()
+            nfs_parser.add_option("--dir", dest="dir")
+            nfs_parser.add_option("--server", dest="server")
+
+            for line in lines:
+                match = method_re.match(line)
+                if match:
+                    cmd = match.group("urlcmd")
+                    if cmd:
+                        (options,args) = url_parser.parse_args(shlex.split(cmd)[1:])
+                        profile_data["install_tree"] = options.url
+                        break
+                    cmd = match.group("nfscmd")
+                    if cmd:
+                        (options,args) = nfs_parser.parse_args(shlex.split(cmd)[1:])
+                        profile_data["install_tree"] = "nfs://%s:%s" % (options.server,options.dir)
+                        break
+
+            if self.safe_load(profile_data,"install_tree"):
+                print("install_tree:", profile_data["install_tree"])
+            else:
+                print("warning: kickstart found but no install_tree found")
+
+        except:
+            # unstable to download the kickstart, however this might not
+            # be an error.  For instance, xen FV installations of non
+            # kickstart OS's...
+            pass
+
+    #---------------------------------------------------
+
+    def get_install_tree_from_profile_data(self, profile_data):
+        """
+        Split ks_meta to obtain the tree path. Generate the install_tree
+           using the http_server and the tree obtained from splitting ks_meta
+
+        """
+
+        try:
+            tree = profile_data["ks_meta"].split()
+            # Ensure we only take the tree in case ks_meta args are passed
+            # First check for tree= in ks_meta arguments
+            meta_re=re.compile('tree=')
+            tree_found=''
+            for entry in tree:
+                if meta_re.match(entry):
+                    tree_found=entry.split("=")[-1]
+                    break
+ 
+            if tree_found=='':
+                # assume tree information as first argument
+                tree = tree.split()[0]
+            else:
+                tree=tree_found
+            tree_re = re.compile ('(http|ftp|nfs):')
+            # Next check for installation tree on remote server
+            if tree_re.match(tree):
+                tree = tree.replace("@@http_server@@", profile_data["http_server"])
+                profile_data["install_tree"] = tree
+            else:
+            # Now take the first parameter as the local path
+                profile_data["install_tree"] = "http://" + profile_data["http_server"] + tree
+
+            if self.safe_load(profile_data,"install_tree"):
+                print("install_tree:", profile_data["install_tree"])
+            else:
+                print("warning: kickstart found but no install_tree found")
+        except:
+            pass
+
+    def get_install_tree_from_kernel_options(self, profile_data):
+        """
+        Split kernel options to obtain the inst.stage2 path. Generate the install_tree
+           using the http_server and the tree obtained from the inst.stage2 path
+
+        """
+
+        try:
+            tree = profile_data["kernel_options"].split()
+            # Ensure we only take the tree in case ks_meta args are passed
+            # First check for tree= in ks_meta arguments
+            meta_re = re.compile('inst.stage2=')
+            tree_found = ''
+            for entry in tree:
+                if meta_re.match(entry):
+                    tree_found = entry.split("=")[-1]
+                    break
+
+            if tree_found == '':
+                return False
+            else:
+                tree = tree_found
+            tree_re = re.compile('(http|ftp|nfs):')
+            # Next check for installation tree on remote server
+            if tree_re.match(tree):
+                tree = tree.replace(
+                    "@@http_server@@",
+                    profile_data["http_server"])
+                profile_data["install_tree"] = tree
+            else:
+                # Now take the first parameter as the local path
+                profile_data["install_tree"] = "http://" + \
+                    profile_data["http_server"] + tree
+
+            if self.safe_load(profile_data, "install_tree"):
+                print("install_tree:", profile_data["install_tree"])
+            else:
+                print("warning: kickstart found but no install_tree found")
+        except:
+            pass
+    #---------------------------------------------------
+  
+    def kexec_replace(self):
+        """
+        Prepare to morph existing system by downloading new kernel and initrd
+        and preparing kexec to execute them. Allow caller to do final 'kexec
+        -e' invocation; this allows modules such as network drivers to be
+        unloaded (for cases where an immediate kexec would leave the driver in
+        an invalid state.
+        """
+        def after_download(self, profile_data):
+            k_args = self.calc_kernel_args(profile_data)
+            kickstart = self.safe_load(profile_data,'kickstart')
+            arch      = self.safe_load(profile_data,'arch')
+            breed     = self.safe_load(profile_data,'breed')
+            if breed =='ubuntu':
+                if self.embed_seed:
+                    progress = Progress()
+                    progress.start()
+                    self.build_initrd(
+                        self.safe_load(profile_data,'initrd_local'),
+                        kickstart,
+                        profile_data
+                    )
+                    progress.stop()
+            # Validate kernel argument length (limit depends on architecture --
+            # see asm-*/setup.h).  For example:
+            #   asm-i386/setup.h:#define COMMAND_LINE_SIZE 256
+            #   asm-ia64/setup.h:#define COMMAND_LINE_SIZE  512
+            #   asm-powerpc/setup.h:#define COMMAND_LINE_SIZE   512
+            #   asm-s390/setup.h:#define COMMAND_LINE_SIZE  896
+            #   asm-x86_64/setup.h:#define COMMAND_LINE_SIZE    256
+            #   arch/x86/include/asm/setup.h:#define COMMAND_LINE_SIZE 2048
+            if arch.startswith("ppc") or arch.startswith("ia64"):
+                if len(k_args) > 511:
+                    raise InfoException, "Kernel options are too long, 512 chars exceeded: %s" % k_args
+            elif arch.startswith("s390"):
+                if len(k_args) > 895:
+                    raise InfoException, "Kernel options are too long, 896 chars exceeded: %s" % k_args
+            elif len(k_args) > 2048:
+                raise InfoException, "Kernel options are too long, 2048 chars exceeded: %s" % k_args
+            if self.vncpassword:
+                if len(self.vncpassword)>8 or len(self.vncpassword)<6:
+                    strdata = "VNC password must be six to eight characters long"
+                    self.logger.error(strdata)
+                    notice_server(strdata,self.server,self.report)
+                    raise InfoException(strdata)
+            subprocess_call([
+                'kexec',
+                '--load',
+                '--initrd=%s' % (self.safe_load(profile_data,'initrd_local'),),
+                '--command-line=%s' % (k_args,),
+                self.safe_load(profile_data,'kernel_local')
+            ])
+            strdata="Kernel loaded; run 'kexec -e' to execute"
+            print(strdata)
+            self.logger.info(strdata)
+            notice_server(strdata,self.server,self.report)
+            if self.reboot:
+                subprocess_call(['kexec','-e'])
+        return self.net_install(after_download)
+
+    #---------------------------------------------------
+
+    def get_insert_script(self,initrd):
+        """
+        Create bash script for inserting kickstart into initrd.
+        Code heavily borrowed from internal auto-ks scripts.
+        """
+        return r"""
+        cd /var/spool/qios
+        mkdir initrd
+        gzip -dc %s > initrd.tmp || xz -dc %s > initrd.tmp
+        if mount -o loop -t ext2 initrd.tmp initrd >&/dev/null ; then
+            cp preseed.cfg initrd/
+            ln initrd/preseed.cfg initrd/tmp/preseed.cfg
+            umount initrd
+            gzip -c initrd.tmp > initrd_final
+        else
+            echo "mount failed; treating initrd as a cpio archive..."
+            cd initrd
+            cpio -id <../initrd.tmp
+            cp /var/spool/qios/preseed.cfg .
+            ln preseed.cfg tmp/preseed.cfg
+            find . | cpio -o -H newc | gzip -9 > ../initrd_final
+            echo "...done"
+        fi
+        """ % (initrd, initrd)
+
+    #---------------------------------------------------
+
+    def build_initrd(self,initrd,kickstart,data):
+        """
+        Crack open an initrd and install the kickstart file.
+        """
+        self.logger.info("Building initrd")
+        # save kickstart to file
+        ksdata = urlread(kickstart)
+        fd = open("/var/spool/qios/preseed.cfg","w+")
+        if ksdata is not None:
+            fd.write(ksdata)
+        fd.close()
+
+        # handle insertion of kickstart based on type of initrd
+        fd = open("/var/spool/qios/insert.sh","w+")
+        fd.write(self.get_insert_script(initrd))
+        fd.close()
+        subprocess_call([ "/bin/bash", "/var/spool/qios/insert.sh" ])
+        shutil.copyfile("/var/spool/qios/initrd_final", initrd)
+        self.logger.info("New initrd consists of preseed.cfg has been bulided")
+    #---------------------------------------------------
+
+    def connect_fail(self):
+        raise InfoException, "Could not communicate with %s:%s" % (self.server, self.port)
+
+    #---------------------------------------------------
+
+    def get_data(self,what,name=None):
+        try:
+            if what[-1] == "s":
+                data = getattr(self.xmlrpc_server, "get_%s" % what)()
+            else:
+                data = getattr(self.xmlrpc_server, "get_%s_for_koan" % what)(name)
+        except:
+            traceback.print_exc()
+            self.connect_fail()
+        if data == {}:
+            raise InfoException("No entry/entries found")
+        return data
+    
+    #---------------------------------------------------
+
+    def get_ips(self,strdata):
+        """
+        Return a list of IP address strings found in argument.
+        warning: not IPv6 friendly
+        """
+        return re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}',strdata)
+
+    #---------------------------------------------------
+
+    def get_macs(self,strdata):
+        """
+        Return a list of MAC address strings found in argument.
+        """
+        return re.findall(r'[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F:0-9]{2}:[A-F:0-9]{2}', strdata.upper())
+
+    #---------------------------------------------------
+
+    def is_ip(self,strdata):
+        """
+        Is strdata an IP?
+        warning: not IPv6 friendly
+        """
+        return self.get_ips(strdata) and True or False
+
+    #---------------------------------------------------
+
+    def is_mac(self,strdata):
+        """
+        Return whether the argument is a mac address.
+        """
+        return self.get_macs(strdata) and True or False
+
+    #---------------------------------------------------
+
+    def get_distro_files(self,profile_data, download_root):
+        """
+        Using distro data (fetched from bootconf tree), determine
+        what kernel and initrd to download, and save them locally.
+        """
+        os.chdir(download_root)
+        distro = self.safe_load(profile_data,'distro')
+        kernel = self.safe_load(profile_data,'kernel')
+        initrd = self.safe_load(profile_data,'initrd')
+        kernel_short = os.path.basename(kernel)
+        initrd_short = os.path.basename(initrd)
+        kernel_save = "%s/%s_qios" % (download_root, kernel_short)
+        initrd_save = "%s/%s_qios" % (download_root, initrd_short)
+
+        if self.server:
+            if kernel[0] == "/":
+                kernel = "http://%s/cobbler/images/%s/%s" % (profile_data["http_server"], distro, kernel_short)
+            if initrd[0] == "/":
+                initrd = "http://%s/cobbler/images/%s/%s" % (profile_data["http_server"], distro, initrd_short)
+
+        try:
+            print("downloading initrd %s to %s" % (initrd_short, initrd_save))
+            print("url=%s" % initrd)
+            urlgrab(initrd,initrd_save)
+
+            print("downloading kernel %s to %s" % (kernel_short, kernel_save))
+            print("url=%s" % kernel)
+            urlgrab(kernel,kernel_save)
+        except:
+            traceback.print_exc()
+            raise InfoException, "error downloading files"
+        profile_data['kernel_local'] = kernel_save
+        profile_data['initrd_local'] = initrd_save
+
+    #---------------------------------------------------
+
+    def calc_kernel_args(self, pd, replace_self=0):
+        kickstart = self.safe_load(pd,'kickstart')
+        options   = self.safe_load(pd,'kernel_options',default='')
+        breed     = self.safe_load(pd,'breed')
+        os_version= self.safe_load(pd,'os_version')
+
+        kextra    = ""
+        if kickstart is not None and kickstart != "":
+            if breed is not None and breed == "suse":
+                kextra = " autoyast=%s"%kickstart
+                if self.drive:
+                    kextra += " insecure=1 dud=%s" %self.drive
+                if self.vncpassword:
+                    kextra += " vncpassword=%s vnc=1 "%self.vncpassword
+                if self.sshpassword:
+                    kextra += " sshpassword=%s ssh=1 "%self.sshpassword
+            elif breed is not None and breed == "debian" or breed =="ubuntu":
+                kextra = " netcfg/disable_autoconfig=true auto-install/enable=true priority=critical url=" + kickstart
+            else:
+                kextra = " ks=" + kickstart
+                if os_version[-1] == '6':
+                    if self.drive:
+                        kextra += " dd=%s" %self.drive
+                    if self.vncpassword:
+                        kextra += " vnc vncpassword=%s"%self.vncpassword
+                    if self.sshpassword:
+                        kextra += " sshd=1"
+                elif os_version[-1] == '7':
+                    if self.drive:
+                        kextra += " inst.dd=%s" %self.drive
+                    if self.vncpassword:
+                        kextra += " inst.vnc inst.vncpassword=%s"%self.vncpassword
+                    if self.sshpassword:
+                        kextra += " inst.sshd"
+        if options !="":
+            kextra = kextra + " " + options
+        # parser issues?  lang needs a trailing = and somehow doesn't have it.
+
+        # convert the from-cobbler options back to a hash
+        # so that we can override it in a way that works as intended
+
+        hashv = input_string_or_hash(kextra)
+
+        if breed == "redhat" or breed == "suse" or breed == "debian" or breed == "ubuntu":
+            if os.path.exists("/proc/net/bonding/bond0"):
+                interface_name = 'bond0'
+            else:
+                interface_name = 'eth0'
+            interfaces = self.safe_load(pd, "interfaces")
+            if interface_name.startswith("eth"):
+                alt_interface_name = interface_name.replace("eth", "intf")
+                interface_data = self.safe_load(interfaces, interface_name, alt_interface_name)
+            else:
+                interface_data = self.safe_load(interfaces, interface_name)
+
+            ip = self.safe_load(interface_data, "ip_address")
+            netmask = self.safe_load(interface_data, "netmask")
+            gateway = self.safe_load(pd, "gateway")
+            dns = self.safe_load(pd, "name_servers")
+            hostname = self.safe_load(interface_data, "dns_name")
+
+            if breed == "debian" or breed == "ubuntu":
+                hostname = self.safe_load(pd, "hostname")
+                name = self.safe_load(pd, "name")
+                if hostname != "" or name != "":
+                    if hostname != "":
+                        # if this is a FQDN, grab the first bit
+                        my_hostname = hostname.split(".")[0]
+                        _domain = hostname.split(".")[1:]
+                        if _domain:
+                           my_domain = ".".join(_domain)
+                    else:
+                        my_hostname = name.split(".")[0]
+                        _domain = name.split(".")[1:]
+                        if _domain:
+                           my_domain = ".".join(_domain)
+                    hashv["hostname"] = my_hostname
+                    hashv["domain"] = my_domain
+
+            if breed == "suse":
+                hashv["netdevice"] = self.safe_load(pd, "mac_address_eth0")
+                hashv["install"] = self.safe_load(pd, "install_tree")
+            else:
+                hashv["ksdevice"] = self.safe_load(pd, "mac_address_eth0")
+            if ip is not None:
+                if breed == "suse":
+                    hashv["hostip"] = ip
+                elif breed == "debian" or breed == "ubuntu":
+                    hashv["netcfg/get_ipaddress"] = ip
+                else:
+                    hashv["ip"] = ip
+            if netmask is not None:
+                if breed == "debian" or breed == "ubuntu":
+                    hashv["netcfg/get_netmask"] = netmask
+                else:
+                    hashv["netmask"] = netmask
+            if gateway is not None:
+                if breed == "debian" or breed == "ubuntu":
+                    hashv["netcfg/get_gateway"] = gateway
+                else:
+                    hashv["gateway"] = gateway
+            if dns is not None:
+                if breed == "suse":
+                    hashv["nameserver"] =  " ".join(dns)
+                elif breed == "debian" or breed == "ubuntu":
+                    hashv["netcfg/get_nameservers"] = " ".join(dns)
+                else:
+                    hashv["nameserver"] =  " ".join(dns)
+        """
+        if replace_self and self.embed_kickstart:
+           hashv["ks"] = "file:ks.cfg"
+        """
+        if self.kopts_override is not None:
+           hash2 = input_string_or_hash(self.kopts_override)
+           hashv.update(hash2)
+        options = hash_to_string(hashv)
+        options = string.replace(options, "lang ","lang= ")
+        # if using ksdevice=bootif that only works for PXE so replace
+        # it with something that will work
+        options = string.replace(options, "ksdevice=bootif","ksdevice=link")
+        return options
+
+#---------------------------------------------------
+#=======================================================
+class Progress:
+    def __init__(self):
+        self._flag = False
+    def timer(self,progress='default'):
+        if progress == 'default':
+            i = 19
+            while self._flag:
+                print(" %s \r" % (i * "="),)
+                sys.stdout.flush()
+                i = (i + 1) % 20
+                time.sleep(1)
+            print(" %s" % (19 * "="))
+        else:
+            i = 1
+            while self._flag:
+                print(" %s \r" % (i * "."),)
+                sys.stdout.flush()
+                i = i+1
+                time.sleep(1)
+            print(" %s \r" % (i * "."))
+    def start(self):
+        self._flag = True
+        Thread(target=self.timer,kwargs={"progress":"custom"}).start()
+    def stop(self):
+        self._flag = False
+        time.sleep(1)
+
+def input_string_or_hash(options,delim=None,allow_multiples=True):
+    """
+    Older cobbler files stored configurations in a flat way, such that all values for strings.
+    Newer versions of cobbler allow dictionaries.  This function is used to allow loading
+    of older value formats so new users of cobbler aren't broken in an upgrade.
+    """
+
+    if options is None:
+        return {}
+    elif type(options) == list:
+        raise InfoException("No idea what to do with list: %s" % options)
+    elif type(options) == type(""):
+        new_dict = {}
+        tokens = string.split(options, delim)
+        for t in tokens:
+            tokens2 = string.split(t,"=")
+            if len(tokens2) == 1:
+                # this is a singleton option, no value
+                key = tokens2[0]
+                value = None
+            else:
+                key = tokens2[0]
+                value = tokens2[1]
+
+            # if we're allowing multiple values for the same key,
+            # check to see if this token has already been
+            # inserted into the dictionary of values already
+
+            if key in new_dict.keys() and allow_multiples:
+                # if so, check to see if there is already a list of values
+                # otherwise convert the dictionary value to an array, and add
+                # the new value to the end of the list
+                if type(new_dict[key]) == list:
+                    new_dict[key].append(value)
+                else:
+                    new_dict[key] = [new_dict[key], value]
+            else:
+                new_dict[key] = value
+
+        # dict.pop is not avail in 2.2
+        if new_dict.has_key(""):
+           del new_dict[""]
+        return new_dict
+    elif type(options) == type({}):
+        options.pop('',None)
+        return options
+    else:
+        raise InfoException("invalid input type: %s" % type(options))
+
+def hash_to_string(hash):
+    """
+    Convert a hash to a printable string.
+    used primarily in the kernel options string
+    and for some legacy stuff where qios expects strings
+    (though this last part should be changed to hashes)
+    """
+    buffer = ""
+    if type(hash) != dict:
+       return hash
+    for key in hash:
+       value = hash[key]
+       if value is None:
+           buffer = buffer + str(key) + " "
+       elif type(value) == list:
+           # this value is an array, so we print out every
+           # key=value
+           for item in value:
+              buffer = buffer + str(key) + "=" + str(item) + " "
+       else:
+              buffer = buffer + str(key) + "=" + str(value) + " "
+    return buffer
+
+#=======================================================
+if __name__ == "__main__":
+    main()
+
+

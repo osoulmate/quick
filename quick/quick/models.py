@@ -12,11 +12,12 @@ class List(models.Model):
     osbreed = models.CharField(max_length=20,verbose_name='系统流派')
     osrelease = models.CharField(max_length=20,verbose_name='系统版本')
     ospart = models.TextField(verbose_name='系统分区')
-    ospackages = models.TextField(verbose_name='系统软件')
+    ospackages = models.TextField(verbose_name='安装软件')
     osenv = models.CharField(max_length=35,verbose_name='任务场景')
     notice_mail = models.EmailField(max_length=254,verbose_name='通知邮箱')
     drive_path = models.URLField(max_length=200,verbose_name='驱动路径')
     raid = models.CharField(max_length=300,verbose_name='RAID配置')
+    bios = models.CharField(max_length=300,verbose_name='BIOS配置')
     start_time = models.CharField(max_length=20,default=time.time,verbose_name='开始时间')
     usetime= models.CharField(max_length=30,verbose_name='已用时间')
     status = models.CharField(max_length=30,verbose_name='状态|进度')
@@ -28,7 +29,11 @@ class Detail(models.Model):
     mac = models.CharField(max_length=55,verbose_name='MAC')
     netmask = models.CharField(max_length=55,default='255.255.255.0',verbose_name='NETMASK')
     gateway = models.GenericIPAddressField(default='N/R',verbose_name='网关')
-    ipmi_ip = models.GenericIPAddressField(default='N/R',verbose_name='IPMI地址')
+    ipmi_ip = models.CharField(max_length=50,verbose_name='IPMI IP',null=True)
+    ipmi_netmask = models.CharField(max_length=50,verbose_name='IPMI_NETMASK',null=True)
+    ipmi_gateway = models.CharField(max_length=50,verbose_name='IPMI_GATEWAY',null=True)
+    ipmi_user = models.CharField(max_length=50,verbose_name='IPMI_USER',null=True)
+    ipmi_pwd = models.CharField(max_length=50,verbose_name='IPMI_PWD',null=True)
     vendor = models.CharField(max_length=50,default='N/R',verbose_name='厂商')
     hardware_model= models.CharField(max_length=50,verbose_name='硬件型号')
     hardware_sn = models.CharField(max_length=150,verbose_name='序列号')
@@ -40,6 +45,25 @@ class Detail(models.Model):
     flag = models.CharField(max_length=20,verbose_name='标记')
     class Meta:
         unique_together=("name","ip")
+
+class Report(models.Model):
+    ip = models.CharField(max_length=55,verbose_name='IP',unique=True)
+    bootmac = models.CharField(max_length=55,verbose_name='MAC',unique=True)
+    vendor = models.CharField(max_length=50,default='N/R',verbose_name='厂商')
+    hardware_model= models.CharField(max_length=150,verbose_name='硬件型号')
+    hardware_sn = models.CharField(max_length=150,verbose_name='序列号')
+    nic = models.TextField(verbose_name="网卡信息")
+    nic_model = models.TextField(verbose_name="网卡硬件信息")
+    cpu = models.TextField(verbose_name='CPU')
+    memory = models.TextField(verbose_name='内存')
+    disk = models.TextField(verbose_name='硬盘')
+    raid = models.TextField(verbose_name='RAID卡')
+    ipmi = models.TextField(verbose_name='IPMI信息')
+    device_type = models.TextField(verbose_name='设备类型')
+    owner = models.CharField(max_length=30,verbose_name='管理者')
+    create_time = models.CharField(max_length=30,verbose_name='添加时间')
+    updtae_time = models.CharField(max_length=30,verbose_name='最近更新时间')
+    flag = models.CharField(max_length=20,verbose_name='标记',null=True)
 
 class Users(models.Model):
     employee_id = models.CharField(max_length=30,verbose_name='员工编号',unique=True)
@@ -481,6 +505,8 @@ class User_Profile(models.Model):
     vm_host_ip                 = models.CharField(max_length=4,default='on')
     vm_host_powerstatus           = models.CharField(max_length=4,default='on')
     vm_host_esxi_ip               = models.CharField(max_length=4,default='on')
+
+
 
 
 

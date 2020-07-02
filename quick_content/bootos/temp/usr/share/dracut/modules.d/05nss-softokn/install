@@ -1,0 +1,12 @@
+#!/bin/bash
+
+libdir="lib"
+if ldd $(which ls) 2>/dev/null | grep -q /lib64/; then
+    libdir="lib64"
+fi
+
+dracut_install \
+        /usr/$libdir/libfreeblpriv3.so /usr/$libdir/libfreeblpriv3.chk \
+        /$libdir/libfreeblpriv3.so /$libdir/libfreeblpriv3.chk 
+
+# vim:ts=8:sw=4:sts=4:et

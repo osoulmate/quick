@@ -36,7 +36,7 @@
     });
 function format(source, params) {
     if (arguments.length === 1) {
-	    //console.log("只有1个参数")
+        //console.log("只有1个参数")
         return function () {
             var args = $.makeArray(arguments);
             args.unshift(source);
@@ -45,32 +45,32 @@ function format(source, params) {
     }
     if (arguments.length > 2 && params.constructor !== Array) {
         params = $.makeArray(arguments).slice(1);
-		//console.log("参数大于2")
+        //console.log("参数大于2")
     }
     if (params.constructor !== Array) {
         params = [params];
-		//console.log(params)
+        //console.log(params)
     }
     $.each(params, function (i, n) {
         source = source.replace(new RegExp("\\{" + i + "\\}", "g"), function () {
-			//console.log(params instanceof Array)
-			//console.log("i="+i)
-			if (params instanceof Array && params.length>1 && i==0 ){
-				ip_len = n.length
-				if (ip_len<15){
-					for(var j=ip_len-1;j<15;j++){
-						//console.log(n)
-						n = n+" "
-					}
-					//console.log("ip len:"+n.length)
-					return n
-				}
-			}
-		    //console.log(n)
+            //console.log(params instanceof Array)
+            //console.log("i="+i)
+            if (params instanceof Array && params.length>1 && i==0 ){
+                ip_len = n.length
+                if (ip_len<15){
+                    for(var j=ip_len-1;j<15;j++){
+                        //console.log(n)
+                        n = n+" "
+                    }
+                    //console.log("ip len:"+n.length)
+                    return n
+                }
+            }
+            //console.log(n)
             return n;
         });
     });
-	//console.log("source:"+source)
+    //console.log("source:"+source)
     return source;
 };
 setInterval(update_data,2000)
@@ -142,18 +142,21 @@ function update_data() {
                                             <input id="osip" name="osip" class="form-control input-square" type="text" placeholder="请输入主机IP..."/>
                                           </li>
                                           <li>
-                                            <input class="btn btn-primary" type="submit" name="submit" value="查询" />
+                                            <input class="btn btn-info" type="submit" name="submit" value="查询" />
                                           </li>
                                             {% for item in items %}
                                             {% for value in item %}
                                                 {% ifequal value.0 "ip" %}
-                                          <li><a class="btn btn-primary" target="_blank" href="http://{{ location }}:8022/ssh/{{ value.1 }}">SSH</a></li>
-                                          <li><a class="btn btn-primary" target="_blank" href="http://{{ location }}:6080/vnc.html?path=?token=sys-{{ value.1 }}">VNC</a></li>
+                                          <li><a class="btn btn-info" target="_blank" href="http://{{ location }}:8022/ssh/{{ value.1 }}">SSH</a></li>
+                                          <li><a class="btn btn-info" target="_blank" href="http://{{ location }}:6080/vnc.html?path=?token=sys-{{ value.1 }}">VNC</a></li>
                                                 {% endifequal %}
                                                 {% ifequal value.0 "ipmi_ip" %}
-                                                {% if value.1 != "None" or value.1 != ""%}
-                                          <li><a class="btn btn-primary" target="_blank" href="http://{{ location }}:8022/ssh/{{ location }}">SOL</a></li>
-                                          <li><a class="btn btn-primary" target="_blank" href="http://{{ value.1 }}">BMC</a></li>
+                                                {% if value.1 == "N/R" or value.1 == ""%}
+                                          <li><button type="button" class="btn btn-info" disabled="disabled">SOL</button></li>
+                                          <li><button type="button" class="btn btn-info" disabled="disabled">IPMI</button></li>
+                                                {% else %}
+                                          <li><a class="btn btn-info" target="_blank" href="http://{{ location }}:8022/ssh/{{ location }}">SOL</a></li>
+                                          <li><a class="btn btn-info" target="_blank" href="http://{{ value.1 }}">IPMI</a></li>
                                                 {% endif %}
                                                 {% endifequal %}
                                             {% endfor %}
@@ -341,6 +344,7 @@ function update_data() {
                 </div>
             </div>
 {% endblock content %}
+
 
 
 

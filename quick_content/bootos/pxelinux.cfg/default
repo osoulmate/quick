@@ -6,5 +6,5 @@ LABEL Qios
   MENU LABEL ^Qios
   MENU DEFAULT
   KERNEL http://172.16.1.10/quick_content/bootos/vmlinuz
-  APPEND initrd=http://172.16.1.10/quick_content/bootos/initrd.img console=tty0 selinux=0 biosdevname=0  QUICK_SERVER=172.16.1.10 LOGGING=1 LOOPINTERVAL=15
+  APPEND initrd=http://172.16.1.10/quick_content/bootos/initrd.img intremap=off console=tty0 selinux=0 biosdevname=0  QUICK_SERVER=172.16.1.10 LOGGING=1 LOOPINTERVAL=15
   IPAPPEND 2

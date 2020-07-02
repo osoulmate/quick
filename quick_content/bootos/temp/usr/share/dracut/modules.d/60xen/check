@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# No Xen-detect? Boo!!
+XENDETECT=$(which xen-detect 2>/dev/null)
+[ -z "$XENDETECT" ] && [ -d "/usr/lib/xen-default" ] && XENDETECT="/usr/lib/xen-default/bin/xen-detect"
+[ -z "$XENDETECT" ] && exit 1
+
+. $dracutfunctions
+[[ $debug ]] && set -x
+
+# Yes, we are under Xen PV env.
+$XENDETECT | egrep -q -v 'PV' || exit 0
+
+exit 1

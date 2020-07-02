@@ -128,66 +128,90 @@ def get_obj(content, vimtype, name=None):
     obj = [ view for view in container.view]
     return obj
 
-def generate_ip_list(ip,**kw):
+def generate_ip_list(ips,**kw):
+    logger = Logger()
     ip_list = []
-    if ',' in ip:
-        new_ip_list = ip.split(',')
-        for ip in new_ip_list:
-            if '-' in ip:
-                start_ip = ip.split('-')[0]
-                end_ip = ip.split('-')[1]
-                ip_prefix = start_ip.split('.')[0]+'.'+start_ip.split('.')[1]+'.'+start_ip.split('.')[2]
-                ip_range = range(int(start_ip.split('.')[3]),int(end_ip.split('.')[3])+1)
-                for ip_postfix in ip_range:
-                    ip_list.append(ip_prefix+'.'+str(ip_postfix))
-            else:
-                ip_list.append(ip.strip())
-    elif '-' in ip:
-        start_ip = ip.split('-')[0]
-        end_ip = ip.split('-')[1]
-        ip_prefix = start_ip.split('.')[0]+'.'+start_ip.split('.')[1]+'.'+start_ip.split('.')[2]
-        ip_range = range(int(start_ip.split('.')[3]),int(end_ip.split('.')[3])+1)
-        for ip_postfix in ip_range:
-            ip_list.append(ip_prefix+'.'+str(ip_postfix))
-    else:
-        ip_list.append(ip) 
+    ips = ips.split('\n')
+    for ip in ips:
+        ip = ip.replace('\r','').strip()
+        if not is_valid_ip(ip):
+            logger.error('%s 不是有效的IP地址'%ip)
+        ip_list.append(ip)
     return ip_list
 def generate_ip_mask_gateway_mac(obj=None):
     if obj:
         data = []
         newobj = obj.strip().split('\n')
+        ip=''
+        netmask=''
+        gateway=''
+        mac=''
+        ipmi_ip=''
+        ipmi_netmask=''
+        ipmi_gateway=''
+        ipmi_user=''
+        ipmi_pwd=''
         for i in newobj:
-            if len(re.split('\s+',i.strip()))>4:
-                ip = re.split('\s+',i.strip())[0]
-                netmask = re.split('\s+',i.strip())[1]
-                gateway = re.split('\s+',i.strip())[2]
-                mac1 = re.split('\s+',i.strip())[3]
-                mac2 = re.split('\s+',i.strip())[4]
-                mac=mac1+','+mac2
-            elif len(re.split('\s+',i.strip()))==4:
+            if len(re.split('\s+',i.strip()))==4:
                 ip = re.split('\s+',i.strip())[0]
                 netmask = re.split('\s+',i.strip())[1]
                 gateway = re.split('\s+',i.strip())[2]
                 mac = re.split('\s+',i.strip())[3]
-            data.append([ip,netmask,gateway,mac])
+            elif len(re.split('\s+',i.strip()))==7:
+                ip = re.split('\s+',i.strip())[0]
+                netmask = re.split('\s+',i.strip())[1]
+                gateway = re.split('\s+',i.strip())[2]
+                mac = re.split('\s+',i.strip())[3]
+                ipmi_ip = re.split('\s+',i.strip())[4]
+                ipmi_netmask = re.split('\s+',i.strip())[5]
+                ipmi_gateway = re.split('\s+',i.strip())[6]
+            elif len(re.split('\s+',i.strip()))==9:
+                ip = re.split('\s+',i.strip())[0]
+                netmask = re.split('\s+',i.strip())[1]
+                gateway = re.split('\s+',i.strip())[2]
+                mac = re.split('\s+',i.strip())[3]
+                ipmi_ip = re.split('\s+',i.strip())[4]
+                ipmi_netmask = re.split('\s+',i.strip())[5]
+                ipmi_gateway = re.split('\s+',i.strip())[6]
+                ipmi_user = re.split('\s+',i.strip())[7]
+                ipmi_pwd = re.split('\s+',i.strip())[8]
+            else:
+                pass
+            data.append([ip,netmask,gateway,mac,ipmi_ip,ipmi_netmask,ipmi_gateway,ipmi_user,ipmi_pwd])
         return data
 
-def generate_data(osip,task_name,profilename,usetime,progress,owner):
+def generate_data(osip,task_name,profile_name,progress,owner):
+    logger = Logger()
     data = generate_ip_mask_gateway_mac(osip)
+    logger.info(data)
     j=len(data)
     i=0
-    for ip,mask,gateway,mac in data:
-        subtask = Detail(name=task_name,ip=ip,mac=mac,hardware_model='wait',netmask=mask,gateway=gateway,
-                                ipmi_ip='wait',hardware_sn='wait',apply_template=profilename,start_time='0',
-                                usetime='0',status=progress,owner=owner,flag='detail')
-        subtask.save()
-        i=i+1
-        task = List.objects.get(name=task_name)
-        if i == j:
-            task.status = '等待执行'
-        else:
-            task.status = '初始化(%s/%s)'%(i,j)
-        task.save()
+    for ip,netmask,gateway,mac,ipmi_ip,ipmi_netmask,ipmi_gateway,ipmi_user,ipmi_pwd in data:
+        logger.info("%s %s %s %s %s %s %s %s %s "%(ip,netmask,gateway,mac,ipmi_ip,ipmi_netmask,ipmi_gateway,ipmi_user,ipmi_pwd))
+        hardware_model = ''
+        hardware_sn    = ''
+        vendor         = ''
+        try:
+            ip=ip.strip()
+            mac=mac.lower().strip()
+            report = Report.objects.filter(ip=ip,bootmac=mac)
+            logger.info("%s"%report)
+            if report:
+                report = report[0]
+                hardware_model = report.hardware_model
+                hardware_sn    = report.hardware_sn
+                vendor         = report.vendor
+            subtask = Detail(name=task_name,ip=ip,mac=mac,netmask=netmask,gateway=gateway,ipmi_ip=ipmi_ip,ipmi_netmask=ipmi_netmask,ipmi_gateway=ipmi_gateway,ipmi_user=ipmi_user,ipmi_pwd=ipmi_pwd,vendor=vendor,hardware_model=hardware_model,hardware_sn=hardware_sn,apply_template=profile_name,start_time='0',usetime='0',status=progress,owner=owner,flag='detail')
+            subtask.save()
+            i=i+1
+            task = List.objects.get(name=task_name)
+            if i == j:
+                task.status = '等待执行'
+            else:
+                task.status = '初始化(%s/%s)'%(i,j)
+            task.save()
+        except Exception,e:
+            logger.error(str(e))
     return True
 def __add_host(ip,user,pwd):
     logger = Logger()
@@ -309,6 +333,13 @@ def __get_host_info(name,ip,user,pwd,obj,iplist):
         ssh.connect(ip,22,user,pwd,timeout=15)
     except:
         logger.error("ssh host(%s) use username(%s) and password(%s) in port 22 failure !"%(ip,user,pwd))
+        if not validate_ip(ip):
+            logger.error("(%s) 不是有效格式的IP地址"%ip)
+            task = List.objects.get(name=name)
+            task.status = "IP格式错误!"
+            task.usetime = '0'
+            task.start_time = '0'
+            task.save()
         subtask = Detail(name=name,ip=ip,mac='unknown',
             hardware_model='unknown',hardware_sn='unknown',
             apply_template=apply_template,start_time='0',usetime='0',
@@ -384,14 +415,14 @@ def __get_host_info(name,ip,user,pwd,obj,iplist):
                     subtask.mac            = mac
                     subtask.hardware_model = product_name
                     subtask.hardware_sn    = sn
-                    subtask.status         = '就绪'
+                    subtask.status         = 'ready'
                     subtask.apply_template = apply_template
                     subtask.owner          = obj.owner
                     subtask.save()
             else:
                 subtask = Detail(name=name,ip=ip,mac=mac,vendor=vendor,
                     hardware_model=product_name,hardware_sn=sn,apply_template=apply_template,
-                    start_time='0',usetime='0',status='就绪',owner=obj.owner,flag='detail')
+                    start_time='0',usetime='0',status='ready',owner=obj.owner,flag='detail')
                 subtask.save()
             successed = len(Detail.objects.filter(name=name))
             if len(iplist) == successed:
@@ -600,48 +631,21 @@ def add_vnc_token(ip_list,path='/usr/share/quick/extend/novnc/vnc_tokens',token=
         s = "\n"+"sys-"+ip+": "+ip+":"+port
         f.writelines(s)
         f.close()
-def add_cobbler_system(remote,token,taskname,ospart,ospackages,raid):
+def add_cobbler_system(remote,token,taskname,ospart,ospackages,raid,bios):
     task_details = Detail.objects.filter(name=taskname)
     for task_detail in task_details:
         ifdatas=[]
-        if len(task_detail.mac.split(','))>1:
-            mac1=task_detail.mac.split(',')[0]
-            mac2=task_detail.mac.split(',')[1]
-            ifbond={'static-bond0':'true',
-                    'ip_address-bond0':task_detail.ip,
-                    'netmask-bond0':task_detail.netmask,
-                    'bonding_opts-bond0':'mode=active-backup miimon=100',
-                    'interface_type-bond0': 'bond',}
-            ifeth0={'static-eth0':'true',
-                    'interface_master-eth0':'bond0',
-                    'interface_type-eth0': 'bond_slave',
-                    'mac_address-eth0':mac1}
-            ifeth1={'static-eth1':'true',
-                    'interface_master-eth1':'bond0',
-                    'interface_type-eth1': 'bond_slave',
-                    'mac_address-eth1':mac2}
-            ifdatas=[ifbond,ifeth0,ifeth1]
-        else:
-            ifeth={'static-eth0':'true',
-                    'ip_address-eth0':task_detail.ip,
-                    'netmask-eth0':task_detail.netmask,
-                    'mac_address-eth0':task_detail.mac}
-            ifdatas=[ifeth]
+        ifeth={'static-eth0':'true',
+                'ip_address-eth0':task_detail.ip,
+                'netmask-eth0':task_detail.netmask,
+                'mac_address-eth0':task_detail.mac}
+        ifdatas=[ifeth]
         obj_name='sys-%s'%task_detail.ip
         profile=task_detail.apply_template
         gateway=task_detail.gateway
-        if 'suse' in profile:
-            kopts="vncpassword=hellovnc vnc=1 sshpassword=hellossh ssh=1"
-        elif 'centos7' in profile:
-            kopts='inst.vnc inst.vncpassword=hellovnc inst.sshd'
-        elif 'centos6' in profile:
-            kopts='vnc vncpassword=hellovnc sshd=1'
-        else:
-            kopts=''
-        ks_meta='partition=%s package=%s raid=%s'%(ospart,ospackages,raid)
+        ks_meta='partition=%s package=%s raid=%s bios=%s'%(ospart,ospackages,raid,bios)
         fields=[{'name':'name','value':obj_name},
                 {'name':'profile','value':profile},
-                {'name':'kernel_options','value':kopts},
                 {'name':'ks_meta','value':ks_meta},
                 {'name':'gateway','value':gateway}]
         if not remote.has_item('system', obj_name):
@@ -652,7 +656,7 @@ def add_cobbler_system(remote,token,taskname,ospart,ospackages,raid):
             except Exception, e:
                 pass
             else:
-                obj_id = remote.new_item('system', token )
+                obj_id = remote.new_item('system', token)
         for field in fields:
             try:
                 remote.modify_item('system',obj_id,field['name'],field['value'],token)
@@ -667,7 +671,7 @@ def add_cobbler_system(remote,token,taskname,ospart,ospackages,raid):
                 task_detail.save()
         try:
             remote.save_item('system', obj_id,token,'new')
-            task_detail.status='initializing...'
+            task_detail.status='ready'
             task_detail.save()
             return True
         except Exception, e:
@@ -697,6 +701,19 @@ def is_valid_ip(strdata=None):
             return True
         else:
             return False
+
+def validate_ip(strdata=None):
+    ippattern = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
+    if not ippattern.match(strdata):
+        return False
+    iparray = strdata.split(".");
+    ip1 = int(iparray[0])
+    ip2 = int(iparray[1])
+    ip3 = int(iparray[2])
+    ip4 = int(iparray[3])
+    if ip1<0 or ip1>255 or ip2<0 or ip2>255 or ip3<0 or ip3>255 or ip4<0 or ip4>255:
+       return False
+    return True
 
 
 

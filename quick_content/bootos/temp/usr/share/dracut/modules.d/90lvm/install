@@ -1,0 +1,38 @@
+#!/bin/bash
+inst lvm
+
+inst_rules "$moddir/64-lvm.rules" 64-lvm.rules
+
+if [[ $hostonly ]] || [[ $lvmconf = "yes" ]]; then
+    if [ -f /etc/lvm/lvm.conf ]; then
+        for f in /etc/lvm/lvm.conf /etc/lvm/lvm_*.conf; do
+	    [ -e "$f" ] || continue
+            inst "$f"
+	    # FIXME: near-term hack to establish read-only locking;
+	    # use command-line lvm.conf editor once it is available
+	    [ -f "${initdir}/$f" ] && \
+                sed -i -e \
+                    's/\(^[[:space:]]*\)locking_type[[:space:]]*=[[:space:]]*[[:digit:]]/\1locking_type = 4/' \
+                    "${initdir}/$f"
+        done
+    fi
+fi
+
+inst_rules 11-dm-lvm.rules
+
+inst "$moddir/lvm_scan.sh" /sbin/lvm_scan
+inst_hook cmdline 30 "$moddir/parse-lvm.sh"
+
+if ldd $(which lvm) 2>/dev/null | grep -q lib64; then
+    LIBDIR="/lib64"
+else
+    LIBDIR="/lib"
+fi
+
+for i in $(ls /{usr,}/$LIBDIR/libdevmapper-event-lvm*.so 2>/dev/null); do
+    dracut_install $i
+done
+
+dracut_install -o thin_dump thin_restore thin_check thin_repair \
+               cache_dump cache_restore cache_check cache_repair \
+               era_check era_dump era_invalidate era_restore

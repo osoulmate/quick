@@ -1,0 +1,51 @@
+#!/bin/sh -e
+
+set -e
+
+usage()
+{
+	echo "usage: p11-kit redhat-setup-trust enable" >&2
+	echo "       p11-kit redhat-setup-trust disable" >&2
+	echo "       p11-kit redhat-setup-trust status" >&2
+	exit 2
+}
+
+if test $# -ne 1; then
+    usage
+fi
+
+if test "$1" = "enable"; then
+	/usr/sbin/update-alternatives --install /usr/lib64/libnssckbi.so \
+		libnssckbi.so.x86_64 /usr/lib64/pkcs11/p11-kit-trust.so 30
+
+elif test "$1" = "disable"; then
+	/usr/sbin/update-alternatives --remove libnssckbi.so.x86_64 \
+		/usr/lib64/pkcs11/p11-kit-trust.so
+
+elif test "$1" = "status"; then
+	ret=2
+	cd /etc/alternatives
+	for name in libnssckbi.so*; do
+		test -L $name || continue
+		if readlink $name | grep -q p11-kit-trust.so; then
+			status="enabled"
+			ret=0
+		elif /usr/sbin/update-alternatives --display $name | grep -q p11-kit-trust.so; then
+			status="available"
+			ret=1
+		else
+			continue
+		fi
+		case $name in
+		libnssckbi.so.x86_64)
+			echo "libnssckbi.so alternative $status"
+			;;
+		libnssckbi.so*)
+			echo "libnssckbi.so alternative $status for other arch"
+			;;
+		esac
+	done
+	exit $ret
+else
+	usage
+fi

@@ -1,0 +1,29 @@
+# -*-Shell-script-*-
+#
+# This file is not a stand-alone shell script; it provides functions 
+# to network scripts that source it.
+
+# Set up a default search path.
+PATH="/sbin:/usr/sbin:/bin:/usr/bin"
+export PATH
+
+for _var in $(cat /proc/cmdline)
+do
+    [[ $_var =~ ^BOOTIF ]] && _bootif_mac=$(tr '-' ':' <<<${_var#*=01-})
+    [[ $_var =~ ^LINKDELAY ]] && _link_delay=${_var#*=}
+done
+
+[[ -z "$_link_delay" ]] && _link_delay=10
+
+_bootif_dev=$(grep -l -w "$_bootif_mac" /sys/class/net/*/address | cut -d'/' -f5)
+
+if [[ -n "$_bootif_mac" && -n "$_bootif_dev" ]]; then
+    cat > /etc/sysconfig/network-scripts/ifcfg-$_bootif_dev <<EOF
+DEVICE=$_bootif_dev
+BOOTPROTO=dhcp
+HWADDR=$_bootif_mac
+ONBOOT=yes
+TYPE=Ethernet
+LINKDELAY=$_link_delay
+EOF
+fi
