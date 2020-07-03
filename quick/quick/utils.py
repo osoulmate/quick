@@ -649,36 +649,25 @@ def add_cobbler_system(remote,token,taskname,ospart,ospackages,raid,bios):
                 {'name':'profile','value':profile},
                 {'name':'ks_meta','value':ks_meta},
                 {'name':'gateway','value':gateway}]
-        if not remote.has_item('system', obj_name):
-            obj_id = remote.new_item('system', token )
-        else:
-            try:
-                remote.xapi_object_edit('system', obj_name, "remove", {'name': obj_name, 'recursive': True}, token)
-            except Exception, e:
-                pass
-            else:
-                obj_id = remote.new_item('system', token)
-        for field in fields:
-            try:
-                remote.modify_item('system',obj_id,field['name'],field['value'],token)
-            except Exception, e:
-                task_detail.status=e
-                task_detail.save()
-        for ifdata in ifdatas:
-            try:
-                remote.modify_system(obj_id, 'modify_interface', ifdata,token)
-            except Exception, e:
-                task_detail.status=e
-                task_detail.save()
         try:
+            if not remote.has_item('system', obj_name):
+                obj_id = remote.new_item('system', token )
+            else:
+                remote.xapi_object_edit('system', obj_name, "remove", {'name': obj_name, 'recursive': True}, token)
+                obj_id = remote.new_item('system', token)
+            for field in fields:
+                remote.modify_item('system',obj_id,field['name'],field['value'],token)
+            for ifdata in ifdatas:
+                remote.modify_system(obj_id, 'modify_interface', ifdata,token)
+        except Exception,e:
+            task_detail.status=e
+            task_detail.save()
+            continue
+        else:
             remote.save_item('system', obj_id,token,'new')
             task_detail.status='ready'
             task_detail.save()
-            return True
-        except Exception, e:
-            task_detail.status=e
-            task_detail.save()
-            return False
+    return True
 
 def timers(diff=None):
     if diff > 60 and diff < 3600:
@@ -715,6 +704,7 @@ def validate_ip(strdata=None):
     if ip1<0 or ip1>255 or ip2<0 or ip2>255 or ip3<0 or ip3>255 or ip4<0 or ip4>255:
        return False
     return True
+
 
 
 
