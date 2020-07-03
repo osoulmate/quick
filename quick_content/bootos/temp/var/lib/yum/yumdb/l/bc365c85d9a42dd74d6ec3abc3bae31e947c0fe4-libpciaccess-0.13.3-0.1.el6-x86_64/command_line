@@ -1,1 +1,0 @@
---installroot=/root/bootos -y install bash kernel openssh-clients openssh-server rsyslog dhclient vim-minimal yum ipmitool pciutils dmidecode

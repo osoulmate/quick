@@ -5,5 +5,7 @@
 #$SNIPPET('download_config_files')
 #$SNIPPET('kickstart_done')
 wget "$server/quick/install/notice/install_finish" -O /dev/null
+/target/usr/bin/curl -H "Content-Type: application/json" -X POST -d '{"progress":"100%"}' http://$server/quick/api/report_progress -o /dev/null
+# End final steps
 sed -i 's/PermitRootLogin(.*)$/PermitRootLogin yes/g' /etc/ssh/sshd_config
 #End preseed_late_default

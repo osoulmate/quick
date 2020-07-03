@@ -31,12 +31,12 @@ do
                     kill -9 $pid
             fi
             if [ "$log" != '' ];then
-                cmd="$server/quick/install/notice/install_"$log
-                echo $cmd >> /tmp/anamon.log
-                curl -s $cmd
+                curl -H "Content-Type: application/json" -X POST -d "{\"progress\":\"$log\"}" http://$server/quick/api/report_progress >> /tmp/anamon.log
             fi
     else
         sleep 1
     fi
 done
+
+
 

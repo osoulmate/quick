@@ -341,7 +341,7 @@ def __get_host_info(name,ip,user,pwd,obj,iplist):
             task.start_time = '0'
             task.save()
         subtask = Detail(name=name,ip=ip,mac='unknown',
-            hardware_model='unknown',hardware_sn='unknown',
+            hardware_model='unknown',hardware_sn='unknown',ipmi_ip='N/R',
             apply_template=apply_template,start_time='0',usetime='0',
             status='ssh connect failure',owner=obj.owner,flag='detail')
         subtask.save()
@@ -417,11 +417,12 @@ def __get_host_info(name,ip,user,pwd,obj,iplist):
                     subtask.hardware_sn    = sn
                     subtask.status         = 'ready'
                     subtask.apply_template = apply_template
+                    subtask.ipmi_ip        = 'N/R'
                     subtask.owner          = obj.owner
                     subtask.save()
             else:
                 subtask = Detail(name=name,ip=ip,mac=mac,vendor=vendor,
-                    hardware_model=product_name,hardware_sn=sn,apply_template=apply_template,
+                    hardware_model=product_name,hardware_sn=sn,apply_template=apply_template,ipmi_ip='N/R',
                     start_time='0',usetime='0',status='ready',owner=obj.owner,flag='detail')
                 subtask.save()
             successed = len(Detail.objects.filter(name=name))

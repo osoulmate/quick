@@ -34,8 +34,9 @@ urlpatterns = patterns('',
     (r'^init$', add_web_users.add_web_users),
     (r'^utils/random_mac$', views.random_mac),
     (r'^api/report_device_info$', install.discover_hosts),
-    (r'^api/install_queue/(?P<obj_name>.+)$', install.install_queue),
-    (r'^api/request_host_conf/(?P<obj_name>.+)$', install.host_conf),
+    (r'^api/install_queue$', install.install_queue),
+    (r'^api/request_host_conf$', install.host_conf),
+    (r'^api/report_progress$', install.progress_api),
     (r'^install/discover/list(/(?P<page>\d+))?', install.discover_list),
     (r'^install/discover/detail(/(?P<obj_id>\d+))?', install.discover_detail),
 
@@ -125,6 +126,8 @@ urlpatterns = patterns('',
     (r'^(?P<what>\w+)/save$', views.generic_save),
 
 )
+
+
 
 
 

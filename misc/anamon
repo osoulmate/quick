@@ -22,7 +22,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 02110-1301  USA
 """
-
+from __future__ import print_function
 import os
 import sys
 import string
@@ -31,6 +31,9 @@ import re
 import base64
 import shlex
 import re
+import urllib
+import json
+import urllib2
 # on older installers (EL 2) we might not have xmlrpclib
 # and can't do logging, however this is more widely
 # supported than remote syslog and also provides more
@@ -38,7 +41,7 @@ import re
 try:
     import xmlrpclib
 except ImportError, e:
-    print "xmlrpclib not available, exiting"
+    print("xmlrpclib not available, exiting")
     sys.exit(0)
 
 # shlex.split support arrived in python-2.3, the following will provide some
@@ -46,6 +49,29 @@ except ImportError, e:
 if not hasattr(shlex, "split"):
     shlex.split = lambda s: s.split(" ")
 
+def call_rest_api(url,data=None):
+    #print(json.dumps(data,ensure_ascii=False))
+    if not url or not isinstance(data,dict):
+        html_json = {"result":""}
+    try:
+        headers = {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1","Content-Type":"application/json"}
+        resquest = urllib2.Request(url,data=json.dumps(data,ensure_ascii=False),headers=headers) 
+        response = urllib2.urlopen(resquest)
+    except Exception,e:
+        print("错误:%s"%str(e))
+        html_json = {"result":""}
+    else:
+        html = response.read()
+        try:
+            html_json = json.loads(html)
+        except Exception,e:
+            print("%s 不是字典类型"%html)
+            html_json = {"result":""}
+        else:
+            print("data:%s,响应码:%s,请求url:%s,头信息:%s"%(html_json,response.getcode(),response.geturl(),response.info()))
+    finally:
+        return html_json
 class WatchedFile:
     def __init__(self, fn, alias):
         self.fn = fn
@@ -85,16 +111,16 @@ class WatchedFile:
         p1=re.compile('(\d+:\d+:\d+,\d+) (.*) anaconda:')
         p2=re.compile('\s+')
         p3=re.compile('^\d+~blocks$')
-        cmd = "%s/quick/install/notice/install_"%server
+        request_url = "http://%s/quick/api/report_progress"%server
         alogCmd="tail -n 1 %s" % self.fn
         log = os.popen(alogCmd).read().strip()
         log=re.sub(p1,'',log).strip()
         log=re.sub(p2,'~',log)
         log=re.sub(p3,'Performing~post-installation~setup~tasks',log)
-        cmd += log
-        cmd = 'curl '+'"'+cmd+'"'
-        debug("Adding %s to notice\n" % cmd)
-        os.system(cmd)
+        print(log)
+        kw={"progress":log}
+        call_rest_api(request_url,kw)
+        return 1
     def update(self):
         if not self.exists():
             return
@@ -190,8 +216,8 @@ def anamon_loop():
     else:
         watchlist = [alog, rpmlog]
         waitlist.extend(package_logs)
-    # Monitor loop
     enable_report = 1
+    # Monitor loop
     while 1:
         time.sleep(1)
         for watch in waitlist:
@@ -211,22 +237,19 @@ def anamon_loop():
         if exit:
             break
 def report(server=None):
-    vendor=os.popen("dmidecode -s system-manufacturer").read().strip()
-    product=os.popen("dmidecode -s system-product-name").read().strip()
-    sn=os.popen("dmidecode -s system-serial-number").read().strip()
     ipmiip=os.popen("ipmitool lan print 2>/dev/null|grep 'IP Address  '|awk -F':' '{print $2}'").read().strip()
-    vendor=re.sub('\s+','~',vendor)
-    product=re.sub('\s+','~',product)
-    sn=re.sub('\s+','~',sn)
     ipmiip=re.sub('\s+','~',ipmiip)
     if not ipmiip:
         ipmiip = 'none'
     if not server:
         return False
-    cmd="%s/quick/install/notice/notice?vendor=%s&product=%s&sn=%s&ipmiip=%s"%(server,vendor,product,sn,ipmiip)
-    cmd = 'curl '+'"'+cmd+'"'
-    os.system(cmd)
-    debug("Adding %s to notice\n" % cmd)
+    try:
+        cmd="%s/quick/install/notice/update/ipmiip=%s"%(server,ipmiip)
+        cmd = 'curl '+'"'+cmd+'"'
+        os.system(cmd)
+        debug("Adding %s to notice\n" % cmd)
+    except:
+        return False
     return True
 # Establish some defaults
 name = ""
@@ -277,5 +300,6 @@ if daemon:
     sys.exit(0)
 else:
     anamon_loop()
+
 
 

@@ -1,5 +1,0 @@
-[quick]
-name=quick-$releasever
-baseurl=http://@@server@@/quick_content/hwtools/
-gpgcheck=0
-

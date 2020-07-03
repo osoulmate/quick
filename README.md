@@ -75,6 +75,100 @@ systemctl start httpd
 systemctl start cobblerd
 ```
 9. 修改/etc/cobbler/dhcp.template配置，添加一个与本机地址在同一个网络的dhcp地址池
+```
+# ******************************************************************
+# Cobbler managed dhcpd.conf file
+#
+# generated from cobbler dhcp.conf template ($date)
+# Do NOT make changes to /etc/dhcpd.conf. Instead, make your changes
+# in /etc/cobbler/dhcp.template, as /etc/dhcpd.conf will be
+# overwritten.
+#
+# ******************************************************************
+
+ddns-update-style interim;
+
+allow booting;
+allow bootp;
+
+ignore client-updates;
+set vendorclass = option vendor-class-identifier;
+
+option pxe-system-type code 93 = unsigned integer 16;
+
+subnet 172.16.1.0 netmask 255.255.255.0 {
+     option routers             172.16.1.1;
+     option domain-name-servers 172.16.1.1;
+     option subnet-mask         255.255.255.0;
+     range dynamic-bootp        172.16.1.11 172.16.1.100;
+     default-lease-time         21600;
+     max-lease-time             43200;
+     next-server                $next_server;
+     class "pxeclients" {
+          match if substring (option vendor-class-identifier, 0, 9) = "PXEClient";
+          if option pxe-system-type = 00:02 {
+                  filename "ia64/elilo.efi";
+          } else if option pxe-system-type = 00:06 {
+                  filename "grub/grub-x86.efi";
+          } else if option pxe-system-type = 00:07 {
+                  filename "grub/grub-x86_64.efi";
+          } else if option pxe-system-type = 00:09 {
+                  filename "grub/grub-x86_64.efi";
+          } else {
+                  #filename "pxelinux.0";
+                  filename "undionly.kpxe";
+          }
+     }
+
+}
+
+#for dhcp_tag in $dhcp_tags.keys():
+    ## group could be subnet if your dhcp tags line up with your subnets
+    ## or really any valid dhcpd.conf construct ... if you only use the
+    ## default dhcp tag in cobbler, the group block can be deleted for a
+    ## flat configuration
+# group for Cobbler DHCP tag: $dhcp_tag
+group {
+        #for mac in $dhcp_tags[$dhcp_tag].keys():
+            #set iface = $dhcp_tags[$dhcp_tag][$mac]
+    host $iface.name {
+        #if $iface.interface_type == "infiniband":
+        option dhcp-client-identifier = $mac;
+        #else
+        hardware ethernet $mac;
+        #end if
+        #if $iface.ip_address:
+        fixed-address $iface.ip_address;
+        #end if
+        #if $iface.hostname:
+        option host-name "$iface.hostname";
+        #end if
+        #if $iface.netmask:
+        option subnet-mask $iface.netmask;
+        #end if
+        #if $iface.gateway:
+        option routers $iface.gateway;
+        #end if
+        #if $iface.enable_gpxe:
+        if exists user-class and option user-class = "gPXE" {
+            filename "http://$cobbler_server/cblr/svc/op/gpxe/system/$iface.owner";
+        } else if exists user-class and option user-class = "iPXE" {
+            filename "http://$cobbler_server/cblr/svc/op/gpxe/system/$iface.owner";
+        } else {
+            filename "undionly.kpxe";
+        }
+        #else
+        filename "$iface.filename";
+        #end if
+        ## Cobbler defaults to $next_server, but some users
+        ## may like to use $iface.system.server for proxied setups
+        next-server $next_server;
+        ## next-server $iface.next_server;
+    }
+        #end for
+}
+#end for
+```
 
 10. 执行cobbler sync命令，同步配置
 
@@ -136,4 +230,6 @@ service novnc start                                   #启动novnc服务
 
 **Tips**
 
-在有DHCP网络环境下进行裸机系统安装时，要注意system中是否有多个名字不同的配置文件但主机MAC地址相同的情况。如果有，则要先删除无效的配置文件，否则裸机启动时获得的IP将与要分配的IP不一致。
+1. 在有DHCP网络环境下进行裸机系统安装时，要注意system中是否有多个名字不同的配置文件但主机MAC地址相同的情况。如果有，则要先删除无效的配置文件，否则裸机启动时获得的IP将与要分配的IP不一致。
+
+2. 在裸机新装场景下，当前bootos仅支持目标系统是redhat通过`kexec -e`切换至新内核，不支持susu、ubuntu等系统。对于目标系统为非redhat的安装场景，当前的qios_agent处理逻辑为向服务端发送sync请求，使服务端进行`cobbler sync`同步，以使已安装的system配置同步到dhcp配置文件。然后qios_agnet使当前主机再次重启，再次重启进将进入传统PXE启动场景后，自动加载`/var/lib/tftp/pxelinux.cfg/`目录下与本机匹配的配置文件进行网络启动，并开始正式的安装进程。

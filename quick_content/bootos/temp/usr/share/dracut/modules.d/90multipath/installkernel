@@ -1,8 +1,0 @@
-#!/bin/bash
-
-mp_mod_test() {
-    local mpfuncs='scsi_register_device_handler|dm_dirty_log_type_register|dm_register_path_selector|dm_register_target'
-    egrep -q "$mpfuncs" "$1"
-}
-
-instmods $(filter_kernel_modules mp_mod_test)

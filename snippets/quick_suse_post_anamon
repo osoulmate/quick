@@ -1,6 +1,6 @@
 <script>
      <interpreter>shell</interpreter>
      <source><![CDATA[
-curl $server/quick/install/notice/install_finish -o /dev/null
+curl -H "Content-Type: application/json" -X POST -d '{"progress":"100%"}' http://$server/quick/api/report_progress -o /dev/null
 ]]></source>
 </script>

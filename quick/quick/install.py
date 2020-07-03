@@ -321,19 +321,17 @@ def task_delete(request,what,task_name=None):
     return HttpResponseRedirect("/quick/install/%s/list"%what)
 #========================================================================
 def task_state(request,task_name=None):
+    kw = {'result':'','info':'NULL'}
     now = int(time.time())
-    action = request.GET.get('k','')
     progress='0'
     usetime='0'
-    '''
-    任务列表页面ajax请求处理逻辑
-    '''
+    # 任务列表页面ajax请求处理逻辑
     if re.match('^(task_\d+$)',task_name):
         task = List.objects.filter(name=task_name,flag='resume')
         if task:
             task = task[0]
         else:
-            return HttpResponse('False')
+            return HttpResponse('')
         progress = task.status
         if progress != '完成':
             if task.start_time == '0':
@@ -345,18 +343,15 @@ def task_state(request,task_name=None):
                 task.save()
         else:
             usetime = task.usetime
-
-    '''
-    任务详情页面ajax请求处理逻辑
-    '''
-    if re.match('^(task_\d+)-((\d{1,3}\.){3}\d{1,3})$',task_name):
+    # 任务详情页面ajax请求处理逻辑
+    elif re.match('^(task_\d+)-((\d{1,3}\.){3}\d{1,3})$',task_name):
         name = task_name.split('-')[0]
         ip = task_name.split('-')[1]
         subtask = Detail.objects.filter(ip=ip,name=name)
         if subtask:
             subtask = subtask[0]
         else:
-            return HttpResponse('False')
+            return HttpResponse('')
         progress=subtask.status
         if progress != '100%':
             if subtask.start_time == '0':
@@ -368,69 +363,28 @@ def task_state(request,task_name=None):
                 subtask.save()
         else:
             usetime = subtask.usetime
-    '''
-    客户机操作系统安装进度状态更新请求处理逻辑
-    '''
-    if 'install_' in task_name:
-        step={"install_finish":"100%"}
-        remote_ip = request.META['REMOTE_ADDR']
-        subtask = Detail.objects.filter(~Q(status='100%'),ip=remote_ip)
-        if subtask:
-            subtask = subtask[0]
-            name    = subtask.name
-            status= step.get(task_name,task_name.split('install_')[1])
-            usetime = now - int(float(subtask.start_time))
-            subtask.usetime= utils.timers(usetime)
-            subtask.status=re.sub('~',' ',status)
-            subtask.save()
-            running = Detail.objects.filter(~Q(status='100%'),name=name)
-            total = Detail.objects.filter(name=name)
-            finished = Detail.objects.filter(status='100%',name=name)
-            task = List.objects.filter(name=name)
-            if task:
-                task = task[0]
-                if running:
-                    usetime = now - int(float(task.start_time))
-                    task.usetime = utils.timers(usetime)
-                    task.status = '执行中(%s/%s)'%(len(finished),len(total))
-                    task.save()
-                else:
-                    usetime = now - int(float(task.start_time))
-                    task.usetime = utils.timers(usetime)
-                    task.status = '完成'
-                    mail        = task.notice_mail
-                    name        = task.name
-                    task.save()
-                    if mail != '':
-                        __mail(name,mail)
-        return HttpResponse('True')
-    '''
-    PXE下裸机安装操作系统，客户机硬件信息同步更新请求处理逻辑
-    '''
-    if task_name == 'notice':
-        ip = request.META['REMOTE_ADDR']
-        vendor = request.GET.get('vendor','')
-        product = request.GET.get('product','')
-        ipmiip = request.GET.get('ipmiip','')
-        sn = request.GET.get('sn','')
+    # 无DHCP重装场景下，客户机请求更新IPMI地址的处理逻辑
+    elif task_name == 'update':
+        ipmi_ip = request.GET.get('ipmiip',None)
+        if not ipmi_ip:
+            return HttpResponse('False')
         subtasks = Detail.objects.filter(ip=ip)
         for subtask in subtasks:
-            if subtask.ip == ip and subtask.hardware_model =='wait':
-                vendor = re.sub('~',' ',vendor)
-                product = re.sub('~',' ',product)
-                sn = re.sub('~',' ',sn)
-                ipmiip = re.sub('~',' ',ipmiip)
-                subtask.vendor = vendor
-                subtask.hardware_model = product
-                subtask.hardware_sn = sn
-                subtask.ipmi_ip = ipmiip
+            if subtask.ip == request.META['REMOTE_ADDR']:
+                ipmi_ip = re.sub('~',' ',ipmi_ip)
+                subtask.ipmi_ip = ipmi_ip
                 subtask.save()
-        return HttpResponse('True')
+        return HttpResponse('ok')
+    else:
+        return HttpResponse('非法请求')
+    # action 用于判断请求类型，有效类型<'usetime','progress'>
+    action = request.GET.get('k','')
     if action == 'usetime':
         return HttpResponse(usetime)
-    if action == 'progress':
+    elif action == 'progress':
         return HttpResponse(progress)
-    return HttpResponse('False')
+    else:
+        return HttpResponse('')
 # ======================================================================
 
 @require_POST
@@ -655,35 +609,126 @@ def discover_hosts(request):
             if report:
                 report[0].updtae_time = now
                 report[0].save()
-                return HttpResponse(simplejson.dumps({'result':'update'},ensure_ascii=False),content_type="application/json,charset=utf-8")
+                return HttpResponse(simplejson.dumps({'result':'update'},ensure_ascii=False))
             data['create_time'] = now
             data['updtae_time'] = now
             report = Report(**data)
             report.save()
         except Exception,e:
-            return HttpResponse(simplejson.dumps({'result':str(e)},ensure_ascii=False),content_type="application/json,charset=utf-8")
+            return HttpResponse(simplejson.dumps({'result':'','info':str(e)},ensure_ascii=False))
         else:
             pass
+        data['result'] = 'ok'
+        data['info'] = '服务器接收数据正常'
         return HttpResponse(simplejson.dumps(data))
     else:
-        return HttpResponse(simplejson.dumps({'result':'no data'},ensure_ascii=False),content_type="application/json,charset=utf-8")
+        return HttpResponse(simplejson.dumps({'result':'','info':'no data'},ensure_ascii=False))
 # ======================================================================
-def install_queue(request,obj_name):
+
+@csrf_exempt
+def progress_api(request):
+    '''
+    客户机操作系统安装进度状态更新请求处理逻辑
+    '''
+    kw={'result':'','info':'NULL'}
+    data = request.body
+    is_match = re.findall("progress=",data)
+    #newdata = re.findall("(.*)progress=(.*)",data)
+    #kw['result'] = str(is_match) + str(type(is_match))
+    #kw['info'] = str(newdata) + str(type(newdata)) + str(data) + str(type(data))
+    #return HttpResponse(simplejson.dumps(kw))
+    if is_match:
+        # 兼容ubuntu下使用wget 进行post请求字符串不是JSON格式的情况
+        progress_list = re.findall(".*progress=(.*)",data)
+        progress = ''
+        #kw['result'] = str(progress) + str(type(progress))
+        #kw['info'] = str(progress_list) + str(type(progress_list))
+        #return HttpResponse(simplejson.dumps(kw))
+        for i in progress_list:
+            progress += i
+
+    else:
+        #kw['result'] = str(is_match) + str(type(is_match))
+        #kw['info'] = str(data) + str(type(data)) + 'else'
+        #return HttpResponse(simplejson.dumps(kw))
+        # 除ubuntu下更新请求外，其它所有请求应该是可以格式为JSON的字符串数据
+        try:
+            # 如字符串中含有单引号，将其改为双引号。否则将导致<str->dict>格式转换失败
+            progress = data.replace("'",'"')
+            progress = simplejson.loads(progress)
+            kw['info'] = progress
+        except Exception,e:
+            kw['info'] = str(e)
+            return HttpResponse(simplejson.dumps(kw))
+        else:
+            progress = progress.get('progress','no data')
+
     remote_ip = request.META['REMOTE_ADDR']
-    kw={'ip':remote_ip,'mac':obj_name,'status':'ready'}
-    if remote_ip and obj_name:
+    subtask = Detail.objects.filter(~Q(status='100%'),ip=remote_ip)
+    if subtask:
+        now = int(time.time())
+        subtask = subtask[0]
+        name    = subtask.name
+        status  = progress
+        usetime = now - int(float(subtask.start_time))
+        subtask.usetime= utils.timers(usetime)
+        subtask.status=re.sub('~',' ',status)
+        subtask.save()
+        running = Detail.objects.filter(~Q(status='100%',name=name))
+        total = Detail.objects.filter(name=name)
+        finished = Detail.objects.filter(status='100%',name=name)
+        tasks = List.objects.filter(name=name)
+        for task in tasks:
+            if running:
+                usetime = now - int(float(task.start_time))
+                if len(finished) == len(total):
+                    task.usetime = utils.timers(usetime)
+                    task.status = '完成'
+                else:
+                    task.usetime = utils.timers(usetime)
+                    task.status = '执行中(%s/%s)'%(len(finished),len(total))
+                task.save()
+            else:
+                usetime = now - int(float(task.start_time))
+                task.usetime = utils.timers(usetime)
+                task.status = '完成'
+                mail        = task.notice_mail
+                name        = task.name
+                task.save()
+                if mail != '':
+                    __mail(name,mail)
+        kw['result'] = 'ok'
+        kw['info']  = 'update success'
+    else:
+        kw['result'] = ''
+        kw['info']  = 'no running task'
+    return HttpResponse(simplejson.dumps(kw))
+# ======================================================================
+@require_POST
+@csrf_exempt
+def install_queue(request):
+    data = request.body
+    if data:
+        remote_ip = request.META['REMOTE_ADDR']
+        mac = simplejson.loads(data)
+        kw={'ip':remote_ip,'mac':mac['bootmac'],'status':'ready'}
         subtask = Detail.objects.filter(**kw)
         if subtask:
-            Report.objects.filter(ip=remote_ip,bootmac=obj_name).delete()
-            return HttpResponse(simplejson.dumps({'result':'ready'},ensure_ascii=False),content_type="application/json,charset=utf-8")
+            Report.objects.filter(ip=remote_ip,bootmac=mac['bootmac']).delete()
+            return HttpResponse(simplejson.dumps({'result':'ok','info':'已成功加入安装队列'},ensure_ascii=False))
         else:
-            return HttpResponse(simplejson.dumps({'result':'unready'},ensure_ascii=False),content_type="application/json,charset=utf-8")
-    return HttpResponse(simplejson.dumps({'result':'unready'},ensure_ascii=False),content_type="application/json,charset=utf-8")
+            return HttpResponse(simplejson.dumps({'result':'','info':'未加入安装队列'},ensure_ascii=False))
+    else:
+        return HttpResponse(simplejson.dumps({'result':'','info':'非法请求'},ensure_ascii=False))
 # ======================================================================
-def host_conf(request,obj_name):
-    remote_ip = request.META['REMOTE_ADDR']
-    kw={'ip':remote_ip,'mac':obj_name,'status':'ready'}
-    if remote_ip and obj_name:
+@require_POST
+@csrf_exempt
+def host_conf(request):
+    data = request.body
+    if data:
+        remote_ip = request.META['REMOTE_ADDR']
+        mac = simplejson.loads(data)
+        kw={'ip':remote_ip,'mac':mac['bootmac'],'status':'ready'}
         subtask = Detail.objects.filter(**kw)
         if len(subtask) == 1:
             subtask = subtask[0]
@@ -696,12 +741,13 @@ def host_conf(request,obj_name):
                 raid = task.raid
                 bios = task.bios
             else:
-                return HttpResponse(simplejson.dumps({'result':'unready'},ensure_ascii=False),content_type="application/json,charset=utf-8")
-            res = {'ipmi':ipmi,'raid':raid,'bios':bios,'system_name':system_name,'drive_path':drive_path}
+                return HttpResponse(simplejson.dumps({'result':'','info':'未找到匹配的任务'},ensure_ascii=False))
+            res = {'result':'ok','info':'正常获取配置','ipmi':ipmi,'raid':raid,'bios':bios,'system_name':system_name,'drive_path':drive_path}
             return HttpResponse(simplejson.dumps(res))
         else:
-            return HttpResponse(simplejson.dumps({'result':'unready'},ensure_ascii=False),content_type="application/json,charset=utf-8")
-    return HttpResponse(simplejson.dumps({'result':'unready'},ensure_ascii=False),content_type="application/json,charset=utf-8")
+            return HttpResponse(simplejson.dumps({'result':'','info':'非法请求'},ensure_ascii=False))
+    else:
+        return HttpResponse(simplejson.dumps({'result':'','info':'非法请求'},ensure_ascii=False))
 # ======================================================================
 def discover_list(request,page=None):
     if not oauth.test_user_authenticated(request): 
@@ -808,6 +854,9 @@ def discover_detail(request,obj_id=None):
         'meta'           : meta
     }))
     return HttpResponse(html)
+
+
+
 
 
 

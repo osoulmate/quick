@@ -3,6 +3,7 @@
 
 #platform=x86, AMD64, or Intel EM64T
 # System authorization information
+unsupported_hardware
 auth  --useshadow  --enablemd5
 # System bootloader configuration
 bootloader --location=mbr
@@ -76,6 +77,6 @@ $SNIPPET('cobbler_register')
 $SNIPPET('post_anamon')
 # Start final steps
 $SNIPPET('kickstart_done')
-curl $server/quick/install/notice/install_finish -o /dev/null
+curl -H "Content-Type: application/json" -X POST -d '{"progress":"100%"}' http://$server/quick/api/report_progress -o /dev/null
 # End final steps
 %end
