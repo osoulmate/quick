@@ -16,7 +16,7 @@ a platform of os management base Cobbler web
 ```
 yum install -y epel-release
 ```
-2. 安装pip工具
+2. 安装依赖包
 ```
 yum install -y python-pip
 pip install --index http://pypi.douban.com/simple/ paramiko --trusted-host pypi.douban.com
@@ -115,7 +115,6 @@ subnet 172.16.1.0 netmask 255.255.255.0 {
           } else if option pxe-system-type = 00:09 {
                   filename "grub/grub-x86_64.efi";
           } else {
-                  #filename "pxelinux.0";
                   filename "undionly.kpxe";
           }
      }
@@ -189,27 +188,28 @@ mysql> grant all privileges on *.* to root@'%'identified by 'root'; #把所有�
 mysql> create database quick;
 ```
 12. 复制 quick 文件夹到/usr/share目录下
+13. 复制quick_content到/var/www/目录下。
+14. 复制misc目录下所有文件到/var/www/cobbler/misc/目录下
+15. 复制quick.conf到/etc/httpd/conf.d/目录下
+16. 复制kickstarts目录下所有文件到/var/lib/cobbler/kickstarts/目录下
+17. 复制snippets目录下所有文件到/var/lib/cobbler/snippets/目录下
+18. 复制scripts目录下所有文件到/var/lib/cobbler/scripts/目录下
+
 ```
 cd /usr/share/quick
-mkdir sessions
-chown -R apache sessions/                                 #赋予apache用户读写sessions文件夹及其文件的权限
 chown apache extend/novnc/vnc_tokens                      #赋予apache用户读写vnc_tokens文件的权限
 python manage.py syncdb                                   #创建数据表
 mkdir /var/log/quick                                      #创建日志文件夹
 chown -R apache /var/log/quick                            #赋予apache用户读写/var/log/quick文件夹及其文件的权限
+chown -R apache /var/www/quick_content/temp               #赋予apache用户读写/var/www/quick_content/temp文件夹及其文件的权限
 修改agent目录下两个文件qios2.py qios3.py中QUICK_SERVER的值为本机IP
 ```
-13. 复制quick_content到/var/www/目录下。
-14. 复制misc目录下所有文件到/var/www/cobbler/misc/目录下
-15. 复制quick.conf到/etc/httpd/conf.d/目录下
-16. 复制kickstarts目录下所有文件 到 /var/lib/cobbler/kickstarts/目录下
-17. 复制snippets目录下所有文件到/var/lib/cobbler/snippets/目录下
-18. 复制scripts目录下所有文件到/var/lib/cobbler/scripts/目录下
+
 19. 重启apache服务
 ```
 systemctl restart httpd
 ```
-20. 创建管理平台登陆账号,使用浏览器访问`http://localhost/quick/add_web_users`
+20. 创建管理平台登陆账号,使用浏览器访问`http://localhost/quick/init`
 21. 启动webssh服务
 ```
 forever start /usr/share/quick/extend/webssh2/index.js
@@ -232,4 +232,16 @@ service novnc start                                   #启动novnc服务
 
 1. 在有DHCP网络环境下进行裸机系统安装时，要注意system中是否有多个名字不同的配置文件但主机MAC地址相同的情况。如果有，则要先删除无效的配置文件，否则裸机启动时获得的IP将与要分配的IP不一致。
 
-2. 在裸机新装场景下，当前bootos仅支持目标系统是redhat通过`kexec -e`切换至新内核，不支持susu、ubuntu等系统。对于目标系统为非redhat的安装场景，当前的qios_agent处理逻辑为向服务端发送sync请求，使服务端进行`cobbler sync`同步，以使已安装的system配置同步到dhcp配置文件。然后qios_agnet使当前主机再次重启，再次重启进将进入传统PXE启动场景后，自动加载`/var/lib/tftp/pxelinux.cfg/`目录下与本机匹配的配置文件进行网络启动，并开始正式的安装进程。
+2. 裸机新装场景下，创建新的装机任务时，最好先将旧的system配置文件删除，并同步下配置(cobbler sync)。当前BootOS内置的代理程序会根据启动命令行中enable_kexec的参数值来判断硬件配置完成后的处理逻辑。参数值为[redhat|suse|ubuntu]，参数值以`/`分割。当安装的目标系统是redhat发行版时，如果enable_kexec的参数值含有redhat，那么硬件配置完成后，代理程序将通过`kexec -e`进行系统安装，否则，代理程序将强制客户机重启。重启后，由于服务端已有该客户机的配置，再次PXE启动将直接进行安装进程。
+
+**待改进**
+
+1. qios2.py,qios3.py 取消当前直接将cobbler接口地址，用户名，密码直接暴露给客户端的方式，改由客户端通过POST请求将所需数据发送给服务端，由服务端验证客户端身份后进行配置，服务端可以根据请求IP、请求MAC是否在本地CMDB数据库中进行主机身份验证。验证通过，则根据主机提交的数据进行配置，配置成功后，响应客户端json格式数据。客户端（即qios2.py或qios3.py）根据回复结果进行后续处理。该API接口为:`quick/api/request_to_config`
+
+2. 新增下载qios2.py,qios3.py的方法，该API接口为:`quick/qios2`,`quick/qios3`
+
+3. 任务详情、任务列表下已用时间和状态字段的AJAX更新请求取消当前的由各个任务或各个主机单独发送更新请求的方式，改由统一的AJAX更新进行更新请求。获取的结果再由客户端JS进行对应视图的更新，以减少服务器的开销。统一的AJAX请求API接口为`quick/api/status`。当从服务端获知当前已没有在执行的任务时，AJAX请求将停止
+
+4. 虚拟化功能的完善
+
+5. 完善各视图的操作日志记录
