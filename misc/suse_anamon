@@ -15,11 +15,11 @@ do
             if [ -n "$install_progress_log" ];then
                 log=$(echo "$install_progress_log"|cut -d" " -f7-)
                 log=$(echo $log|sed -e "s/ /~/g")
-                log=$(echo $log|sed -e"s/\%/\%25/g")
+                log=$(echo $log|sed -e"s/\%/\%/g")
             elif [[ -n "$downloaded_log" ]]; then
                 log=$(echo "$downloaded_log"|cut -d" " -f7-)
                 log=$(echo $log|sed -e "s/ /~/g")
-                log=$(echo $log|sed -e"s/\%/\%25/g")
+                log=$(echo $log|sed -e"s/\%/\%/g")
             else
                 log=$(tail -n 1 /var/log/YaST2/y2log|grep "[YCP]")
                 log=$(echo "$log"|cut -d" " -f7-)
