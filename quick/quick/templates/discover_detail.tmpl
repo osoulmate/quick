@@ -163,7 +163,15 @@
                                             {% else %}
                                             <tr>
                                                <td class="active" align="right" width="20%"><label>{{ item.0 }}</label></td>
-                                               <td width="80%"><div class="col-md-12">{{ item.1 }}</div></td>
+                                               <td width="80%">
+                                               <div class="col-md-12">
+                                               {% if item.2 == 'nic_model' or item.2 == 'ipmi' %}
+                                               <pre>{{ item.1 }}</pre>
+                                               {% else %}
+                                               {{ item.1 }}
+                                               {% endif %}
+                                               </div>
+                                               </td>
                                             </tr>
                                             {% endif %}
                                             {% endfor %}
@@ -182,5 +190,6 @@
                 </div>
             </div>
 {% endblock content %}
+
 
 

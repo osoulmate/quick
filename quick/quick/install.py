@@ -706,6 +706,33 @@ def progress_api(request):
 # ======================================================================
 @require_POST
 @csrf_exempt
+def sync_api(request):
+    data = request.body
+    if data:
+        remote_ip = request.META['REMOTE_ADDR']
+        mac = simplejson.loads(data)
+        kw={'ip':remote_ip,'mac':mac['bootmac']}
+        subtask = Detail.objects.filter(**kw)
+        if subtask:
+            try:
+                import xmlrpclib
+                import cobbler.utils as cobbler_utils
+                shared_secret = cobbler_utils.get_shared_secret()
+                url_cobbler_api = cobbler_utils.local_get_cobbler_api_url()
+                remote = xmlrpclib.Server(url_cobbler_api, allow_none=True)
+                cobbler_token = remote.login("",shared_secret)
+                remote.background_sync({"verbose":"True"},cobbler_token)
+            except Exception,e:
+                return HttpResponse(simplejson.dumps({'result':'','info':str(e)},ensure_ascii=False))
+            else:
+                return HttpResponse(simplejson.dumps({'result':'ok','info':'success sync'},ensure_ascii=False))
+        else:
+            return HttpResponse(simplejson.dumps({'result':'','info':'not join install queue'},ensure_ascii=False))
+    else:
+        return HttpResponse(simplejson.dumps({'result':'','info':'illegal request'},ensure_ascii=False))
+# ======================================================================
+@require_POST
+@csrf_exempt
 def install_queue(request):
     data = request.body
     if data:
@@ -715,11 +742,11 @@ def install_queue(request):
         subtask = Detail.objects.filter(**kw)
         if subtask:
             Report.objects.filter(ip=remote_ip,bootmac=mac['bootmac']).delete()
-            return HttpResponse(simplejson.dumps({'result':'ok','info':'已成功加入安装队列'},ensure_ascii=False))
+            return HttpResponse(simplejson.dumps({'result':'ok','info':'success join install queue'},ensure_ascii=False))
         else:
-            return HttpResponse(simplejson.dumps({'result':'','info':'未加入安装队列'},ensure_ascii=False))
+            return HttpResponse(simplejson.dumps({'result':'','info':'not join install queue'},ensure_ascii=False))
     else:
-        return HttpResponse(simplejson.dumps({'result':'','info':'非法请求'},ensure_ascii=False))
+        return HttpResponse(simplejson.dumps({'result':'','info':'illegal request'},ensure_ascii=False))
 # ======================================================================
 @require_POST
 @csrf_exempt
@@ -741,13 +768,13 @@ def host_conf(request):
                 raid = task.raid
                 bios = task.bios
             else:
-                return HttpResponse(simplejson.dumps({'result':'','info':'未找到匹配的任务'},ensure_ascii=False))
-            res = {'result':'ok','info':'正常获取配置','ipmi':ipmi,'raid':raid,'bios':bios,'system_name':system_name,'drive_path':drive_path}
+                return HttpResponse(simplejson.dumps({'result':'','info':'no find match task'},ensure_ascii=False))
+            res = {'result':'ok','info':'Get configure success!','ipmi':ipmi,'raid':raid,'bios':bios,'system_name':system_name,'drive_path':drive_path}
             return HttpResponse(simplejson.dumps(res))
         else:
-            return HttpResponse(simplejson.dumps({'result':'','info':'非法请求'},ensure_ascii=False))
+            return HttpResponse(simplejson.dumps({'result':'','info':'illegal request'},ensure_ascii=False))
     else:
-        return HttpResponse(simplejson.dumps({'result':'','info':'非法请求'},ensure_ascii=False))
+        return HttpResponse(simplejson.dumps({'result':'','info':'illegal request'},ensure_ascii=False))
 # ======================================================================
 def discover_list(request,page=None):
     if not oauth.test_user_authenticated(request): 
@@ -837,12 +864,12 @@ def discover_detail(request,obj_id=None):
                     memorys.append([k,v])
                 items.append([field.verbose_name,memorys,field.name])
             elif field.name == 'disk':
+                device_type = getattr(host,'device_type','虚拟机')
                 for k,v in value.items():
-                    device_type = getattr(host,'device_type','虚拟机')
                     if device_type == '虚拟机':
                         disks.append([k.replace('DISK',u'硬盘'),value[k]['capacity']])
                     else:
-                        disks.append([k.replace('DISK',u'硬盘'),value[k]['solt'],value[k]['capacity'],value[k]['type'],value[k]['vendor'],value[k]['wwn'],value[k]['state']])
+                        disks.append([k.replace('DISK',u'硬盘'),value[k].get('solt',''),value[k].get('capacity',''),value[k].get('type',''),value[k].get('vendor',''),value[k].get('wwn',''),value[k].get('state')])
                 items.append([field.verbose_name,disks,field.name,device_type])
             else:
                 items.append([field.verbose_name,getattr(host,field.name,''),field.name])
@@ -854,6 +881,7 @@ def discover_detail(request,obj_id=None):
         'meta'           : meta
     }))
     return HttpResponse(html)
+
 
 
 

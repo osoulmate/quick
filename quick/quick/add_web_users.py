@@ -223,9 +223,9 @@ def add_web_users(request):
                 elif group.name == '应用资产组':
                     have_rights = ["general_modifylist_1","general_modifylist_2","index","app_view","app_view_edit","app_view_edit_batch","app_view_new","app_view_save","app_view_del","app_view_batch_action","asset_import","asset_export","general_ajax","user_chg_pwd","user_info","my_save"]
                 elif group.name == '硬件资产组':
-                    have_rights = ["discover_detail","discover_device","general_modifylist_1","general_modifylist_2","index","hardware_view","hardware_view_edit","hardware_view_edit_batch","hardware_view_new","hardware_view_save","hardware_view_delete","hardware_view_batch_action","asset_import","asset_export","general_ajax","user_chg_pwd","user_info","my_save"]
+                    have_rights = ["general_modifylist_1","general_modifylist_2","index","hardware_view","hardware_view_edit","hardware_view_edit_batch","hardware_view_new","hardware_view_save","hardware_view_delete","hardware_view_batch_action","asset_import","asset_export","general_ajax","user_chg_pwd","user_info","my_save"]
                 elif group.name == '系统安装组':
-                    have_rights = ["distros_list","profiles_list","distros_edit","distros_new","distros_save","profiles_edit","profiles_new","profiles_save","general_batch_action","general_del","index","install_modifylist","envent_log","systems_list","create_task","task_list","task_detail","task_history","edit_task","save_task","notice_task","execute_task","del_task","batch_action_task","general_ajax","user_chg_pwd","user_info","my_save","systems_edit","systems_new","systems_save","check_config","update_config","general_rename","general_copy","general_eventlog","general_iplist","general_task_created","general_reposync","general_replicate","general_hardlink","general_random_mac","general_random_mac_type"]
+                    have_rights = ["discover_detail","discover_device","distros_list","profiles_list","distros_edit","distros_new","distros_save","profiles_edit","profiles_new","profiles_save","general_batch_action","general_del","index","install_modifylist","envent_log","systems_list","create_task","task_list","task_detail","task_history","edit_task","save_task","notice_task","execute_task","del_task","batch_action_task","general_ajax","user_chg_pwd","user_info","my_save","systems_edit","systems_new","systems_save","check_config","update_config","general_rename","general_copy","general_eventlog","general_iplist","general_task_created","general_reposync","general_replicate","general_hardlink","general_random_mac","general_random_mac_type"]
                 elif group.name == '资源组':
                     have_rights = ["ip_pool","storage_pool","general_modifylist_1","general_modifylist_2","index","user_chg_pwd","user_info","my_save","ip_pool_edit","ip_pool_new","ip_pool_save","ip_pool_delete","ip_pool_batch_action","storage_pool_edit","storage_pool_new","storage_pool_save","storage_pool_delete","storage_pool_batch_action"]
                 elif group.name == '审计组':
@@ -244,6 +244,7 @@ def add_web_users(request):
         return HttpResponse("异常:%s"%str(e))
     else:
         return HttpResponse('已成功添加web用户账号(root:rootpwd!)')
+
 
 
 

@@ -37,6 +37,7 @@ urlpatterns = patterns('',
     (r'^api/install_queue$', install.install_queue),
     (r'^api/request_host_conf$', install.host_conf),
     (r'^api/report_progress$', install.progress_api),
+    (r'^api/request_sync$', install.sync_api),
     (r'^install/discover/list(/(?P<page>\d+))?', install.discover_list),
     (r'^install/discover/detail(/(?P<obj_id>\d+))?', install.discover_detail),
 
@@ -126,6 +127,7 @@ urlpatterns = patterns('',
     (r'^(?P<what>\w+)/save$', views.generic_save),
 
 )
+
 
 
 
