@@ -1,35 +1,73 @@
 {% extends "master.tmpl" %}
-
 {% block content %}
-
-<h1>Events</h1>
-<hr />
-{% if results %}
-<table id="listitems" cellspacing="0">
-  <thead>
-    <tr>
-      <th></th>
-      <th width="40%">时间</th>
-      <th width="20%">任务名称</th>
-      <th width="20%">状态</th>
-      <th width="20%">日志</th>
-    </tr>
-  </thead>
-  <tbody>
-  {% for line in results reversed %}
-    <tr class="{% cycle 'rowodd' 'roweven' %}">
-      <td></td>
-      <td>{{ line.1|safe }}</td>
-      <td>{{ line.2|safe }}</td>
-      <td>{{ line.3|safe }}</td>
-      <td><a action="class" href="/quick/eventlog/{{ line.0 }}">日志详情</a></td>
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<h2>No events</h2>
-{% endif %}
-
-{% endblock %}
+<form id="action" method="POST" action="">{% csrf_token %}</form>
+            <div class="content">
+                <div class="page-inner">
+                    <div class="page-header">
+                        <h4 class="page-title">日志</h4>
+                        <ul class="breadcrumbs">
+                            <li class="nav-home">
+                                <a href="/quick">
+                                    <i class="flaticon-home"></i>
+                                </a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">日志</a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">Events</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">日志列表</h4>
+                                    <p class="card-category">显示最近24小时内的更新日志</p>
+                                </div>
+                                <div class="card-body">
+                                    <p class="demo">
+                                          <div class="table-responsive" id="listitems">
+                                          {% if results %}
+                                          <table class="table table-bordered">
+                                            <thead>
+                                              <tr>
+                                                <th width="50px">序号</th>
+                                                <th width="30%">时间</th>
+                                                <th width="20%">任务名称</th>
+                                                <th width="20%">状态</th>
+                                                <th width="20%">日志</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for line in results reversed %}
+                                              <tr>
+                                                <td>{{forloop.counter}}</td>
+                                                <td>{{ line.1|safe }}</td>
+                                                <td>{{ line.2|safe }}</td>
+                                                <td>{{ line.3|safe }}</td>
+                                                <td><a action="btn btn-primary" href="/quick/eventlog/{{ line.0 }}">日志详情</a></td>
+                                              </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                          </table>
+                                          {% else %}
+                                          <h2>No events</h2>
+                                          {% endif %}
+                                          </div>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+{% endblock content %}
 

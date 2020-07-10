@@ -1,13 +1,45 @@
-{% extends 'master.tmpl' %}
+{% extends "master.tmpl" %}
 {% block content %}
-
-<h1>{{ eventid }} : {{ eventname }} :: {{ eventstate }}</h1>
-<hr />
-<textarea name="eventlog" id="eventlog">
-{{ eventlog }}
-</textarea>
-<br />
-<a href="javascript:location.reload(true)">刷新日志</a>
-
+<form id="action" method="POST" action="">{% csrf_token %}</form>
+            <div class="content">
+                <div class="page-inner">
+                    <div class="page-header">
+                        <h4 class="page-title">日志</h4>
+                        <ul class="breadcrumbs">
+                            <li class="nav-home">
+                                <a href="/quick">
+                                    <i class="flaticon-home"></i>
+                                </a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">日志</a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">日志详情</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title"><a class="btn btn-primary" href="javascript:location.reload(true)">刷新日志</a></div>
+                                    <p class="card-category">{{ eventid }} : {{ eventname }} :: {{ eventstate }}</p>
+                                </div>
+                                <div class="card-body">
+                                    <textarea class="form-control" id="eventlog" rows="15">{{ eventlog }}
+                                    </textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 {% endblock content %}
 

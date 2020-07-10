@@ -1,0 +1,10 @@
+#!ipxe
+prompt --key 0x02 --timeout 2000 Hi,Welcome to use Qios. Press Ctrl-B for the iPXE command line... && shell ||
+ifopen
+set 210:string http://${next-server}/quick_content/bootos/
+set 209:string pxelinux.cfg/default
+set 208:hex f1:00:74:7e
+set filename ${210:string}pxelinux.0
+chain ${filename} ||
+echo Booting ${filename} failed, dropping to shell
+shell

@@ -1,68 +1,131 @@
 {% extends "master.tmpl" %}
 {% block content %}
 <form id="action" method="POST" action="">{% csrf_token %}</form>
-<script src="/quick_content/quick.js" type="text/javascript"></script>
-<h1>用户列表</h1>
-<hr />
-<ul id="submenubar">
-  <li>
-    <a class="action" href="/quick/user/edit">添加用户</a>
-  </li>
-  <li>
-    <select id="batchactions">
-      <option value="" selected="selected">批量操作</option>
-      {% for title,action,value in batchactions %}<option value="{{ action }}|{{ value }}">{{ title }}</option>{% endfor %}
-    </select>
-    <input class="button" type="button" value="执行" onclick="javascript:action_multi('{{ what }}')" />
-  </li>
-  {% include "paginate.tmpl" %}
-</ul>
+            <div class="content">
+                <div class="page-inner">
+                    <div class="page-header">
+                        <h4 class="page-title">用户管理</h4>
+                        <ul class="breadcrumbs">
+                            <li class="nav-home">
+                                <a href="/quick">
+                                    <i class="flaticon-home"></i>
+                                </a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">用户管理</a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                {% ifequal what "user/user" %}
+                                <a href="/quick/user/user/list">用户列表</a>
+                                {% endifequal %}
+                                {% ifequal what "user/role" %}
+                                <a href="/quick/user/role/list">角色列表</a>
+                                {% endifequal %}
+                                {% ifequal what "user/right" %}
+                                <a href="/quick/user/right/list">权限列表</a>
+                                {% endifequal %}
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-head-row">
+                                        <div class="card-title">
+                                          <a class="btn btn-primary" href="/quick/{{what}}/edit">
+                                          {% ifequal what "user/user" %}添加用户{% endifequal %}
+                                          {% ifequal what "user/role" %}添加角色{% endifequal %}
+                                          {% ifequal what "user/right" %}添加权限{% endifequal %}
+                                          </a>
+                                        {% for title,action,value in batchactions %}
+                                        <a class="btn btn-primary" href="javascript:;" value="{{ action }}|{{ value }}" onclick="javascript:action_multi_new('{{ what }}','{{ action }}','{{ value }}')">{{ title }}</a>
+                                        {% endfor %}
+                                        </div>
+                                        <div class="card-tools">
+                                          {% include "paginate.tmpl" %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p class="demo">
+                                        <form name="myform" method="post" action="/quick/{{ what }}/action">
+                                          {% csrf_token %}
+                                          <div class="table-responsive">
+                                          <table class="table table-bordered">
+                                            <thead>
+                                              <tr>
+                                                <th>
+                                                  <input type="checkbox" id="itemsall" onclick="javascript:items_check_all();" />
+                                                  <label for="itemsall"> <i></i></label> 
+                                                </th>
+                                              {% for value in columns %}
+                                                <th>
+                                                  <a href="javascript:action_sort('{{ what }}','{{ value.0 }}');">{{ value.2 }}</a>
+                                                  {% ifequal value.1 "asc" %}&darr;{% endifequal %}
+                                                  {% ifequal value.1 "desc" %}&uarr;{% endifequal %}
+                                                </th>
+                                              {% endfor %}
+                                                <th style="width:220px;"><a href="javascript:;">操作</a></th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for item in items %}
+                                              <tr>
+                                                <td>
+                                                  <input type="checkbox" name="items" id="{{ item.0.1 }}" value="{{ item.0.1 }}" onclick="javascript:items_check(this);" />
+                                                  <label for="{{ item.0.1 }}"> <i></i></label> 
+                                                </td>
+                                                {% for value in item %}
+                                                <td>
 
-<form name="myform" method="post" action="/quick/user/action">
-  {% csrf_token %}
-  <table id="listitems" cellspacing="0">
-    <thead>
-      <tr>
-        <th>
-          <input type="checkbox" id="itemsall" onclick="javascript:items_check_all();" />
-        </th>
-        {% for value in columns %}
-        <th>
-          <a href="javascript:action_sort('{{ what }}','{{ value.0 }}');">{{ value.2 }}</a>
-          {% ifequal value.1 "asc" %}&darr;{% endifequal %}
-          {% ifequal value.1 "desc" %}&uarr;{% endifequal %}
-        </th>
-        {% endfor %}
-        <th>操作</th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for item in items %}
-    <tr class="{% cycle 'rowodd' 'roweven' %}">
-        <td><input type="checkbox" name="items" value="{{ item.0.1 }}" onclick="javascript:items_check(this);" /></td>
-    {% for value in item %}
-        <td>
-            {% if value.1 == 'yes' %}是
-            {% elif value.1 == 'no' %}否
-            {% elif value.1 == 'enable' %}启用
-            {% elif value.1 == 'disable' %}禁用
-            {% elif value.1 == 'online' %}在线
-            {% elif value.1 == 'offline' %}离线
-            {% else %} {{value.1}}
-            {% endif %}
-        </td>
-    {% endfor %}
-        <td>
-          <a class="action" href="/quick/user/edit/{{ item.0.1 }}">编辑</a>
-          <span class="action" onClick="javascript:user_offline('{{ item.0.1 }}')">强制下线</span>
-          <span class="action" onClick="javascript:user_delete('{{ item.0.1 }}')">删除</span>
-        </td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  <input type="hidden" name="names" id="names" value=""/>
-</form>
-{% include "filter.tmpl" %}
+                                                    {% if value.1 == 'yes' %}
+                                                    {% ifequal value.0  'is_active' %}启用
+                                                    {% else %} 是
+                                                    {% endifequal %}
+                                                    {% elif value.1 == 'no' %}
+                                                    {% ifequal value.0 'is_active' %}禁用
+                                                    {% else %} 否
+                                                    {% endifequal %}
+                                                    {% else %} {{value.1}}
+                                                    {% endif %}
+                                                </td>
+                                                {% endfor %}
+                                                <td>
+                                                  <a class="btn btn-primary btn-sm" href="/quick/{{ what }}/edit/{{ item.0.1 }}">编辑</a>
+                                                  <span class="btn btn-primary btn-sm" onClick="javascript:obj_execute('/quick/{{ what }}/delete/{{ item.0.1 }}','删除?','action')">删除</span>
+                                                  {% ifequal what "user/user" %}
+                                                  <span class="btn btn-primary btn-sm" onClick="javascript:obj_execute('/quick/{{ what }}/offline/{{ item.0.1 }}','强制该用户下线?','action')">强制下线</span>
+                                                  {% endifequal %}
+                                                </td>
+                                              </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                          </table>
+                                          </div>
+                                          <input type="hidden" name="names" id="names" value=""/>
+                                        </form>
+                                        {% include "filter.tmpl" %}
+                                    </p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
 {% endblock content %}
+
+
+
+
+
+
+
 

@@ -1,67 +1,95 @@
 {% extends "master.tmpl" %}
 {% block content %}
-
 <form id="action" method="POST" action="">{% csrf_token %}</form>
-<script src="/quick_content/quick.js" type="text/javascript"></script>
-<h1>任务历史</h1>
-<hr />
-<ul id="submenubar">
-  <li>
-    <a class="action" href="/quick/task/edit">创建任务</a>
-  </li>
-  <li>
-    <select id="batchactions">
-      <option value="" selected="selected">批量操作</option>
-      {% for title,action,value in batchactions %}<option value="{{ action }}|{{ value }}">{{ title }}</option>{% endfor %}
-    </select>
-    <input class="button" type="button" value="执行" onclick="javascript:action_multi('{{ what }}')" />
-  </li>
-  {% include "paginate.tmpl" %}
-</ul>
+            <div class="content">
+                <div class="page-inner">
+                    <div class="page-header">
+                        <h4 class="page-title">系统安装</h4>
+                        <ul class="breadcrumbs">
+                            <li class="nav-home">
+                                <a href="/quick">
+                                    <i class="flaticon-home"></i>
+                                </a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">系统安装</a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">历史任务</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-head-row">
+                                        <div class="card-title">
+                                        <a class="btn btn-primary" href="/quick/install/edit">创建任务</a>
+                                        {% for title,action,value in batchactions %}
+                                        {% if action == "delete" %}
+                                        <a class="btn btn-primary" id="batchactions" href="javascript:;" value="{{ action }}|{{ value }}" onclick="javascript:action_multi_new('{{ what }}')">{{ title }}</a>
+                                        {% endif %}
+                                        {% endfor %}
+                                        </div>
+                                        <div class="card-tools">
+                                          {% include "paginate.tmpl" %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p class="demo">
+                                        <form name="myform" method="post" action="/quick/{{ what }}/action">
+                                          {% csrf_token %}
+                                          <div class="table-responsive" id="listitems">
+                                          <table class="table table-bordered">
+                                            <thead>
+                                              <tr>
+                                                <th>
+                                                  <input type="checkbox" id="itemsall" onclick="javascript:items_check_all();" />
+                                                  <label for="itemsall"> <i></i></label> 
+                                                </th>
+                                                {% for value in columns %}
+                                                <th>
+                                                  <a href="javascript:action_sort('{{ what }}','{{ value.0 }}');">{{ value.2 }}</a>
+                                                  {% ifequal value.1 "asc" %}&darr;{% endifequal %}
+                                                  {% ifequal value.1 "desc" %}&uarr;{% endifequal %}
+                                                </th>
+                                                {% endfor %}
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for item in items %}
+                                            <tr>
+                                                <td>
+                                                  <input type="checkbox" name="items" id="{{ item.0.1 }}" value="{{ item.0.1 }}" onclick="javascript:items_check(this);" />
+                                                  <label for="{{ item.0.1 }}"> <i></i></label> 
+                                                </td>
+                                            {% for value in item %}
+                                              <td title="{{ value.1 }}">{{ value.1 }}</td>
+                                            {% endfor %}
+                                              </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                          </table>
+                                          </div>
+                                          <input type="hidden" name="names" id="names" value=""/>
+                                        </form>
+                                    </p>
+                                </div>
+                            </div>
 
-<form name="myform" method="post" action="/quick/task/action">
-  {% csrf_token %}
-  <table id="listitems" cellspacing="0">
-    <thead>
-      <tr>
-        <th>
-          <input type="checkbox" id="itemsall" onclick="javascript:items_check_all();" />
-        </th>
-        {% for value in columns %}
-        <th>
-          <a href="javascript:action_sort('{{ what }}','{{ value.0 }}');">{{ value.2 }}</a>
-          {% ifequal value.1 "asc" %}&darr;{% endifequal %}
-          {% ifequal value.1 "desc" %}&uarr;{% endifequal %}
-        </th>
-        {% endfor %}
-      </tr>
-    </thead>
-    <tbody>
-    {% for item in items %}
-    <tr class="{% cycle 'rowodd' 'roweven' %}">
-        <td><input type="checkbox" name="items" value="{{ item.0.1 }}" onclick="javascript:items_check(this);" /></td>
-    {% for value in item %}
-        {% ifequal value.0 "name" %}
-        <td><a href="/quick/task/edit/{{ value.1 }}">{{ value.1 }}</a></td>
-        {% endifequal %}
-
-        {% ifequal value.2 "editlink" %}
-          {% ifnotequal value.1 "~" %}
-          <td><a target="_blank" href="http://192.168.31.102:8022/ssh/host/{{ value.1 }}">{{ value.1 }}</a></td>
-          {% endifnotequal %}
-        {% endifequal %}
-        
-        {% if value.2 == "text" %}
-        <td>{{ value.1 }}</td>
-        {% endif %}
-    {% endfor %}
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  <input type="hidden" name="names" id="names" value=""/>
-</form>
-{% include "filter.tmpl" %}
-
+                        </div>
+                    </div>
+                </div>
+            </div>
 {% endblock content %}
+
+
 

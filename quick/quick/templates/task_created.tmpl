@@ -1,12 +1,45 @@
 {% extends "master.tmpl" %}
-
 {% block content %}
-
-<h1>任务队列</h1>
-<hr />
-
+<form id="action" method="POST" action="">{% csrf_token %}</form>
+            <div class="content">
+                <div class="page-inner">
+                    <div class="page-header">
+                        <h4 class="page-title">系统设置</h4>
+                        <ul class="breadcrumbs">
+                            <li class="nav-home">
+                                <a href="/quick">
+                                    <i class="flaticon-home"></i>
+                                </a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">系统设置</a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">更新配置</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">任务提示</h4>
+                                </div>
+                                <div class="card-body">
+                                    <p class="demo">
 您执行的操作已放入后台运行，完成后将在本页面右上角弹出提示信息。您也可以点击<a href="/quick/events" sytle="color:blue;">任务日志</a>进行查看
-
-{% endblock %}
-
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+{% endblock content %}
 

@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 02110-1301  USA
 """
 from __future__ import print_function
-QUICK_SERVER = 'localhost'
+QUICK_SERVER = '172.16.1.10'
 QUICK_USER   = 'cobbler'
 QUICK_PASS   = 'cobbler'
 import os
@@ -37,6 +37,8 @@ try:
     except:
         import sub_process
     import urllib2
+    import urllib
+    import json
 except:
     # the main "replace-self" codepath of qios must support
     # Python 1.5.  Other sections may use 2.3 features (nothing newer)
@@ -718,17 +720,39 @@ def host_info():
     serial_number = popen("sudo /usr/sbin/dmidecode -s system-serial-number")
     comment={'product_name':product_name, 'sn':serial_number}
     return ifdatas,ip,gateway,comment
-def notice_server(strdata,server,report=None):
+def notice_server(strdata,server,report=True):
     if server and report:
+        url = 'http://%s/quick/api/report_progress'%server
         strdata=re.sub('\s+','~',strdata)
+        progress = {"progress":strdata}
         try:
-            subprocess_call([
-                            'curl',
-                            '%s/quick/task/notice/install_%s'%(server,strdata)
-                        ])
+            call_rest_api(url,progress)
         except:
             traceback.print_exc()
             return None
+def call_rest_api(url,data=None):
+    #print(json.dumps(data,ensure_ascii=False))
+    if not url or not isinstance(data,dict):
+        html_json = {"result":""}
+    try:
+        headers = {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1","Content-Type":"application/json"}
+        request = urllib2.Request(url,data=json.dumps(data,ensure_ascii=False),headers=headers) 
+        response = urllib2.urlopen(request)
+    except Exception,e:
+        print("错误:%s"%str(e))
+        html_json = {"result":""}
+    else:
+        html = response.read()
+        try:
+            html_json = json.loads(html)
+        except Exception,e:
+            print("%s 不是字典类型"%html)
+            html_json = {"result":""}
+        else:
+            print("data:%s,响应码:%s,请求url:%s,头信息:%s"%(html_json,response.getcode(),response.geturl(),response.info()))
+    finally:
+        return html_json
 #=======================================================
 
 class InfoException(exceptions.Exception):
@@ -1044,6 +1068,7 @@ class Qios:
             self.logger.info(strdata)
             notice_server(strdata,self.server,self.report)
             if self.reboot:
+                notice_server("- booting new kernel",self.server,self.report)
                 subprocess_call(['kexec','-e'])
         return self.net_install(after_download)
 
@@ -1517,3 +1542,5 @@ EOF
 
 if __name__ == "__main__":
     main()
+
+

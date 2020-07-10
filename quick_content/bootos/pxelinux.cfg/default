@@ -1,0 +1,10 @@
+DEFAULT menu
+PROMPT 0
+TIMEOUT 30
+ONTIMEOUT Qios
+LABEL Qios
+  MENU LABEL ^Qios
+  MENU DEFAULT
+  KERNEL http://172.16.1.10/quick_content/bootos/vmlinuz
+  APPEND initrd=http://172.16.1.10/quick_content/bootos/initrd.img  console=tty0 selinux=0 biosdevname=0  QUICK_SERVER=172.16.1.10 LOOPINTERVAL=15 ENABLE_KEXEC=redhat QUICK_PRE=http://172.16.1.10/quick_content/bootos/pre.sh QUICK_POST=http://172.16.1.10/quick_content/bootos/post.sh
+  IPAPPEND 2

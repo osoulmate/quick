@@ -1,4 +1,4 @@
-# Django settings for qios(quilkly install os) project.
+# Django settings for QUICK project.
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -28,8 +28,8 @@ DEFAULT_CHARSET = 'utf-8'
 SITE_ID = 1
 
 # not used
-MEDIA_ROOT = ''
-MEDIA_URL = ''
+MEDIA_ROOT = '/var/www/quick_content/temp/'
+MEDIA_URL = '/media/'
 
 if django.VERSION[0] == 1 and django.VERSION[1] < 4:
     ADMIN_MEDIA_PREFIX = '/media/'
@@ -39,8 +39,8 @@ else:
 SECRET_KEY = 'K/YO3Psl+ulFWz1A+nJdoTe8ihso0DaBIb59Uxn36RBpEtKSx8WVYg=='
 EMAIL_HOST = 'smtp.163.com'
 EMAIL_PORT = 25
-EMAIL_HOST_USER = 'yourname@163.com'
-EMAIL_HOST_PASSWORD = 'yourpassword'
+EMAIL_HOST_USER = 'yourmail@163.com'
+EMAIL_HOST_PASSWORD = 'yourmailpassword'
 # code config
 
 if django.VERSION[0] == 1 and django.VERSION[1] < 4:
@@ -104,5 +104,7 @@ TEMPLATE_CONTEXT_PROCESSORS += (
      'django.core.context_processors.request',
 )
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.file'
-SESSION_FILE_PATH = '/usr/share/quick/sessions'
+#SESSION_ENGINE = 'django.contrib.sessions.backends.file'
+#SESSION_FILE_PATH = '/usr/share/quick/sessions'
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+

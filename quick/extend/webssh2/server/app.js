@@ -7,7 +7,6 @@ var fs = require('fs')
 var nodeRoot = path.dirname(require.main.filename)
 var configPath = path.join(nodeRoot, 'config.json')
 var publicPath = path.join(nodeRoot, 'client', 'public')
-console.log('WebSSH2 service reading config from: ' + configPath)
 var express = require('express')
 var logger = require('morgan')
 
@@ -15,7 +14,7 @@ var logger = require('morgan')
 let config = {
   'listen': {
     'ip': '0.0.0.0',
-    'port': 2222
+    'port': 8022
   },
   'user': {
     'name': null,
@@ -25,7 +24,7 @@ let config = {
     'host': null,
     'port': 22,
     'term': 'xterm-color',
-    'readyTimeout': 20000,
+    'readyTimeout': 60000,
     'keepaliveInterval': 120000,
     'keepaliveCountMax': 10
   },
@@ -41,7 +40,7 @@ let config = {
   },
   'session': {
     'name': 'WebSSH2',
-    'secret': 'mysecret'
+    'secret': 'secret'
   },
   'options': {
     'challengeButton': true,
@@ -88,7 +87,7 @@ let config = {
 // anyway
 try {
   if (fs.existsSync(configPath)) {
-    console.log('ephemeral_auth service reading config from: ' + configPath)
+    console.log('WebSSH2 service reading config from: ' + configPath)
     config = require('read-config')(configPath)
   } else {
     console.error('\n\nERROR: Missing config.json for webssh. Current config: ' + JSON.stringify(config))
@@ -119,7 +118,6 @@ var expressOptions = require('./expressOptions')
 // express
 app.use(compression({ level: 9 }))
 app.use(session)
-app.use(myutil.basicAuth)
 if (config.accesslog) app.use(logger('common'))
 app.disable('x-powered-by')
 
@@ -131,7 +129,7 @@ app.get('/reauth', function (req, res, next) {
   res.status(401).send('<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=' + r + '"></head><body bgcolor="#000"></body></html>')
 })
 
-app.get('/ssh/host/:host?', function (req, res, next) {
+app.get('/ssh/:host?', function (req, res, next) {
   res.sendFile(path.join(path.join(publicPath, 'client.htm')))
   // capture, assign, and validated variables
   req.session.ssh = {
@@ -191,3 +189,5 @@ io.use(function (socket, next) {
 io.on('connection', socket)
 
 module.exports = { server: server, config: config }
+
+

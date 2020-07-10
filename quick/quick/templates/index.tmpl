@@ -1,12 +1,214 @@
 {% extends "master.tmpl" %}
-
 {% block content %}
+            <div class="content">
+                <div class="page-inner">
+				    {% ifequal meta.is_admin "yes" %}
+                    <div class="page-header">
+                        <h4 class="page-title">快捷方式</h4>
+                        <div class="btn-group btn-group-page-header ml-auto">
+                            <button type="button" class="btn btn-light btn-round btn-page-header-dropdown dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-ellipsis-h"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6 col-md-3">
+                            <div class="card card-stats card-round">
+                                <div class="card-body ">
+                                    <div class="row align-items-center">
+                                        <div class="col-icon">
+                                            <div class="icon-big text-center icon-primary bubble-shadow-small">
+                                                <i class="fas fa-desktop"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col col-stats ml-3 ml-sm-0">
+                                            <div class="numbers">
+                                                <a href="/quick/host/single/list">单机管理</a>
+                                                <div class="dropdown-divider"></div>
+                                                <a href="/quick/host/batch/list">批处理</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-3">
+                            <div class="card card-stats card-round">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-icon">
+                                            <div class="icon-big text-center icon-info bubble-shadow-small">
+                                                <i class="fa fa-layer-group"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col col-stats ml-3 ml-sm-0">
+                                            <div class="numbers">
+                                                <a href="/quick/install/edit">创建任务</a>
+                                                <div class="dropdown-divider"></div>
+                                                <a href="/quick/install/resume/list">任务列表</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-3">
+                            <div class="card card-stats card-round">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-icon">
+                                            <div class="icon-big text-center icon-success bubble-shadow-small">
+                                                <i class="fa fa-database"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col col-stats ml-3 ml-sm-0">
+                                            <div class="numbers">
+                                                <a href="/quick/asset/app/list">业务视图</a>
+                                                <div class="dropdown-divider"></div>
+                                                <a href="/quick/asset/hardware/list">硬件视图</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-3">
+                            <div class="card card-stats card-round">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-icon">
+                                            <div class="icon-big text-center icon-secondary bubble-shadow-small">
+                                                <i class="fa fa-sitemap"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col col-stats ml-3 ml-sm-0">
+                                            <div class="numbers">
+                                                <a href="/quick/presence/list">宿主机</a>
+                                                <div class="dropdown-divider"></div>
+                                                <a href="/quick/virtual/list">虚拟机</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+					{% else %}
+                    <div class="page-header">
+                        <p class="page-title">易捷，简单、快捷的运维方式！</p>
+                        <div class="btn-group btn-group-page-header ml-auto">
+                            <button type="button" class="btn btn-light btn-round btn-page-header-dropdown dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-ellipsis-h"></i>
+                            </button>
+                        </div>
+                    </div>
+					{% endifequal %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">活跃用户</div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="lineChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">设备信息</div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="barChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+<script>
+    var lineChart = document.getElementById('lineChart').getContext('2d')
+    var barChart = document.getElementById('barChart').getContext('2d')
 
-<h2>欢迎使用迅捷管理平台</h2>
-<br/>
-<p>
-  当前登录用户: {{ username }}</b>
-</p>
+    var myLineChart = new Chart(lineChart, {
+        type: 'line',
+        data: {
+            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+            datasets: [{
+                label: "活跃用户",
+                borderColor: "#1d7af3",
+                pointBorderColor: "#FFF",
+                pointBackgroundColor: "#1d7af3",
+                pointBorderWidth: 2,
+                pointHoverRadius: 4,
+                pointHoverBorderWidth: 1,
+                pointRadius: 4,
+                backgroundColor: 'transparent',
+                fill: true,
+                borderWidth: 2,
+                data: [542, 480, 430, 550, 530, 453, 380, 434, 568, 610, 700, 900]
+            }]
+        },
+        options : {
+            responsive: true, 
+            maintainAspectRatio: false,
+            legend: {
+                position: 'bottom',
+                labels : {
+                    padding: 10,
+                    fontColor: '#1d7af3',
+                }
+            },
+            tooltips: {
+                bodySpacing: 4,
+                mode:"nearest",
+                intersect: 0,
+                position:"nearest",
+                xPadding:10,
+                yPadding:10,
+                caretPadding:10
+            },
+            layout:{
+                padding:{left:15,right:15,top:15,bottom:15}
+            }
+        }
+    });
+
+    var myBarChart = new Chart(barChart, {
+        type: 'bar',
+        data: {
+            labels: ["物理机","虚拟机","裸金属"],
+            datasets : [{
+                label: "设备",
+                backgroundColor: 'rgb(23, 125, 255)',
+                borderColor: 'rgb(23, 125, 255)',
+                data: [2388,1020,300],
+            }],
+        },
+        options: {
+            responsive: true, 
+            maintainAspectRatio: false,
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero:true
+                    }
+                }]
+            },
+        }
+    });
+
+
+</script>
 {% endblock %}
+
+
+
+
 
 

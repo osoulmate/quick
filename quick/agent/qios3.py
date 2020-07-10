@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 02110-1301  USA
 """
 
-QUICK_SERVER = 'localhost'
+QUICK_SERVER = '172.16.1.10'
 QUICK_USER   = 'cobbler'
 QUICK_PASS   = 'cobbler'
 import os
@@ -52,6 +52,7 @@ import sys
 import xmlrpc.client
 import string
 from threading import Thread
+import json
 """
 qios --release='centos7.3' -r -k
 """
@@ -721,17 +722,41 @@ def host_info():
     serial_number = popen("sudo /usr/sbin/dmidecode -s system-serial-number")
     comment={'product_name':product_name, 'sn':serial_number}
     return ifdatas,ip,gateway,comment
-def notice_server(strdata,server,report=None):
+def notice_server(strdata,server,report=True):
     if server and report:
+        url = 'http://%s/quick/api/report_progress'%server
         strdata=re.sub('\s+','~',strdata)
+        progress = {"progress":strdata}
         try:
-            subprocess_call([
-                            'curl',
-                            '%s/quick/task/notice/install_%s'%(server,strdata)
-                        ])
+            t=call_rest_api(url,progress)
+            print([t['result'],t['info']])
         except:
             traceback.print_exc()
             return None
+def call_rest_api(url,data=None):
+    #print(json.dumps(data,ensure_ascii=False))
+    if not url or not isinstance(data,dict):
+        html_json = {"result":"","info":"url is NULL or is not dict"}
+    try:
+        headers = {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1","Content-Type":"application/json"}
+        data = bytes(json.dumps(data), encoding='utf-8')
+        request = urllib.request.Request(url=url,data=data,headers=headers,method="POST") 
+        response = urllib.request.urlopen(request)
+    except Exception as e:
+        print("error:%s"%str(e))
+        html_json = {"result":"","info":str(e)}
+    else:
+        html = response.read().decode('utf-8')
+        try:
+            html_json = json.loads(html)
+        except Exception as e:
+            print("%s is not a valide dict"%html)
+            html_json = {"result":"","info":str(e)}
+        else:
+            print("data:%s,code:%s,url:%s,headers:%s"%(html_json,response.getcode(),response.geturl(),response.info()))
+    finally:
+        return html_json
 #=======================================================
 
 class InfoException(Exception):
@@ -1046,8 +1071,8 @@ class Qios:
             strdata="Kernel loaded; run 'kexec -e' to execute"
             print(strdata)
             self.logger.info(strdata)
-            notice_server(strdata,self.server,self.report)
             if self.reboot:
+                notice_server("- booting new kernel",self.server,self.report)
                 subprocess_call(['kexec','-e'])
         return self.net_install(after_download)
 
@@ -1524,3 +1549,5 @@ EOF
 
 if __name__ == "__main__":
     main()
+
+

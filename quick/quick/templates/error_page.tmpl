@@ -1,14 +1,24 @@
 {% extends "master.tmpl" %}
-
 {% block content %}
-
-<h1 class="error">错误</h1>
-
-发生错误
-
-<p class="errormsg">{{ message }}</p>
-<br/>
-<a href="javascript: history.go(-1)">返回</a>
-
+            <div class="content">
+                <div class="page-inner">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">错误提示</h4>
+                                </div>
+                                <div class="card-body">
+									<p>{{ message }}</p>
+									<p class="errormsg">cobbler版本: {{ version }}</p>
+									<p class="errormsg">当前用户: {{ meta.username }}</p>
+									<p><a href="javascript: history.go(-1)">返回</a></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 {% endblock content %}
+
 

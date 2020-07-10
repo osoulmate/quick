@@ -18,10 +18,11 @@ function del_filter(filter) {
     document.forms["action"].submit();
 }
 </script>
-<ul id="filter-adder">
-  <li>
-    <label for="filter_field">键:</label>
-    <select id="filter_field" name="filter_field" class="filter">
+<div class="row" style="margin-top:10px;">
+  <div class="md-col-5">
+    <div class="form-group form-inline" id="filter-adder">
+    <label for="filter_field" style="margin-right:5px;">键:</label>
+    <select id="filter_field" name="filter_field" class="form-control form-control-sm">
       <option value=""></option>
       {% ifequal what "distro" %}<option value="arch">arch</option>
       <option value="name">name</option>
@@ -174,21 +175,21 @@ function del_filter(filter) {
       {% ifequal what "file" %}
       <option value="name">name</option>
       {% endifequal %}
-      {% ifequal what "task/list" %}
+      {% ifequal what "install/resume" %}
       <option value="name">任务名称</option>
       <option value="ips">IP</option>
       <option value="usetime">已用时间</option>
       <option value="status">状态/进度</option>
       <option value="owner">创建者</option>
       {% endifequal %}
-      {% ifequal what "task/history" %}
+      {% ifequal what "install/history" %}
       <option value="name">任务名称</option>
       <option value="ips">IP</option>
       <option value="usetime">已用时间</option>
       <option value="status">状态/进度</option>
       <option value="owner">创建者</option>
       {% endifequal %}
-      {% ifequal what "task/detail" %}
+      {% ifequal what "install/detail" %}
       <option value="name">任务名称</option>
       <option value="ip">主机IP</option>
       <option value="mac">主机MAC</option>
@@ -199,26 +200,40 @@ function del_filter(filter) {
       <option value="status">状态/进度</option>
       <option value="owner">创建者</option>
       {% endifequal %}
-      {% ifequal what "user" %}
-      <option value="username">用户名</option>
-      <option value="email">邮箱</option>
-      <option value="last_login">上次登录</option>
-      <option value="registry_time">注册时间</option>
-      <option value="is_active">启用状态</option>
-      <option value="is_online">在线状态</option>
-      <option value="is_superuser">管理员</option>
-      {% endifequal %}
+      {% if 'host' in what or 'asset' in what or 'user' in what or 'manual' in what or 'login' in what or 'virtual' in what or 'presence' in what or 'discover' in what%}
+      {% for value in columns %}
+      {% if value.0 != 'id' %}
+      <option value='{{ value.0 }}'>{{ value.2 }}</option>
+      {% endif %}
+      {% endfor %}
+      {% endif %}
     </select>
-    <label for="filter_value"> 值: </label><input type="text" name="filter_value" id="filter_value" onkeypress="javascript:if (event.keyCode == 13) add_filter();" />
-    <input class="button" type="button" name="filter_add" id="filter_add" onclick="javascript: add_filter();" value="过滤" />
-  </li>
-</ul>
+    </div>
+    </div>
+    <div class="md-col-5">
+    <div class="form-group form-inline">
+    <label for="filter_value" style="margin-right:5px;">值: </label><input type="text" name="filter_value|{{ what }}" id="filter_value" onkeypress="javascript:if (event.keyCode == 13) add_filter();" class="form-control form-control-sm" />
+    </div>
+    </div>
+    <div class="md-col-2">
+    <div class="form-group form-inline">
+    <input class="btn btn-primary btn-sm" type="button" name="filter_add" id="filter_add" onclick="javascript: add_filter();" value="过滤" />
+    </div>
+    </div>
+  </div>
+</div>
   {% if filters %}
-<ul id="filter-remover">
+  <div class="row">
+    <div class="md-col-12" style="margin-left:20px;margin-right:20px;">
     {% for key,value in filters.items %}
-  <li><a href="javascript:del_filter('{{ key }}');" title="remove">✖</a> {{ key }} = {{ value }}</li>
+      <a style="margin-left:20px;" href="javascript:del_filter('{{ key }}');" title="remove"><span class="fa fa-times"></span></a> {{ key }} = {{ value }}
     {% endfor %}
-</ul>
+    </div>
+  </div>
   {% endif %}
 {% endif %}
+
+
+
+
 

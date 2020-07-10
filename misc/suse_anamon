@@ -15,28 +15,28 @@ do
             if [ -n "$install_progress_log" ];then
                 log=$(echo "$install_progress_log"|cut -d" " -f7-)
                 log=$(echo $log|sed -e "s/ /~/g")
-                log=$(echo $log|sed -e"s/\%/\%25/g")
+                log=$(echo $log|sed -e"s/\%/\%/g")
             elif [[ -n "$downloaded_log" ]]; then
                 log=$(echo "$downloaded_log"|cut -d" " -f7-)
                 log=$(echo $log|sed -e "s/ /~/g")
-                log=$(echo $log|sed -e"s/\%/\%25/g")
+                log=$(echo $log|sed -e"s/\%/\%/g")
             else
                 log=$(tail -n 1 /var/log/YaST2/y2log|grep "[YCP]")
                 log=$(echo "$log"|cut -d" " -f7-)
                 log=$(echo $log|sed -e "s/ /~/g")
-                log=$(echo $log|sed -e"s/\%/\%25/g")
+                log=$(echo $log|sed -e"s/\%/\%/g")
             fi
             pid=$(ps -elf |grep "pre-scripts"|grep "sh -c"|awk -F ' ' '{print $4}')
             if [ -n "$pid" ];then
                     kill -9 $pid
             fi
             if [ "$log" != '' ];then
-                cmd="$server/quick/task/notice/install_"$log
-                echo $cmd >> /tmp/anamon.log
-                curl -s $cmd
+                curl -H "Content-Type: application/json" -X POST -d "{\"progress\":\"$log\"}" http://$server/quick/api/report_progress >> /tmp/anamon.log
             fi
     else
         sleep 1
     fi
 done
+
+
 

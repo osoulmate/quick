@@ -1,0 +1,97 @@
+{% extends "master.tmpl" %}
+{% block content %}
+<form id="action" method="POST" action="">{% csrf_token %}</form>
+            <div class="content">
+                <div class="page-inner">
+                    <div class="page-header">
+                        <h4 class="page-title">资产管理</h4>
+                        <ul class="breadcrumbs">
+                            <li class="nav-home">
+                                <a href="/quick">
+                                    <i class="flaticon-home"></i>
+                                </a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">资产管理</a>
+                            </li>
+                            <li class="separator">
+                                <i class="flaticon-right-arrow"></i>
+                            </li>
+                            <li class="nav-item">
+                            {% ifequal what "asset/union" %}<a href="/quick/asset/union/list">综合视图</a>{% endifequal %}
+                            {% ifequal what "asset/app" %}<a href="/quick/asset/app/list">业务视图</a>{% endifequal %}
+                            {% ifequal what "asset/hardware" %}<a href="/quick/asset/hardware/list">硬件视图</a>{% endifequal %}
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                        <form name="editform" method="post" action="/quick/{{ what }}/save">{% csrf_token %}
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">{% if action == 'batch'  %}批量编辑{% elif editmode == 'edit'  %}编辑:{{ name }}{% else %}新增资产{% endif %}</div>
+                                </div>
+                                <div class="card-body">
+                        {% for item in items %}
+                           {% if editable %}
+                                {% if item.0 != "uuid" and item.0 != "hardware_uuid" %}
+                                    <div class="form-group">
+                                        <label for="{{ item.0 }}">{{ item.3 }}</label>
+                                        <input class="form-control" id="{{ item.0 }}" name="{{ item.0 }}" type="text"  value="{{ item.1 }}"/>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                {% ifequal action "batch" %}
+                                    {% if item.0 == 'ip' or item.0 == 'sn' %}
+                                    <div class="form-group">
+                                        <label for="{{ item.0 }}pool">{{ item.3 }}池</label>
+                                        <pre><textarea class="form-control" rows="5" id="{{ item.0 }}pool" name="{{ item.0 }}pool"></textarea></pre>
+                                    </div>
+                                    {% else %}
+                                    {% if item.0 != 'uuid' and item.0 != 'ipmi_ip' and item.0 != 'hardware_uuid' %}
+                                    <div class="form-group">
+                                        <label for="{{ item.0 }}">{{ item.3 }}</label>
+                                        <input class="form-control" id="{{ item.0 }}" name="{{ item.0 }}" type="text" />
+                                    </div>
+                                    {% endif %}
+                                    {% endif %}
+                                {% else %}
+                                    {% if item.0 == 'uuid' %}
+                                    <div class="form-group">
+                                        <label for="{{ item.0 }}">{{ item.3 }}</label>
+                                        <input class="form-control" id="{{ item.0 }}" name="{{ item.0 }}" type="text" readonly="readonly" style="background-color:#eee" value="{{ item.1 }}"/>
+                                    </div>
+                                    {% elif item.0 != 'uuid' and item.0 != 'hardware_uuid' %}
+                                    <div class="form-group">
+                                        <label for="{{ item.0 }}">{{ item.3 }}</label>
+                                        <input class="form-control" id="{{ item.0 }}" name="{{ item.0 }}" type="text" value="{{ item.1 }}"/>
+                                    </div>
+                                    {% endif %}
+                                {% endifequal %}
+                            {% endif %}
+                         {% endfor %}
+                                    <div class="form-group">
+                                        {% if editmode == 'edit' %}
+                                        <input class="btn btn-success" type="submit" name="submit" onClick="on_form_submit();" value="更新" />{% else %}
+                                        <input class="btn btn-success" type="submit" name="submit" onClick="on_form_submit();" value="添加" />
+                                        {% endif %}
+                                        <input class="btn btn-danger" type="button" onClick="window.location='/quick/{{ what }}/list';" value="取消" />
+                                        <input type="hidden" name="name" id="name" value="{{ name }}" />
+                                        <input type="hidden" name="editmode" value="{{ editmode }}" />
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+{% endblock content %}
+
+
+
+
+

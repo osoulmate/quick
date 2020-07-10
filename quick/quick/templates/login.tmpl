@@ -1,31 +1,118 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>{% block title %}迅捷管理平台{% endblock %}</title>
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
-    <link rel="stylesheet" type="text/css" media="all" href="/quick_content/style.css" />
-    <link rel="icon" type="image/png" href="/quick_content/favicon.png" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Login</title>
+    <meta content='width=device-width, initial-scale=1.0, shrink-to-fit=no' name='viewport' />
+    <link rel="icon" href="/quick_content/img/favicon.png" type="image/x-icon"/>
+
+    <!-- Fonts and icons -->
+    <script src="/quick_content/assets/js/plugin/webfont/webfont.min.js"></script>
+    <script>
+        WebFont.load({
+            //google: {"families":["Open+Sans:300,400,600,700"]},
+            custom: {"families":["Flaticon", "Font Awesome 5 Solid", "Font Awesome 5 Regular", "Font Awesome 5 Brands"], urls: ['/quick_content/assets/css/fonts.css']},
+            active: function() {
+                sessionStorage.fonts = true;
+            }
+        });
+    </script>
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/quick_content/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/quick_content/assets/css/azzara.min.css">
 </head>
-<body class="loginscreen">
-  <div id="login">
-    <img src="/quick_content/logo.png" width="185" />
-    <form action="/quick/do_login" method="post">
-      {% csrf_token %}
-      {% if next %}<input type="hidden" name="next" value="{{ next|escape }}" />{% endif %}
-      <div id="username">
-        <label for="username">用户名: </label>
-        <input type="text" name="username" value="" id="username" autofocus>
-      </div>
-      <div id="password">
-        <label for="password">密码: </label>
-        <input type="password" name="password" value="" id="password">
-      </div>
-      <input class="button" type="submit" value="登录" />
-    </form>
-{% if message %}
-    <p class="error">{{ message }}</p>
-{% endif %}
-  </div>
+<body class="login">
+    <div class="wrapper wrapper-login">
+        <div class="container container-login animated fadeIn">
+            <h3 class="text-center"><img src="/quick_content/img/logo.png" width="185" /></h3>
+            <form id="login_form" action="/quick/do_login" method="post">{% csrf_token %}
+            {% if next %}<input type="hidden" name="next" value="{{ next|escape }}" />{% endif %}
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="username" class="placeholder"><b>用户名</b></label>
+                    <input id="username" name="username" type="text" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="password" class="placeholder"><b>密码</b></label>
+                    <a href="#" class="link float-right">忘记密码?</a>
+                    <div class="position-relative">
+                        <input id="password" name="password" type="password" class="form-control" required>
+                        <div class="show-password">
+                            <i class="flaticon-interface"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group form-action-d-flex mb-3">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="rememberme">
+                        <label class="custom-control-label m-0" for="rememberme">记住密码</label>
+                    </div>
+                    <input class="btn btn-primary col-md-5 float-right mt-3 mt-sm-0 fw-bold" type="submit" onclick="do_login()" value="登陆" />
+                </div>
+                <div class="login-account">
+                    <span class="msg">还没有账号?</span>
+                    <a href="#" id="show-signup" class="link">注册</a>
+                {% if message %}
+                    <p style="color:red;">{{ message }}</p>
+                {% endif %}
+					<p style="color:red;" id="tips"></p>
+                </div>
+            </div>
+            </form>
+        </div>
+
+        <div class="container container-signup animated fadeIn">
+            <h3 class="text-center">账号注册</h3>
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="fullname" class="placeholder"><b>姓名</b></label>
+                    <input  id="fullname" name="fullname" type="text" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="email" class="placeholder"><b>邮箱</b></label>
+                    <input  id="email" name="email" type="email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="passwordsignin" class="placeholder"><b>密码</b></label>
+                    <div class="position-relative">
+                        <input  id="passwordsignin" name="passwordsignin" type="password" class="form-control" required>
+                        <div class="show-password">
+                            <i class="flaticon-interface"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="confirmpassword" class="placeholder"><b>二次确认</b></label>
+                    <div class="position-relative">
+                        <input  id="confirmpassword" name="confirmpassword" type="password" class="form-control" required>
+                        <div class="show-password">
+                            <i class="flaticon-interface"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="row form-sub m-0">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" name="agree" id="agree">
+                        <label class="custom-control-label" for="agree">用户注册协议</label>
+                    </div>
+                </div>
+                <div class="row form-action">
+                    <div class="col-md-6">
+                        <a href="#" id="show-signin" class="btn btn-danger btn-link w-100 fw-bold">取消</a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="#" class="btn btn-primary w-100 fw-bold">注册</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/quick_content/assets/js/core/jquery.3.2.1.min.js"></script>
+    <script src="/quick_content/assets/js/plugin/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
+    <script src="/quick_content/assets/js/core/popper.min.js"></script>
+    <script src="/quick_content/assets/js/core/bootstrap.min.js"></script>
+    <script src="/quick_content/assets/js/ready.js"></script>
+    <script src="/quick_content/js/cookie.js"></script>
 </body>
 </html>
 

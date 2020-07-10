@@ -10,26 +10,70 @@ function change_page(value) {
     document.forms["action"].submit();
 }
 </script>
-
-<li class="paginate"><label for="limit">条目/页:</label>
+<ul style="list-style:none" class="nav">
+{% if what == 'install/detail' or what == 'asset/app' or what == 'asset/hardware' or what == 'user/user' or 'virtual' in what or 'presence' in what %}
+<li class="quick-dropdown">
+    <span class="quick-dropbtn">显示列</span>
+    <div class="quick-dropdown-content">
+      {% for column in columns %}
+      {% if column.0 != "id" %}
+      <span>
+          {% if column.4 == 'on' %}
+          <input type="checkbox" id="{{ column.0 }}" style="margin:0px 10px;padding:0px;" name="view_col" value="{{ column.3 }}" checked="checked" onclick="javascript:item_check_off(this,this.value,'{{what}}');" />
+          {% else %}
+           <input type="checkbox" id="{{ column.0 }}" style="margin:0px 10px;padding:0px;" name="view_col" value="{{ column.3 }}" onclick="javascript:item_check_off(this,this.value,'{{what}}');" />
+          {% endif %}
+          <label for="{{ column.0 }}"><i></i></label> 
+          {{ column.2 }}
+      </span>
+      {% endif %}
+      {% endfor %}
+    </div>
+</li>
+{% elif what == 'asset/union'  %}
+<li class="quick-dropdown">
+    <span class="quick-dropbtn">显示列</span>
+    <div class="quick-dropdown-content">
+      {% for column in columns %}
+      {% if column.0 != "id" %}
+      <span>
+          {% if column.4 == 'on' %}
+          <input type="checkbox" id="{{ column.0 }}" style="margin:0px 10px;padding:0px;" name="view_col" value="{{ forloop.counter|add:1 }}" checked="checked" onclick="javascript:item_check_off(this,this.value,'{{what}}');" />
+          {% else %}
+           <input type="checkbox" id="{{ column.0 }}" style="margin:0px 10px;padding:0px;" name="view_col" value="{{ forloop.counter|add:1 }}" onclick="javascript:item_check_off(this,this.value,'{{what}}');" />
+          {% endif %}
+          <label for="{{ column.0 }}"><i></i></label> 
+          {{ column.2 }}
+      </span>
+      {% endif %}
+      {% endfor %}
+    </div>
+</li>
+{% endif %}
+<li>
+  <span for="limit">条目/页:</span>
   <select name="limit" id="limit" onchange="javascript:change_limit(this.value)">
   {% for p in pageinfo.items_per_page_list %}
     <option value="{{ p }}"{% ifequal pageinfo.items_per_page p %} selected="selected"{% endifequal %}>{{ p }}</option>
   {% endfor %}
   </select>
+  <span>共{{ pageinfo.num_items }}条</span>
   {% ifnotequal pageinfo.prev_page "~" %}
-  <a href="javascript:change_page('{{ pageinfo.prev_page }}')"><span class="lpointers">&lArr;</span></a>
+  <a href="javascript:change_page('{{ pageinfo.prev_page }}')"><span class="lpointers" style="color:blue;font-size:150%;">&laquo;</span></a>
   {% else %}
-  <span class="lpointers">&lArr;</span>
+  <span class="lpointers" style="font-size:150%">&laquo;</span>
   {% endifnotequal %}
   <select name="page" id="page" onchange="javascript:change_page(this.value)">
     {% for p in pageinfo.pages %}<option value="{{ p }}"{% ifequal pageinfo.page p %} selected="selected"{% endifequal %}>Page {{ p }}</option>{% endfor %}
   </select>
   {% ifnotequal pageinfo.next_page "~" %}
-  <a href="javascript:change_page('{{ pageinfo.next_page }}')"><span class="rpointers">&rArr;</span></a>
+  <a href="javascript:change_page('{{ pageinfo.next_page }}')"><span class="rpointers" style="color:blue;font-size:150%">&raquo;</span></a>
   {% else %}
-  <span class="rpointers">&rArr;</span>
+  <span class="rpointers" style="font-size:150%">&raquo;</span>
   {% endifnotequal %}
 </li>
+</ul>
 {% endif %}
+
+
 
