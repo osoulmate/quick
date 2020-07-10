@@ -18,12 +18,7 @@ yum install -y epel-release
 ```
 2. 安装依赖包
 ```
-<<<<<<< HEAD
-yum install -y python-pip                                 #安装pip
-
-=======
 yum install -y python-pip
->>>>>>> newui
 pip install --index http://pypi.douban.com/simple/ paramiko --trusted-host pypi.douban.com
 pip install --index http://pypi.douban.com/simple/ gevent --trusted-host pypi.douban.com
 pip install --index http://pypi.douban.com/simple/ pymysql --trusted-host pypi.douban.com
