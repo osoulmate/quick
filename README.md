@@ -29,8 +29,7 @@ pip install --index http://pypi.douban.com/simple/ pyexcel-io --trusted-host pyp
 ```
 3. 下载并安装mysql安装源
 ```
-yum install -y wget
-wget http://dev.mysql.com/get/mysql-community-release-el7-5.noarch.rpm
+curl -L http://dev.mysql.com/get/mysql-community-release-el7-5.noarch.rpm -o mysql-community-release-el7-5.noarch.rpm
 rpm -ivh mysql-community-release-el7-5.noarch.rpm 
 ```
 4. 安装node版本管理工具nvm
