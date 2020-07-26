@@ -37,6 +37,7 @@ sed -i "s/manage_rsync: 0/manage_rsync: 1/g" /etc/cobbler/settings
 sed -i "s/QUICK_SERVER = '172.16.1.10'/QUICK_SERVER = '$my_host'/g" /usr/share/quick/agent/qios2.py
 sed -i "s/QUICK_SERVER = '172.16.1.10'/QUICK_SERVER = '$my_host'/g" /usr/share/quick/agent/qios3.py
 sed -i "s/172.16.1.10/$my_host/g" /var/www/quick_content/bootos/pxelinux.cfg/default
+cp /var/www/quick_content/bootos/undionly.kpxe /var/lib/tftpboot/
 ```
 5. 修改/etc/cobbler/dhcp.template配置，添加一个与本机地址在同一个网络的dhcp地址池
 ```
