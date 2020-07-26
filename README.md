@@ -172,3 +172,27 @@ cobbler import --name=centos7.3 --path=/mnt --kickstart=/var/lib/cobbler/kicksta
 11. 创建管理平台登陆账号,使用浏览器访问`http://your-host-ip/quick/init`
 12. 登陆平台`http://your-host-ip/quick` 用户名:root,密码:rootpwd!
 
+**tips:**
+
+如果在内网环境，上述安装的mysql源不可用。可从百度网盘下载安装quick所需的源包，将源包解压后放置到可网络访问的位置，然后在要安装quick的机器上添加指向该网络位置的源即可快速安装。以下以centos7下用http提供下载源为例：
+
+1. [下载](https://pan.baidu.com/s/1ghtlYPRqsFALPWQtNYzXWg)压缩源包 提取码:3ew8 并将压缩包上传至http服务器的/var/www/html目录下
+2. 解压包到/var/www/html目录
+```
+cd /var/www/html
+tar xvf c7.tar.gz
+```
+3. 在安装quick的机器上添加/etc/yum.repos.d/local.repo，并将其它*.repo文件备份为*.repo.bak。
+```
+[quick]
+name=quick
+baseurl=http://172.16.1.134/c7/x86_64
+enabled=1
+gpgcheck=0
+priority=1
+```
+4. 在安装quick的机器上清除原有的yum缓存
+```
+yum clean all
+```
+5. 可以愉快的安装了...
