@@ -1,0 +1,10 @@
+# Start preseed_late_default
+# This script runs in the chroot /target by default
+#$SNIPPET('quick_post_install_network_config_deb')
+#$SNIPPET('post_run_deb')
+#$SNIPPET('download_config_files')
+#$SNIPPET('kickstart_done')
+wget --post-data="progress=100%"  http://$server/quick/api/report_progress -o /dev/null 
+##curl -H "Content-Type: application/json" -X POST -d '{"progress":"100%"}' http://$server/quick/api/report_progress -o /dev/null
+sed -i 's/PermitRootLogin.*$/PermitRootLogin yes/g' etc/ssh/sshd_config
+#End preseed_late_default

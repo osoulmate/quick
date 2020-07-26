@@ -171,7 +171,7 @@ d-i finish-install/reboot_in_progress note
 # This first command is run as early as possible, just after preseeding is read.
 # d-i preseed/early_command string [command]
 d-i preseed/early_command string wget -O- \
-   http://$http_server/cblr/svc/op/script/$what/$name/?script=preseed_early_default | \
+   http://$http_server/cblr/svc/op/script/$what/$name/?script=quick_preseed_early_default | \
    /bin/sh -s
 
 # This command is run immediately before the partitioner starts. It may be
@@ -186,5 +186,5 @@ d-i preseed/early_command string wget -O- \
 # packages and run commands in the target system.
 # d-i preseed/late_command string [command]
 d-i preseed/late_command string wget -O- \
-   http://$http_server/cblr/svc/op/script/$what/$name/?script=preseed_late_default | \
+   http://$http_server/cblr/svc/op/script/$what/$name/?script=quick_preseed_late_default | \
    chroot /target /bin/sh -s

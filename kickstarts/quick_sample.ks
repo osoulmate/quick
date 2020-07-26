@@ -54,7 +54,8 @@ $SNIPPET('pre_anamon')
 %end
 
 %packages
-$SNIPPET('func_install_if_enabled')
+curl -o /tmp/anamon "http://$server:$http_port/cobbler/misc/quick_anamon"
+python /tmp/anamon --name "$name" --server "$server" --port "$http_port"
 %end
 
 %post --nochroot
@@ -67,7 +68,7 @@ $SNIPPET('log_ks_post')
 $yum_config_stanza
 # End yum configuration
 $SNIPPET('post_install_kernel_options')
-$SNIPPET('post_install_network_config')
+$SNIPPET('quick_post_install_network_config')
 $SNIPPET('func_register_if_enabled')
 $SNIPPET('download_config_files')
 $SNIPPET('koan_environment')
