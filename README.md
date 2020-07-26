@@ -186,7 +186,7 @@ tar xvf c7.tar.gz
 ```
 [quick]
 name=quick
-baseurl=http://172.16.1.134/c7/x86_64
+baseurl=http://your-yum-server-ip/c7/x86_64
 enabled=1
 gpgcheck=0
 priority=1
