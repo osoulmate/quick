@@ -16,7 +16,7 @@ a platform of os management base Cobbler web
 ```
 yum install -y epel-release
 ```
-2. 安装quick [rpm包下载链接](https://pan.baidu.com/s/1P8CeLO5zEbg4yz99coRNSA) 提取码:eup7
+2. 安装quick [rpm包下载链接](https://pan.baidu.com/s/1P8CeLO5zEbg4yz99coRNSA) 提取码:eup7 包md5哈希值:4376edf507d5930fbd9a500e1fa72eb9
 ```
 yum install -y quick-1.0.2-1.el7.centos.x86_64.rpm
 ```
