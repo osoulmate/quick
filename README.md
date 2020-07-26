@@ -166,9 +166,12 @@ cobbler sync
 ```
 10. 导入镜像
 ```
-mount /dev/sr0 /mnt #虚拟机环境光驱在系统映射为sr0。请将镜像提前挂载,本例挂载的是centos7.3镜像，你也可以挂载其它系统镜像
-cobbler import --name=centos7.3 --path=/mnt --kickstart=/var/lib/cobbler/kickstarts/quick_sample.ks #注意，如果挂载的镜像是x86_64。那么--name名称不用在加上，如为ppc，则--name=centos7.3-ppc。
+mount /dev/sr0 /mnt 
+#虚拟机环境光驱在系统映射为sr0。
+#请将镜像提前挂载,本例挂载的是centos7.3镜像，你也可以挂载其它系统镜像
+cobbler import --name=centos7.3 --path=/mnt --kickstart=/var/lib/cobbler/kickstarts/quick_sample.ks 
+#注意，如果挂载的镜像是x86_64。那么--name名称不用在加上，如为ppc，则--name=centos7.3-ppc。
 ```
-10. 创建管理平台登陆账号,使用浏览器访问`http://localhost/quick/init`
+11. 创建管理平台登陆账号,使用浏览器访问`http://localhost/quick/init`
 12. 登陆平台`http://localhost/quick` 用户名:root,密码:rootpwd!
 
