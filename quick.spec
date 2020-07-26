@@ -17,7 +17,7 @@ Group:    quick
 License:  GPLv3
 URL:      https://github.com/osoulmate/quick
 Source0:  quick-1.0.2.tar.gz
-Requires: python-pip,cobbler,python2-django16
+Requires: python-pip,cobbler,python2-django16,dhcp,xinetd
 %description
 Quick is a platform of os management base Cobbler web
 %pre
@@ -27,6 +27,7 @@ echo "    Begin to configure env..."
 chmod 755 /usr/share/node-v10.6.0/bin/*
 ln -s /usr/share/node-v10.6.0/bin/node /usr/local/bin/
 ln -s /usr/share/node-v10.6.0/bin/npm /usr/local/bin/
+cp /var/www/quick_content/bootos/undionly.kpxe /var/lib/tftpboot/
 chown apache:apache /usr/share/quick/extend/novnc/vnc_tokens
 chown -R apache:apache /var/www/quick_content/temp
 chown -R apache:apache /var/log/quick

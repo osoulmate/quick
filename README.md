@@ -12,13 +12,11 @@ a platform of os management base Cobbler web
 ---
 #### 安装流程:
 
-1. 安装epel源和dhcp,xinetd
+1. 安装epel源
 ```
 yum install -y epel-release
-yum install -y dhcp
-yum install -y xinetd
 ```
-2. 安装quick [rpm包下载链接](https://pan.baidu.com/s/18SoD2vkMIXZwJ0n2Qc2rzg) 提取码:ggdi
+2. 安装quick [rpm包下载链接](https://pan.baidu.com/s/1P8CeLO5zEbg4yz99coRNSA) 提取码:eup7
 ```
 yum install -y quick-1.0.2-1.el7.centos.x86_64.rpm
 ```
@@ -38,7 +36,6 @@ sed -i "s/manage_rsync: 0/manage_rsync: 1/g" /etc/cobbler/settings
 sed -i "s/QUICK_SERVER = '172.16.1.10'/QUICK_SERVER = '$my_host'/g" /usr/share/quick/agent/qios2.py
 sed -i "s/QUICK_SERVER = '172.16.1.10'/QUICK_SERVER = '$my_host'/g" /usr/share/quick/agent/qios3.py
 sed -i "s/172.16.1.10/$my_host/g" /var/www/quick_content/bootos/pxelinux.cfg/default
-cp /var/www/quick_content/bootos/undionly.kpxe /var/lib/tftpboot/
 ```
 5. 修改/etc/cobbler/dhcp.template配置，添加一个与本机地址在同一个网络的dhcp地址池
 ```
@@ -160,7 +157,7 @@ python manage.py syncdb
 service cobblerd restart
 cobbler sync
 ```
-9. 添加定时任务，清除过期会话
+9. 添加定时任务，清除过期会话 `crontab -e`
 ```
 */1 * * * * /usr/bin/python2 /usr/share/quick/manage.py clearsessions >> /var/log/quick/sessions.log
 ```
@@ -172,6 +169,6 @@ mount /dev/sr0 /mnt
 cobbler import --name=centos7.3 --path=/mnt --kickstart=/var/lib/cobbler/kickstarts/quick_sample.ks 
 #注意，如果挂载的镜像是x86_64。那么--name名称不用在加上，如为ppc，则--name=centos7.3-ppc。
 ```
-11. 创建管理平台登陆账号,使用浏览器访问`http://localhost/quick/init`
-12. 登陆平台`http://localhost/quick` 用户名:root,密码:rootpwd!
+11. 创建管理平台登陆账号,使用浏览器访问`http://your-host-ip/quick/init`
+12. 登陆平台`http://your-host-ip/quick` 用户名:root,密码:rootpwd!
 
