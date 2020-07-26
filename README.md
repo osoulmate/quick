@@ -12,10 +12,11 @@ a platform of os management base Cobbler web
 ---
 #### 安装流程:
 
-1. 安装epel源和dhcp
+1. 安装epel源和dhcp,xinetd
 ```
 yum install -y epel-release
 yum install -y dhcp
+yum install -y xinetd
 ```
 2. 安装quick [rpm包下载链接](https://pan.baidu.com/s/18SoD2vkMIXZwJ0n2Qc2rzg) 提取码:ggdi
 ```
