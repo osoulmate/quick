@@ -1,5 +1,5 @@
 [Unit]
-Description=node Server daemon
+Description=webssh2 Server daemon
 [Service]
 ExecStart=/usr/share/node-v10.6.0/bin/node /usr/share/quick/extend/webssh2/index.js
 ExecStop=/usr/bin/pkill -f /usr/share/quick/extend/webssh2/index.js
