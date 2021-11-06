@@ -24,9 +24,9 @@ Quick is a platform of os management base Cobbler web
 echo "    Begin to install quick..."
 %post
 echo "    Begin to configure env..."
-chmod 755 /usr/share/node-v10.6.0/bin/*
-ln -s /usr/share/node-v10.6.0/bin/node /usr/local/bin/
-ln -s /usr/share/node-v10.6.0/bin/npm /usr/local/bin/
+chmod 755 /usr/share/node-v10.16.0/bin/*
+ln -s /usr/share/node-v10.16.0/bin/node /usr/local/bin/
+ln -s /usr/share/node-v10.16.0/bin/npm /usr/local/bin/
 cp /var/www/quick_content/bootos/undionly.kpxe /var/lib/tftpboot/
 chown apache:apache /usr/share/quick/extend/novnc/vnc_tokens
 chown -R apache:apache /var/www/quick_content/temp
@@ -59,7 +59,7 @@ echo 'Success to uninstall quick!'
 %setup -q
 %install
 install -d %{buildroot}/usr/share/quick
-install -d %{buildroot}/usr/share/node-v10.6.0
+install -d %{buildroot}/usr/share/node-v10.16.0
 install -d %{buildroot}/etc/httpd/conf.d
 install -d %{buildroot}/usr/bin
 install -d %{buildroot}/usr/lib/systemd/system
@@ -71,7 +71,7 @@ install -d %{buildroot}/var/lib/cobbler/scripts
 install -d %{buildroot}/var/log/quick
 install -d %{buildroot}/tmp/pippkgs
 cp -r ./quick %{buildroot}/usr/share/
-cp -r ./extend/node-v10.16.0-linux-x64/* %{buildroot}/usr/share/node-v10.6.0/
+cp -r ./extend/node-v10.16.0-linux-x64/* %{buildroot}/usr/share/node-v10.16.0/
 cp ./bin/quick.conf %{buildroot}/etc/httpd/conf.d/
 cp ./bin/novnc %{buildroot}/usr/bin/
 cp ./bin/novnc.service %{buildroot}/usr/lib/systemd/system/
