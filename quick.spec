@@ -10,13 +10,13 @@
 %define apache_group apache
 
 Name:  quick
-Version:  1.0.2
+Version:  1.0.3
 Release:  1%{?dist}
 Summary:  quick
 Group:    quick
 License:  GPLv3
 URL:      https://github.com/osoulmate/quick
-Source0:  quick-1.0.2.tar.gz
+Source0:  quick-1.0.3.tar.gz
 Requires: python-pip,cobbler,python2-django16,dhcp,xinetd
 %description
 Quick is a platform of os management base Cobbler web
@@ -93,7 +93,7 @@ cp -r ./extend/pippkgs %{buildroot}/tmp/
 /var/lib/cobbler
 /var/log/quick
 /tmp/pippkgs
-/usr/share/node-v10.6.0
+/usr/share/node-v10.16.0
 %changelog
 * Sun Jul 26 2020 osoulmate <askqingya@163.com>
-- Quick 1.0.2-1 release
+- Quick 1.0.3 release
