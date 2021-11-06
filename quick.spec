@@ -42,13 +42,13 @@ systemctl enable xinetd
 systemctl enable tftp
 systemctl enable rsyncd
 systemctl enable novnc
-systemctl enable node
+systemctl enable webssh2
 systemctl start tftp
 systemctl start rsyncd
 systemctl start httpd
 systemctl start cobblerd
 systemctl start novnc
-systemctl start node
+systemctl start webssh2
 echo "    Begin to install pip packages..."
 pip install --verbose  --no-index   --find-links=/tmp/pippkgs/   -r   /tmp/pippkgs/requirements.txt
 %preun
@@ -75,7 +75,7 @@ cp -r ./extend/node-v10.16.0-linux-x64/* %{buildroot}/usr/share/node-v10.6.0/
 cp ./bin/quick.conf %{buildroot}/etc/httpd/conf.d/
 cp ./bin/novnc %{buildroot}/usr/bin/
 cp ./bin/novnc.service %{buildroot}/usr/lib/systemd/system/
-cp ./bin/node.service %{buildroot}/usr/lib/systemd/system/
+cp ./bin/webssh2.service %{buildroot}/usr/lib/systemd/system/
 cp -r ./quick_content %{buildroot}/var/www/
 cp -r ./misc/* %{buildroot}/var/www/cobbler/misc/
 cp -r ./kickstarts %{buildroot}/var/lib/cobbler/
