@@ -11,7 +11,7 @@ sed -i "s/option subnet-mask         255.255.255.0/option subnet-mask         $D
 sed -i "s/range dynamic-bootp        192.168.1.100 192.168.1.254/range dynamic-bootp        $DHCP_SUBNET_RANGE/g" /etc/cobbler/dhcp.template
 mysql -e 'create database quick'
 mysql -e "set password for 'root'@'localhost'=password('root');"
-echo 'no'|python /usr/share/quick/manage.py syncdb 
+echo 'no'|python /usr/share/quick/manage.py syncdb
 cobbler import --name=centos7.3 --path=/mnt --kickstart=/var/lib/cobbler/kickstarts/quick_sample.ks
 service cobblerd restart
 cobbler sync
