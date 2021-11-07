@@ -1,6 +1,11 @@
 FROM centos:centos7.9.2009
 MAINTAINER osoulmate <askqingya@gmail.com>
 ENV QUICK_SERVER 127.0.0.1
+ENV DHCP_SUBNET 172.16.1.0
+ENV DHCP_NETMASK 255.255.255.0
+ENV DHCP_ROUTERS 172.16.1.1
+ENV DHCP_DNS 172.16.1.1
+ENV DHCP_SUBNET_RANGE "172.16.1.100 172.16.1.200"
 RUN yum install -y epel-release\
     && yum install -y python-pip cobbler python2-django16 dhcp xinetd
 RUN curl -L http://dev.mysql.com/get/mysql-community-release-el7-5.noarch.rpm -o mysql-community-release-el7-5.noarch.rpm\
@@ -12,6 +17,7 @@ ADD quick/bin/quick.conf /etc/httpd/conf.d/
 ADD quick/bin/novnc /usr/bin/
 ADD quick/bin/novnc.service /usr/lib/systemd/system 
 ADD quick/bin/webssh2.service /usr/lib/systemd/system
+ADD quick/bin/start.sh /root/
 ADD quick/quick_content /var/www/quick_content
 ADD quick/misc/ /var/www/cobbler/misc/
 ADD quick/kickstarts  /var/lib/cobbler/kickstarts
