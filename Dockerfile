@@ -11,19 +11,19 @@ RUN yum install -y epel-release\
 RUN curl -L http://dev.mysql.com/get/mysql-community-release-el7-5.noarch.rpm -o mysql-community-release-el7-5.noarch.rpm\
     && rpm -ivh mysql-community-release-el7-5.noarch.rpm\
     && yum install -y –nogpgcheck mysql-community-server
-ADD quick/quick /usr/share/quick
-ADD quick/extend/node-v10.16.0-linux-x64 /usr/share/node-v10.16.0 
-ADD quick/bin/quick.conf /etc/httpd/conf.d/ 
-ADD quick/bin/novnc /usr/bin/
-ADD quick/bin/novnc.service /usr/lib/systemd/system 
-ADD quick/bin/webssh2.service /usr/lib/systemd/system
-ADD quick/bin/start.sh /root/
-ADD quick/quick_content /var/www/quick_content
-ADD quick/misc/ /var/www/cobbler/misc/
-ADD quick/kickstarts  /var/lib/cobbler/kickstarts
-ADD quick/snippets  /var/lib/cobbler/snippets
-ADD quick/scripts  /var/lib/cobbler/scripts
-ADD quick/extend/pippkgs /tmp/pippkgs
+ADD ./quick /usr/share/quick
+ADD ./extend/node-v10.16.0-linux-x64 /usr/share/node-v10.16.0 
+ADD ./bin/quick.conf /etc/httpd/conf.d/ 
+ADD ./bin/novnc /usr/bin/
+ADD ./bin/novnc.service /usr/lib/systemd/system 
+ADD ./bin/webssh2.service /usr/lib/systemd/system
+ADD ./bin/start.sh /root/
+ADD ./quick_content /var/www/quick_content
+ADD ./misc/ /var/www/cobbler/misc/
+ADD ./kickstarts  /var/lib/cobbler/kickstarts
+ADD ./snippets  /var/lib/cobbler/snippets
+ADD ./scripts  /var/lib/cobbler/scripts
+ADD ./extend/pippkgs /tmp/pippkgs
 RUN pip install --verbose  --no-index --find-links=/tmp/pippkgs/ -r /tmp/pippkgs/requirements.txt \
     && chmod 755 -R /usr/share/node-v10.16.0/bin/ \
     && chmod +x /usr/bin/novnc  \
