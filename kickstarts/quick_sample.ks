@@ -50,12 +50,12 @@ $SNIPPET('log_ks_pre')
 $SNIPPET('kickstart_start')
 $SNIPPET('pre_install_network_config')
 # Enable installation monitoring
-$SNIPPET('pre_anamon')
+curl -o /tmp/anamon "http://$server:$http_port/cobbler/misc/quick_anamon"
+python /tmp/anamon --name "$name" --server "$server" --port "$http_port"
 %end
 
 %packages
-curl -o /tmp/anamon "http://$server:$http_port/cobbler/misc/quick_anamon"
-python /tmp/anamon --name "$name" --server "$server" --port "$http_port"
+$SNIPPET('func_install_if_enabled')
 %end
 
 %post --nochroot
