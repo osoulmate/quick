@@ -26,7 +26,7 @@ docker pull osoulmate/quick
 #DHCP_NETMASK为与HOST相同子网掩码
 #DHCP_ROUTERS为HOST网关
 #DHCP_DNS为HOST DNS
-docker run -d --network=host -p 80:80 \
+docker run -d --privileged --network=host -p 80:80 \
         -e QUICK_SERVER="10.200.30.78"\
         -e DHCP_SUBNET="10.200.30.0" \
         -e DHCP_NETMASK="255.255.255.0" \
