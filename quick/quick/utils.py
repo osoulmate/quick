@@ -1,9 +1,10 @@
-#!/usr/bin/env python
 #-*- coding=utf-8 -*-
 from __future__ import print_function
 import paramiko
 import glob
 import os
+import traceback
+import sys
 import gevent
 from threading import Thread
 import re
@@ -14,122 +15,12 @@ import argparse
 import atexit
 import getpass
 import ssl
-
+import logging
+from vcenter import VcenterApi
 from quick.models import *
-ERROR       = "ERROR"
-WARNING     = "WARNING"
-DEBUG       = "DEBUG"
-INFO        = "INFO"
-
-class Logger(object):
-    def __init__(self, logfile="/var/log/quick/quick.log"):
-        self.logfile = None
-        # Main logfile is append mode, other logfiles not.
-        if not os.path.exists(os.path.dirname(logfile)):
-            try:
-                os.mkdir("/var/log/quick")
-            except IOError:
-                return
-        if not os.path.exists(logfile) and os.path.exists(os.path.dirname(logfile)):
-            self.logfile = open(logfile, "a")
-            self.logfile.close()
-        try:
-            self.logfile = open(logfile, "a")
-        except IOError:
-            # You likely don't have write access, this logger will just print 
-            # things to stdout.
-            pass
-    def warning(self, msg):
-        self.__write(WARNING, msg)
-
-    def error(self, msg):
-        self.__write(ERROR, msg)
-
-    def debug(self, msg):
-        self.__write(DEBUG, msg)
-
-    def info(self, msg):
-        self.__write(INFO, msg)
-
-    def flat(self, msg):
-        self.__write(None, msg)
-
-    def __write(self, level, msg):
-    
-        if level is not None:
-            msg = "%s - %s | %s" % (time.asctime(), level, msg)
-
-        if self.logfile is not None:
-            self.logfile.write(msg)
-            self.logfile.write("\n")
-            self.logfile.flush()
-        else:
-            print(msg)
-    def handle(self):
-        return self.logfile
-    def close(self):
-        self.logfile.close()
-class Esxi(object):
-    def __init__(self,obj,delimit='  '):
-        self.esxi_obj = obj
-        self.delimit = delimit
-    def gather(self):
-        result = {}
-        for esxi in self.esxi_obj:
-            sn = []
-            for i in esxi.summary.hardware.otherIdentifyingInfo:
-                if isinstance(i, vim.host.SystemIdentificationInfo):
-                    sn.append(i.identifierValue)
-            result['spec']     = str(esxi.summary.hardware.numCpuPkgs) + "C" + str(esxi.summary.hardware.numCpuCores) + "核  " + str(esxi.summary.hardware.memorySize/1024/1024) +"MB"
-            result['cpuutil']      = '%.3f%%' % (float(esxi.summary.quickStats.overallCpuUsage) /(float(esxi.summary.hardware.numCpuPkgs * esxi.summary.hardware.numCpuCores * esxi.summary.hardware.cpuMhz)) *100)
-            result['memoryutil']   = '%.3f%%' % ((float(esxi.summary.quickStats.overallMemoryUsage)/ (float(esxi.summary.hardware.memorySize/1024/1024))) *100)
-            result['cputhreads']   = esxi.summary.hardware.numCpuThreads
-            result['cpumhz']       = esxi.summary.hardware.cpuMhz
-            result['cpumodel']     = esxi.summary.hardware.cpuModel
-            result['os']     = esxi.summary.config.product.fullName
-            result['vendor']       = esxi.summary.hardware.vendor
-            result['model']        = esxi.summary.hardware.model
-            result['sn']        = sn
-            s = ''
-            for ds in esxi.datastore:
-                total_size = str(int((ds.summary.capacity)/1024/1024/1024)) + "GB"
-                free_size = str(int((ds.summary.freeSpace)/1024/1024/1024)) + "GB"
-                filesystem_type = ds.summary.type
-                s += "%s[total:%s,free:%s,fs:%s]  "%(ds.name,total_size,free_size,filesystem_type)
-            result['storage'] = s
-            s = []
-            for nt in esxi.network:
-                s.append(nt.name)
-            result['network'] = s
-            vms = []
-            for vm in esxi.vm:
-                v = {}
-                v['name']   =vm.name
-                v['powerstatus']  = vm.runtime.powerState
-                v['spec']  = str(vm.config.hardware.numCPU) +"C " + str(vm.config.hardware.memoryMB) +'MB'
-                v['os']  = vm.config.guestFullName
-                if vm.guest.ipAddress:
-                    v['ip'] = vm.guest.ipAddress
-                else:
-                    v['ip'] = 'no vmtools'
-                disks = ''
-                for d in vm.config.hardware.device:
-                    if isinstance(d, vim.vm.device.VirtualDisk):
-                        disk_name = d.deviceInfo.label.replace(r" ","")
-                        disk_size = str((d.capacityInKB)/1024/1024) + 'GB'
-                        disks += "%s  %s"%(disk_name,disk_size)
-                v['disk'] = disks
-                vms.append(v)
-            result['vms'] = vms
-        return result
-
-def get_obj(content, vimtype, name=None):
-    container = content.viewManager.CreateContainerView(content.rootFolder, vimtype, True)
-    obj = [ view for view in container.view]
-    return obj
+logger = logging.getLogger(__name__)
 
 def generate_ip_list(ips,**kw):
-    logger = Logger()
     ip_list = []
     ips = ips.split('\n')
     for ip in ips:
@@ -181,13 +72,13 @@ def generate_ip_mask_gateway_mac(obj=None):
         return data
 
 def generate_data(osip,task_name,profile_name,progress,owner):
-    logger = Logger()
     data = generate_ip_mask_gateway_mac(osip)
     logger.info(data)
     j=len(data)
     i=0
     for ip,netmask,gateway,mac,ipmi_ip,ipmi_netmask,ipmi_gateway,ipmi_user,ipmi_pwd in data:
-        logger.info("%s %s %s %s %s %s %s %s %s "%(ip,netmask,gateway,mac,ipmi_ip,ipmi_netmask,ipmi_gateway,ipmi_user,ipmi_pwd))
+        logger.info("%s %s %s %s %s %s %s %s %s "%(
+            ip,netmask,gateway,mac,ipmi_ip,ipmi_netmask,ipmi_gateway,ipmi_user,ipmi_pwd))
         hardware_model = ''
         hardware_sn    = ''
         vendor         = ''
@@ -201,7 +92,25 @@ def generate_data(osip,task_name,profile_name,progress,owner):
                 hardware_model = report.hardware_model
                 hardware_sn    = report.hardware_sn
                 vendor         = report.vendor
-            subtask = Detail(name=task_name,ip=ip,mac=mac,netmask=netmask,gateway=gateway,ipmi_ip=ipmi_ip,ipmi_netmask=ipmi_netmask,ipmi_gateway=ipmi_gateway,ipmi_user=ipmi_user,ipmi_pwd=ipmi_pwd,vendor=vendor,hardware_model=hardware_model,hardware_sn=hardware_sn,apply_template=profile_name,start_time='0',usetime='0',status=progress,owner=owner,flag='detail')
+            subtask = Detail(name=task_name,
+                            ip=ip,
+                            mac=mac,
+                            netmask=netmask,
+                            gateway=gateway,
+                            ipmi_ip=ipmi_ip,
+                            ipmi_netmask=ipmi_netmask,
+                            ipmi_gateway=ipmi_gateway,
+                            ipmi_user=ipmi_user,
+                            ipmi_pwd=ipmi_pwd,
+                            vendor=vendor,
+                            hardware_model=hardware_model,
+                            hardware_sn=hardware_sn,
+                            apply_template=profile_name,
+                            start_time='0',
+                            usetime='0',
+                            status=progress,
+                            owner=owner,
+                            flag='detail')
             subtask.save()
             i=i+1
             task = List.objects.get(name=task_name)
@@ -210,53 +119,66 @@ def generate_data(osip,task_name,profile_name,progress,owner):
             else:
                 task.status = '初始化(%s/%s)'%(i,j)
             task.save()
-        except Exception,e:
+        except Exception as e:
             logger.error(str(e))
     return True
 def __add_host(ip,user,pwd):
-    logger = Logger()
     logger.info("Begin to add host(%s)"%ip)
     try:
-        if hasattr(ssl, '_create_unverified_context'):
-            context = ssl._create_unverified_context()
-        si = SmartConnect(
-                host=ip,
-                user=user,
-                pwd=pwd,
-                port=443,
-                sslContext=context)
-        # disconnect this thing
-        atexit.register(Disconnect, si)
-        content = si.RetrieveContent()
-        esxi_obj = get_obj(content, [vim.HostSystem])
-        my_esxi = Esxi(esxi_obj)
-        esxi_info = my_esxi.gather()
+        vcenter_obj=VcenterApi(ip,user,pwd)
+        hosts_info = vcenter_obj.get_host_list()
         esxi_fields = [f for f in Esxi_host._meta.fields]
-        kw = {}
-        for field in esxi_fields:
-            if field.name == 'ip':
-                continue
-            kw[field.name] = esxi_info[field.name]
-        esxi = Esxi_host.objects.get(ip=ip)
-        for k,v in kw.items():
-            setattr(esxi, k , v)
-        esxi.save()
-        virt_fields = [f for f in Vm_host._meta.fields]
-
-        for vm in esxi_info['vms']:
-            kw = {}
-            for field in virt_fields:
+        for host in hosts_info:
+            kw={}
+            host_kw = {
+                "spec": "%sC%s核 %sG"%(host.get('cpu_pkgs'),
+                        host.get('cpu_cores'),
+                        host.get('mem_size')),
+                "cpuutil":float(host.get('cpu_usage'))\
+                            /((float(host.get('cpu_Ghz'))\
+                            *float(host.get('cpu_cores')))),
+                "memoryutil":float(host.get('mem_usage'))\
+                            /float(host.get('mem_size')),
+                "cputhreads":host.get('cpu_cores'),
+                "cpumhz":float(host.get('cpu_Ghz'))*1000,
+                "cpumodel":host.get('model'),
+                "os":host.get('fullname'),
+                "vendor":host.get('vendor'),
+                "model":host.get('model'),
+                "storage":host.get('datastore')[0:99],
+                "sn":host.get('sn','null')}
+            for field in esxi_fields:
                 if field.name == 'ip':
-                    kw[field.name] = vm['ip']
-                elif field.name == 'esxi_ip':
+                    continue
+                kw[field.name] = host_kw[field.name]
+            esxi = Esxi_host.objects.get(ip=ip)
+            for k,v in kw.items():
+                setattr(esxi, k , v)
+            esxi.save()
+        virt_fields = [f for f in Vm_host._meta.fields]
+        vm_hosts_info = vcenter_obj.get_vm_list()
+        for vm in vm_hosts_info:
+            if vm.get('ip_address'):
+                vm_ip = vm.get('ip_address')
+            else:
+                vm_ip = 'no vmtools'
+            kw={}
+            host_kw = {"name":vm.get('name'),
+                    "powerstatus":vm.get('power_state'),
+                    "spec":"%sC %sG"%(vm.get('cpu_cores'),vm.get('mem_size')),
+                    "os":vm.get('os'),
+                    "ip":vm_ip,
+                    "disk":vm.get('virtual_disk_info')[0:99]}
+            for field in virt_fields:
+                if field.name == 'esxi_ip':
                     kw['esxi_ip'] = ip
                 else:
-                    kw[field.name] = vm[field.name]
+                    kw[field.name] = host_kw[field.name]
             vm_host= Vm_host(**kw)
             vm_host.save()
         logger.info("End to add host(%s)"%ip)
         return True
-    except Exception,e:
+    except Exception as e:
         esxi_fields = [f for f in Esxi_host._meta.fields]
         kw = {}
         for field in esxi_fields:
@@ -267,10 +189,10 @@ def __add_host(ip,user,pwd):
         for k,v in kw.items():
             setattr(esxi, k , v)
         esxi.save()
-        logger.error("Host(%s) occur error(%s)"%(ip,str(e)))
+        exc_type, exc_value, exc_obj = sys.exc_info()
+        logger.error(traceback.format_exc(limit=3))
         return False
 def __quick_install_os(name,ip,obj,ip_list):
-    logger = Logger()
     logger.info("Begin to configure host(%s) before to reinstall..."%ip)
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -300,7 +222,7 @@ def __quick_install_os(name,ip,obj,ip_list):
         try:
             sftp = ssh.open_sftp()
             sftp.put(local_path, target_path)
-        except Exception,err:
+        except Exception as err:
             logger.error("Host(%s) occur error(%s) in uploading script"%(ip,str(err)))
             return True
         if 'ubuntu' in obj.osrelease.lower():
@@ -316,7 +238,7 @@ def __quick_install_os(name,ip,obj,ip_list):
             else:
                 logger.info("host(%s) report(%s) "%(ip,strdata))
                 logger.info("End to configure host(%s),now is rebooting..."%ip)
-        except Exception,err:
+        except Exception as err:
             if 'suse' in is_suse_out:
                 logger.info("host(%s) report(run kexec -e to loaded) "%ip)
                 logger.info("End to configure host(%s),now is reload new kernel..."%ip)
@@ -324,7 +246,6 @@ def __quick_install_os(name,ip,obj,ip_list):
                 logger.info("host(%s) connect timeout(%s) "%(ip,err))
         return True
 def __get_host_info(name,ip,user,pwd,obj,iplist):
-    logger = Logger()
     logger.info("Begin to collect host(%s) info(vendor,mac,sn...)"%ip)
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -434,7 +355,7 @@ def __get_host_info(name,ip,user,pwd,obj,iplist):
             task.status = status
             task.save()
             ssh.close()
-        except Exception,err:
+        except Exception as err:
             logger.eror(err)
         logger.info("End to collect Host(%s) info(vendor,mac,sn...)"%ip)
 def __quick_batch_exec(name,ip,user,pwd,cmd,is_script,owner,shell):
@@ -442,13 +363,12 @@ def __quick_batch_exec(name,ip,user,pwd,cmd,is_script,owner,shell):
         cmd_info = 'script(%s)'%cmd[0]
     else:
         cmd_info = 'command(%s)'%cmd
-    logger = Logger()
     logger.info("Host(%s) begin to exec %s"%(ip,cmd_info))
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
         ssh.connect(ip,22,user,pwd,timeout=15)
-    except Exception,e:
+    except Exception as e:
         logger.error("To ssh host(%s) use username(%s) and password(%s) in port 22 failure!"%(ip,user,pwd))
         batch_temp = Batch_Temp(name=name,ip=ip,status='failure',result=str(e),owner=owner)
         batch_temp.save()
@@ -476,7 +396,7 @@ def __quick_batch_exec(name,ip,user,pwd,cmd,is_script,owner,shell):
                     logger.info("Host(%s) exec %s success!"%(ip,cmd_info))
                     e = strdata
                     status = 'success'
-            except Exception,err:
+            except Exception as err:
                 logger.error("Host(%s) occur error(%s) in executing script!"%(ip,str(err)))
                 status = 'failure'
                 e = err
@@ -498,7 +418,7 @@ def __quick_batch_exec(name,ip,user,pwd,cmd,is_script,owner,shell):
                     logger.info("Host(%s) execute %s success!"%(ip,cmd_info))
                     e = strdata
                     status = 'success'
-            except Exception,err:
+            except Exception as err:
                 logger.error("Host(%s) occur error(%s) in executing (%s)!"%(ip,str(err),cmd_info))
                 status = 'failure'
                 e = err
@@ -508,7 +428,6 @@ def __quick_batch_exec(name,ip,user,pwd,cmd,is_script,owner,shell):
             logger.info("Host(%s) end to exec %s!"%(ip,cmd_info))
             return True
 def __start_task(thr_obj_fn,name):
-    logger = Logger()
     logger.info("Start task(%s)"%name)
     thr_obj = QuickThread(name,logger)
     thr_obj._run = thr_obj_fn
@@ -517,28 +436,28 @@ def __start_task(thr_obj_fn,name):
     return True
 def background_collect(name):
     def runner(self):
-        self.logger.info("i am in background_collect(%s)"%name)
+        logger.info("i am in background_collect(%s)"%name)
         try:
             rc = __background_collect(name)
-        except Exception,err:
-            self.logger.error(err)
+        except Exception as err:
+            logger.error(err)
         else:
             return True 
     return __start_task(runner,name)
 def background_qios(name):
     def runner(self):
-        self.logger.info("i am in background_qios(%s)"%name)
+        logger.info("i am in background_qios(%s)"%name)
         return __background_qios(name)
     return __start_task(runner,name)
 
 def background_exec(name):
     def runner(self):
-        self.logger.info("i am in background_exec(%s)"%name)
+        logger.info("i am in background_exec(%s)"%name)
         return __background_exec(name)
     return __start_task(runner,name)
 def background_add_host(name):
     def runner(self):
-        self.logger.info("i am in background_add_host(%s)"%name)
+        logger.info("i am in background_add_host(%s)"%name)
         return __background_add_host(name)
     return __start_task(runner,name)
 
@@ -573,7 +492,6 @@ def __background_qios(name):
         return True
 def __background_exec(name):
     try:
-        logger = Logger()
         batch = Batch.objects.filter(name=name)
         logger.info("Batch (%s) in __background_exec"%name)
         gevent_list = []
@@ -604,7 +522,7 @@ def __background_exec(name):
             for ip in ip_list:
                 gevent_list.append(gevent.spawn(__quick_batch_exec,name,ip.strip(),batch.osuser,batch.ospwd,cmd,batch.is_script,batch.owner,shell))
             gevent.joinall(gevent_list)
-    except Exception,e:
+    except Exception as e:
         logger.error("Batch (%s) occur error(%s)!"%(name,str(err)))
         return False
     else:
@@ -622,7 +540,7 @@ class QuickThread(Thread):
             self.logger.info("End thread(%s)"%self._run)
             self.logger.info("End task(%s)"%self.name)
             return rc
-        except Exception,e:
+        except Exception as e:
             self.logger.info("End thread(%s)"%self._run)
             self.logger.error("End task(%s) exit(%s)!"%(self.name,str(e)))
             return False
@@ -659,7 +577,7 @@ def add_cobbler_system(remote,token,taskname,ospart,ospackages,raid,bios):
                 remote.modify_item('system',obj_id,field['name'],field['value'],token)
             for ifdata in ifdatas:
                 remote.modify_system(obj_id, 'modify_interface', ifdata,token)
-        except Exception,e:
+        except Exception as e:
             task_detail.status=e
             task_detail.save()
             continue

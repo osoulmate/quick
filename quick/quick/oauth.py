@@ -9,10 +9,11 @@ import simplejson
 import cobbler.utils as cobbler_utils
 import re
 import utils
+import logging
 from quick.models import Users,User_Profile
 
 remote = None
-logger = utils.Logger(logfile="/var/log/quick/auth.log")
+logger = logging.getLogger('auth')
 def test_user_authenticated(request):
     global remote
     url_cobbler_api = None

@@ -1,5 +1,6 @@
 # Django settings for QUICK project.
 import sys
+import os
 reload(sys)
 sys.setdefaultencoding('utf-8')
 import django
@@ -18,15 +19,93 @@ ADMINS = (
 MANAGERS = ADMINS
 
 # Force Django to use the systems timezone
-TIME_ZONE = None
+TIME_ZONE =  'Asia/Shanghai'
 
 # Language section
 # TBD.
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'zh-cn'
 USE_I18N = False
 DEFAULT_CHARSET = 'utf-8'
 SITE_ID = 1
-
+# Logger
+BASE_LOG_DIR = "/var/log/quick/"
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s\t%(pathname)s\t[%(module)s:%(lineno)d]\t%(levelname)s\t%(message)s',
+        },
+        'simple': {
+            'format': '%(levelname)s\t%(asctime)s\t[%(filename)s:%(lineno)d]\t%(message)s'
+        }
+    },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'default': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_LOG_DIR, "info.log"),
+            'maxBytes': 1024 * 1024 * 500,
+            'backupCount': 3,
+            'formatter': 'standard',
+            'encoding': 'utf-8',
+        },
+        'auth': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_LOG_DIR, "auth.log"),
+            'maxBytes': 1024 * 1024 * 50,
+            'backupCount': 3,
+            'formatter': 'standard',
+            'encoding': 'utf-8',
+        },
+        'django': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_LOG_DIR, "django.log"),
+            'maxBytes': 1024 * 1024 * 50,
+            'backupCount': 3,
+            'formatter': 'standard',
+            'encoding': 'utf-8',
+        },
+        'error': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_LOG_DIR, "err.log"),
+            'maxBytes': 1024 * 1024 * 50,
+            'backupCount': 3,
+            'formatter': 'standard',
+            'encoding': 'utf-8',
+        }
+    },
+    'loggers': {
+        '': {
+            'handlers': ['default','error'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django': {
+            'handlers': ['django'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'auth': {
+            'handlers': ['auth'],
+            'level': 'INFO',
+        }
+    },
+}
 # not used
 MEDIA_ROOT = '/var/www/quick_content/temp/'
 MEDIA_URL = '/media/'
