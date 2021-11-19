@@ -1,18 +1,32 @@
 # -*- coding: utf-8 -*-
 # support VMware ESXi 6.5.0 build-4887370
-from pyVim import connect
+#from pyVim import connect
+import atexit
 from pyVmomi import vim
+from pyVim.connect import SmartConnect, Disconnect, SmartConnectNoSSL
+import ssl
 import json
 class VcenterApi(object):
     """
     收集Vcenter中数据中心，主机集群，主机，网络，虚拟机，的信息
     """
     def __init__(self, host, user, pwd):
-        self.si = connect.ConnectNoSSL(host=host, user=user, pwd=pwd)
+        '''
+        if hasattr(ssl, '_create_unverified_context'):
+            context = ssl._create_unverified_context()
+        self.si = SmartConnect(
+                host=host,
+                user=user,
+                pwd=pwd,
+                port=443,
+                sslContext=context)
+        # disconnect this thing
+        atexit.register(Disconnect, self.si)
+        '''
+        self.si = SmartConnectNoSSL(host=host, user=user, pwd=pwd)
         self.content = self.si.RetrieveContent()
         datacenter = self.content.rootFolder.childEntity[0]
         self.datacentername = datacenter.name
-        #print(self.datacentername)
     def get_cluster_list(self):
         """
         获取所有机器资源使用情况

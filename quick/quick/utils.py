@@ -1,7 +1,6 @@
 #-*- coding=utf-8 -*-
 from __future__ import print_function
 import paramiko
-import glob
 import os
 import traceback
 import sys
@@ -9,17 +8,10 @@ import gevent
 from threading import Thread
 import re
 import time
-from pyVmomi import vim
-from pyVim.connect import SmartConnect, Disconnect, SmartConnectNoSSL
-import argparse
-import atexit
-import getpass
-import ssl
 import logging
 from vcenter import VcenterApi
 from quick.models import *
 logger = logging.getLogger(__name__)
-
 def generate_ip_list(ips,**kw):
     ip_list = []
     ips = ips.split('\n')
@@ -141,7 +133,7 @@ def __add_host(ip,user,pwd):
                             /float(host.get('mem_size')),
                 "cputhreads":host.get('cpu_cores'),
                 "cpumhz":float(host.get('cpu_Ghz'))*1000,
-                "cpumodel":host.get('model'),
+                "cpumodel":host.get('cpu_model'),
                 "os":host.get('fullname'),
                 "vendor":host.get('vendor'),
                 "model":host.get('model'),
