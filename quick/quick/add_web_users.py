@@ -137,6 +137,10 @@ def add_web_users(request):
             {"name":"profiles_new","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"新建Profiles","menu2_url":"profile/edit","desc":"新建"},
             {"name":"profiles_save","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"保存Profiles","menu2_url":"profile/save","desc":"保存"},
 
+            {"name":"subprofiles_edit","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"修改SubProfiles","menu2_url":"subprofile/edit/.+","desc":"修改"},
+            {"name":"subprofiles_new","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"新建SubProfiles","menu2_url":"subprofile/edit","desc":"新建"},
+            {"name":"subprofiles_save","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"保存SubProfiles","menu2_url":"subprofile/save","desc":"保存"},
+
             {"name":"systems_edit","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"修改Systems","menu2_url":"system/edit/.+","desc":"修改"},
             {"name":"systems_new","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"新建Systems","menu2_url":"system/edit","desc":"新建"},
             {"name":"systems_save","menu1_title":"配置管理","menu1_icon":"fa-paint-roller","menu2_title":"保存Systems","menu2_url":"system/save","desc":"保存"},
@@ -240,7 +244,7 @@ def add_web_users(request):
                         group_right_query.append(Group_Right(**kw))
                 Group_Right.objects.bulk_create(group_right_query)
 
-    except Exception, e:
+    except Exception as e:
         return HttpResponse("异常:%s"%str(e))
     else:
         return HttpResponse('已成功添加web用户账号(root:rootpwd!)')

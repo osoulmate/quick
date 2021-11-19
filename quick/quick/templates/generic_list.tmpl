@@ -55,15 +55,21 @@
                                 <div class="card-header">
                                     <div class="card-head-row">
                                         <div class="card-title">
-                                          <a class="btn btn-primary" href="/quick/{{what}}/edit">创建{{ what }}</a>
-                                          {% ifequal what "profile" %}
-                                          <a class="btn btn-primary" href="/quick/sub{{what}}/edit">创建sub-{{ what }}</a>
-                                          {% endifequal %}
-    <select id="batchactions">
-      <option value="" selected="selected">Batch Actions</option>
-      {% for title,action,value in batchactions %}<option value="{{ action }}|{{ value }}">{{ title }}</option>{% endfor %}
-    </select>
-    <a class="btn btn-primary" href="javascript:;" onclick="javascript:action_multi('{{ what }}')" />GO</a>
+                                          <div class="input-group mb-3">
+                                            <select id="batchactions">
+                                              <option value="" selected="selected">批量操作</option>
+                                              {% for title,action,value in batchactions %}
+                                              <option value="{{ action }}|{{ value }}">{{ title }}</option>
+                                              {% endfor %}
+                                            </select>
+                                            <div class="input-group-append" style="margin-right:5px;">
+	                                            <a class="btn btn-primary" href="javascript:;" onclick="javascript:action_multi('system')" />GO</a> 
+                                            </div>
+                                            <a class="btn btn-primary" style="margin-right:5px;" href="/quick/{{what}}/edit">创建{{ what }}</a>
+                                            {% ifequal what "profile" %}
+                                            <a class="btn btn-primary" href="/quick/sub{{what}}/edit">创建sub-{{ what }}</a>
+                                            {% endifequal %}
+                                          </div>
                                         </div>
                                         <div class="card-tools">
                                           {% include "paginate.tmpl" %}
