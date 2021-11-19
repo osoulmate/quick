@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding:utf-8 -*-
 from django.http import HttpResponseRedirect
 from django.http import HttpResponse
@@ -22,17 +21,24 @@ def do_login(request):
     username = request.POST.get('username', '').strip()
     password = request.POST.get('password', '')
     nextsite = request.POST.get('next',None)
-    users = Users.objects.filter(username=username,password=hashlib.md5(password.encode(encoding='UTF-8')).hexdigest())
+    users = Users.objects.filter(username=username,
+            password=hashlib.md5(password.encode(encoding='UTF-8')).hexdigest())
     now = datetime.now()
     now = now.strftime("%Y-%m-%d %H:%M:%S")
     if not users:
-        login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='用户名或密码错误')
+        login_log = Login_Log(time=now,action='登入',
+        user=username,status='失败',
+        ip=request.META['REMOTE_ADDR'],
+        remark='用户名或密码错误')
         login_log.save()
         return login(request,nextsite,message="用户名或密码错误")
     else:
         user = users[0]
         if user.is_active == 'no':
-            login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='用户账号未激活')
+            login_log = Login_Log(time=now,action='登入',
+            user=username,status='失败',
+            ip=request.META['REMOTE_ADDR'],
+            remark='用户账号未激活')
             login_log.save()
             return login(request,nextsite,message="您的账号尚未激活，请联系管理员")
         if user.is_superuser == 'yes':
@@ -44,9 +50,15 @@ def do_login(request):
             for right in rights:
                 if right.desc == 'menu':
                     if kw.has_key(right.menu1_title):
-                        kw[right.menu1_title]["children"].append({"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"})
+                        kw[right.menu1_title]["children"].append(
+                            {"title":right.menu2_title,
+                            "url":right.menu2_url,
+                            "menustate":"inactive"})
                     else:
-                        kw[right.menu1_title] = {"menutitle":right.menu1_title,"menuicon":right.menu1_icon,"menustate":"inactive","children":[{"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"}]}
+                        kw[right.menu1_title] = {"menutitle":right.menu1_title,
+                        "menuicon":right.menu1_icon,
+                        "menustate":"inactive",
+                        "children":[{"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"}]}
                         order.append(right.menu1_title)
                 have_right.append(right.menu2_url)
         else:
@@ -62,9 +74,13 @@ def do_login(request):
                         right = Rights.objects.get(id=right.right_id)
                         if right.desc == 'menu':
                             if kw.has_key(right.menu1_title):
-                                kw[right.menu1_title]["children"].append({"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"})
+                                kw[right.menu1_title]["children"].append({"title":right.menu2_title,
+                                "url":right.menu2_url,"menustate":"inactive"})
                             else:
-                                kw[right.menu1_title] = {"menutitle":right.menu1_title,"menuicon":right.menu1_icon,"menustate":"inactive","children":[{"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"}]}
+                                kw[right.menu1_title] = {"menutitle":right.menu1_title,
+                                "menuicon":right.menu1_icon,
+                                "menustate":"inactive",
+                                "children":[{"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"}]}
                                 order.append(right.menu1_title)
                         have_right.append(right.menu2_url)
             user_right = User_Right.objects.filter(user_id=user.id)
@@ -73,9 +89,13 @@ def do_login(request):
                     right = Rights.objects.get(id=right.right_id)
                     if right.desc == 'menu':
                         if kw.has_key(right.menu1_title):
-                            kw[right.menu1_title]["children"].append({"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"})
+                            kw[right.menu1_title]["children"].append({"title":right.menu2_title,
+                            "url":right.menu2_url,"menustate":"inactive"})
                         else:
-                            kw[right.menu1_title] = {"menutitle":right.menu1_title,"menuicon":right.menu1_icon,"menustate":"inactive","children":[{"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"}]}
+                            kw[right.menu1_title] = {"menutitle":right.menu1_title,
+                            "menuicon":right.menu1_icon,
+                            "menustate":"inactive",
+                            "children":[{"title":right.menu2_title,"url":right.menu2_url,"menustate":"inactive"}]}
                             order.append(right.menu1_title)
                     have_right.append(right.menu2_url)
             else:
@@ -120,7 +140,10 @@ def do_login(request):
                             meta_old = simplejson.loads(meta_old)
                             if meta_old['username'] == username:
                                 Session.objects.filter(session_key=session.session_key).delete()
-                                login_log = Login_Log(time=now,action='登出',user=username,status='成功',ip=request.META['REMOTE_ADDR'],remark='账号在另一区域登陆')
+                                login_log = Login_Log(time=now,action='登出',
+                                user=username,status='成功',
+                                ip=request.META['REMOTE_ADDR'],
+                                remark='账号在另一区域登陆')
                                 login_log.save()
             user_profile = User_Profile.objects.filter(username=username)
             if user_profile:
@@ -129,7 +152,15 @@ def do_login(request):
             else:
                 bg = 'bg1'
                 topbar = 'light-blue'
-            meta = {"online":online,"username":username,"usermail":user.email,"menu":menu,"have_right":have_right,"notice":2,"bg":bg,"topbar":topbar,"is_admin":user.is_superuser}
+            meta = {"online":online,
+            "username":username,
+            "usermail":user.email,
+            "menu":menu,
+            "have_right":have_right,
+            "notice":2,
+            "bg":bg,
+            "topbar":topbar,
+            "is_admin":user.is_superuser}
             request.session['quick_meta'] = simplejson.dumps(meta)
         except Exception as e:
             login_log = Login_Log(time=now,action='登入',user=username,status='失败',ip=request.META['REMOTE_ADDR'],remark='系统异常')

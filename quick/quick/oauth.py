@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding:utf-8 -*-
 from django.contrib.sessions.models import Session
 from datetime import datetime
@@ -34,7 +33,7 @@ def test_user_authenticated(request):
             exipry_time = settings['auth_token_expiration']
             try:
                 t = remote.token_check(request.session['cobbler_token'])
-            except Exception,e:
+            except Exception as e:
                 logger.error("用户(%s)访问URL(%s)异常,异常：[%s]"%(meta['username'],request.path,str(e)))
                 return True
             else:
