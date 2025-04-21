@@ -15,4 +15,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
-      run: docker pull osoulmate/quick
+    - run: docker pull osoulmate/quick
+    - run: docker run -d --privileged --network=host -p 80:80 \
+        -e QUICK_SERVER="10.200.30.78"\
+        -e DHCP_SUBNET="10.200.30.0" \
+        -e DHCP_NETMASK="255.255.255.0" \
+        -e DHCP_ROUTERS="10.200.30.78" \
+        -e DHCP_DNS="10.200.30.78" \
+        -e DHCP_SUBNET_RANGE="10.200.30.100 10.200.30.200" \
+        -v /mnt:/mnt  osoulmate/quick
